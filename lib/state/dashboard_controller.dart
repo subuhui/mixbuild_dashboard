@@ -83,11 +83,17 @@ class DashboardController extends Notifier<DashboardState> {
     final selectedByName = <String, DependencyBranch>{
       for (final dependency in state.selectedScenario.dependencies) dependency.name: dependency,
     };
+    final matchingScenarios = state.config.buildScenarios
+        .where((s) => s.id == state.selectedScenarioId);
+    final scenarioOverrides = matchingScenarios.isNotEmpty
+        ? matchingScenarios.first.dependencyOverrides
+        : const <String, String>{};
     return state.config.dependencies.map((dependency) {
       final selected = selectedByName[dependency.name];
+      final overrideBranch = scenarioOverrides[dependency.name];
       return DependencyBranch(
         name: dependency.name,
-        branch: dependency.defaultBranch,
+        branch: selected?.branch ?? overrideBranch ?? dependency.defaultBranch,
         icon: selected?.icon ?? _dependencyIcon(dependency.type, dependency.name),
         highlight: selected?.highlight,
       );
@@ -190,29 +196,22 @@ class DashboardController extends Notifier<DashboardState> {
     if (state.selectedScenario.status.controlsLocked) {
       return;
     }
-    state = state.copyWith(
-      projects: state.projects.map((project) {
-        if (project.id != state.selectedProjectId) {
-          return project;
-        }
-        return project.copyWith(
-          scenarios: project.scenarios.map((scenario) {
-            return scenario.copyWith(
-              dependencies: scenario.dependencies.map((dependency) {
-                if (dependency.name != dependencyName) {
-                  return dependency;
-                }
-                return dependency.copyWith(
-                  branch: branch,
-                  isOverride: true,
-                  highlight: dependency.highlight ?? MixBuildPalette.primary,
-                );
-              }).toList(growable: false),
-            );
-          }).toList(growable: false),
-        );
-      }).toList(growable: false),
-      lastError: null,
+    final currentScenarioId = state.selectedScenarioId;
+    final updatedScenarios = state.config.buildScenarios.map((scenarioConfig) {
+      if (scenarioConfig.id != currentScenarioId) {
+        return scenarioConfig;
+      }
+      final overrides = Map<String, String>.from(scenarioConfig.dependencyOverrides)
+        ..[dependencyName] = branch;
+      return scenarioConfig.copyWith(dependencyOverrides: overrides);
+    }).toList(growable: false);
+    final updatedConfig = state.config.copyWith(buildScenarios: updatedScenarios);
+    final savedConfig = ref.read(mixbuildYamlStoreProvider).saveConfigSync(updatedConfig);
+    _applyConfig(
+      savedConfig,
+      preserveError: false,
+      preserveSelectedProjectId: state.selectedProjectId,
+      preserveSelectedScenarioId: state.selectedScenarioId,
     );
   }
 
@@ -278,6 +277,15 @@ class DashboardController extends Notifier<DashboardState> {
         .toList(growable: false);
 
     final updatedScenarios = scenarios.map((scenario) {
+      final baseScenarioMatches = baseConfig.buildScenarios
+          .where((s) => s.id == scenario.id);
+      final baseScenario = baseScenarioMatches.isNotEmpty
+          ? baseScenarioMatches.first
+          : null;
+      final overrides = <String, String>{
+        if (baseScenario != null) ...baseScenario.dependencyOverrides,
+        for (final dep in scenario.dependencies) dep.name: dep.branch,
+      };
       return MixbuildScenarioConfig(
         id: scenario.id,
         name: scenario.name,
@@ -288,6 +296,7 @@ class DashboardController extends Notifier<DashboardState> {
         outputDir: scenario.outputPath.trim().isEmpty ? null : scenario.outputPath.trim(),
         autoTag: scenario.autoTag,
         tagPrefix: scenario.tagPrefix,
+        dependencyOverrides: overrides,
       );
     }).toList(growable: false);
 
@@ -354,22 +363,15 @@ class DashboardController extends Notifier<DashboardState> {
         outputDir: scenario.outputPath.trim().isEmpty ? null : scenario.outputPath.trim(),
         autoTag: scenario.autoTag,
         tagPrefix: scenario.tagPrefix,
+        dependencyOverrides: {
+          for (final dep in scenario.dependencies) dep.name: dep.branch,
+        },
       );
     }).toList(growable: false);
 
     var workspaceName = config.activeProjectName.trim();
     if (workspaceName.isEmpty) {
-      workspaceName = 'workspace-${DateTime.now().millisecondsSinceEpoch}';
-    }
-
-    var targetPath = store.workspaceYamlPath(
-      MixbuildConfig.workspaceSlugFor(workspaceName),
-    );
-    if (File(targetPath).existsSync()) {
-      workspaceName = '$workspaceName-${DateTime.now().millisecondsSinceEpoch}';
-      targetPath = store.workspaceYamlPath(
-        MixbuildConfig.workspaceSlugFor(workspaceName),
-      );
+      workspaceName = 'workspace';
     }
 
     final newConfig = MixbuildConfig(
@@ -514,6 +516,7 @@ class DashboardController extends Notifier<DashboardState> {
         transform: (current) => current.copyWith(
           status: BuildStatus.failed,
           progress: 0,
+          mainBranch: project.branch,
           logs: [
             _log(
               level: 'ERROR',
@@ -631,10 +634,14 @@ class DashboardController extends Notifier<DashboardState> {
               tagPrefix: scenarioConfig.tagPrefix,
               yamlOverride: _scenarioOverrideTemplate(config, scenarioConfig),
               dependencies: config.dependencies.map((dependency) {
+                final overrideBranch = scenarioConfig.dependencyOverrides[dependency.name];
+                final isOverride = overrideBranch != null;
                 return DependencyBranch(
                   name: dependency.name,
-                  branch: dependency.defaultBranch,
+                  branch: overrideBranch ?? dependency.defaultBranch,
                   icon: _dependencyIcon(dependency.type, dependency.name),
+                  isOverride: isOverride,
+                  highlight: isOverride ? MixBuildPalette.primary : null,
                 );
               }).toList(growable: false),
               logs: [
@@ -733,7 +740,11 @@ class DashboardController extends Notifier<DashboardState> {
     MixbuildScenarioConfig scenarioConfig,
   ) {
     final dependencyLines = config.dependencies
-        .map((dependency) => '  ${dependency.name}:\n    branch: ${dependency.defaultBranch}')
+        .map((dependency) {
+          final overrideBranch = scenarioConfig.dependencyOverrides[dependency.name];
+          final branch = overrideBranch ?? dependency.defaultBranch;
+          return '  ${dependency.name}:\n    branch: $branch';
+        })
         .join('\n');
     return 'workspace:\n  root_path: ${config.workspace.rootPath}\nscenario:\n  name: ${scenarioConfig.name}\n  main_branch: ${scenarioConfig.mainBranch}\ndependencies:\n$dependencyLines\n';
   }
@@ -756,6 +767,8 @@ class DashboardController extends Notifier<DashboardState> {
     GlobalConfig? overrideGlobalConfig,
     required bool preserveError,
     String? previousFilePath,
+    String? preserveSelectedProjectId,
+    String? preserveSelectedScenarioId,
   }) {
     final updatedProject = _projectFromConfig(config);
     final existingProjects = state.projects;
@@ -774,6 +787,10 @@ class DashboardController extends Notifier<DashboardState> {
     final cleanFlags = <String, bool>{
       for (final scenario in allScenarios) scenario.id: false,
     };
+
+    final selectedProjectId = preserveSelectedProjectId ?? config.filePath;
+    final selectedScenarioId = preserveSelectedScenarioId ?? updatedProject.scenarios.first.id;
+
     state = DashboardState(
       config: config,
       projects: merged,
@@ -794,8 +811,8 @@ class DashboardController extends Notifier<DashboardState> {
           ),
       metrics: _buildMetrics(allScenarios),
       availableWorkspaceNames: _workspaceNames(),
-      selectedProjectId: config.filePath,
-      selectedScenarioId: updatedProject.scenarios.first.id,
+      selectedProjectId: selectedProjectId,
+      selectedScenarioId: selectedScenarioId,
       cleanBeforeBuild: cleanFlags,
       lastError: preserveError ? state.lastError : null,
     );

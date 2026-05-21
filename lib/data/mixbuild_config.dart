@@ -73,6 +73,7 @@ class MixbuildScenarioConfig {
     this.outputDir,
     this.autoTag = false,
     this.tagPrefix = '',
+    this.dependencyOverrides = const {},
   });
 
   final String id;
@@ -82,6 +83,7 @@ class MixbuildScenarioConfig {
   final String? outputDir;
   final bool autoTag;
   final String tagPrefix;
+  final Map<String, String> dependencyOverrides;
 
   MixbuildScenarioConfig copyWith({
     String? id,
@@ -91,6 +93,7 @@ class MixbuildScenarioConfig {
     Object? outputDir = _sentinel,
     bool? autoTag,
     String? tagPrefix,
+    Map<String, String>? dependencyOverrides,
   }) {
     return MixbuildScenarioConfig(
       id: id ?? this.id,
@@ -100,6 +103,7 @@ class MixbuildScenarioConfig {
       outputDir: outputDir == _sentinel ? this.outputDir : outputDir as String?,
       autoTag: autoTag ?? this.autoTag,
       tagPrefix: tagPrefix ?? this.tagPrefix,
+      dependencyOverrides: dependencyOverrides ?? this.dependencyOverrides,
     );
   }
 }
@@ -179,6 +183,7 @@ class MixbuildConfig {
           outputDir: _asOptionalString(item['output_dir']),
           autoTag: item['auto_tag'] == true,
           tagPrefix: _asOptionalString(item['tag_prefix']) ?? '',
+          dependencyOverrides: _parseDependencyOverrides(item['dependency_overrides']),
         );
       }).toList(growable: false),
     );
@@ -251,6 +256,12 @@ class MixbuildConfig {
       if (scenario.tagPrefix.isNotEmpty) {
         buffer.writeln('    tag_prefix: ${_quote(scenario.tagPrefix)}');
       }
+      if (scenario.dependencyOverrides.isNotEmpty) {
+        buffer.writeln('    dependency_overrides:');
+        for (final entry in scenario.dependencyOverrides.entries) {
+          buffer.writeln('      ${_quote(entry.key)}: ${_quote(entry.value)}');
+        }
+      }
     }
     return buffer.toString();
   }
@@ -293,13 +304,33 @@ String? _asOptionalString(Object? value) {
   return trimmed.isEmpty ? null : trimmed;
 }
 
+Map<String, String> _parseDependencyOverrides(Object? value) {
+  if (value == null) {
+    return const {};
+  }
+  if (value is! YamlMap) {
+    throw const FormatException('dependency_overrides must be a map.');
+  }
+  final result = <String, String>{};
+  for (final entry in value.entries) {
+    final key = entry.key;
+    final val = entry.value;
+    if (key is String && val is String) {
+      result[key.trim()] = val.trim();
+    }
+  }
+  return result;
+}
+
 String _slugify(String value) {
   final normalized = value
+      .trim()
       .toLowerCase()
-      .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+      .replaceAll(RegExp(r'[^\p{L}\p{N}\s]+', unicode: true), '-')
+      .replaceAll(RegExp(r'\s+'), '-')
       .replaceAll(RegExp(r'-+'), '-')
       .replaceAll(RegExp(r'^-|-$'), '');
-  return normalized.isEmpty ? 'scenario' : normalized;
+  return normalized.isEmpty ? 'workspace' : normalized;
 }
 
 String _quote(String value) {

@@ -211,23 +211,21 @@ class _SidebarPanel extends StatelessWidget {
                       const SizedBox(height: 20),
                       _SidebarSectionLabel(label: '主工程分支'),
                       const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        initialValue: project.branch,
-                        isExpanded: true,
-                        decoration: const InputDecoration(isDense: true),
-                        onChanged: scenario.status.controlsLocked
-                            ? null
-                            : (v) {
-                                if (v != null) onBranchChanged(v);
-                              },
-                        items: branchOptions
-                            .map(
-                              (b) => DropdownMenuItem<String>(
-                                value: b,
-                                child: Text(b),
-                              ),
-                            )
-                            .toList(),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.24),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                        ),
+                        child: Text(
+                          scenario.mainBranch,
+                          style: MixBuildTheme.monoTextStyle(
+                            fontSize: 13,
+                            color: MixBuildPalette.foreground,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 20),
                       _SidebarSectionLabel(
@@ -608,8 +606,8 @@ class _DependencyTreeNode extends StatelessWidget {
   final ValueChanged<String> onBranchChanged;
 
   Color get _nodeColor => dependency.isOverride
-      ? MixBuildPalette.error
-      : (dependency.highlight ?? MixBuildPalette.muted);
+      ? MixBuildPalette.primary
+      : MixBuildPalette.foreground;
 
   @override
   Widget build(BuildContext context) {
@@ -662,7 +660,7 @@ class _DependencyTreeNode extends StatelessWidget {
                       border: Border.all(color: _nodeColor.withValues(alpha: 0.2)),
                     ),
                     child: Text(
-                      dependency.isOverride ? '覆写' : '跟随',
+                      dependency.isOverride ? '覆写' : '默认',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: _nodeColor,
                         fontSize: 9,
@@ -672,27 +670,21 @@ class _DependencyTreeNode extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 6),
-              DropdownButtonFormField<String>(
-                initialValue: dependency.branch,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  isDense: true,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.24),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                 ),
-                onChanged: isLocked
-                    ? null
-                    : (v) {
-                        if (v != null) onBranchChanged(v);
-                      },
-                items: options
-                    .map(
-                      (b) => DropdownMenuItem<String>(
-                        value: b,
-                        child: Text(b),
-                      ),
-                    )
-                    .toList(),
+                child: Text(
+                  dependency.branch,
+                  style: MixBuildTheme.monoTextStyle(
+                    fontSize: 12,
+                    color: _nodeColor,
+                  ),
+                ),
               ),
             ],
           ),

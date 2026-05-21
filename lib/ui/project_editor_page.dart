@@ -361,19 +361,6 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
     });
   }
 
-  void _setDraftType(_ProjectBindingDraft draft, MixbuildProjectType type) {
-    setState(() {
-      draft.type = type;
-      if (!draft.isMainProject) {
-        draft.restoreCommandController.text = _defaultRestoreCommand(type);
-        _replaceScenarioDependency(
-          previousName: draft.projectName,
-          nextDependency: _dependencyBranchFromDraft(draft),
-        );
-      }
-    });
-  }
-
   void _addDependencyFromProject(DiscoveredGitProject project) {
     if (_isProjectSelected(project)) {
       _showSelectionMessage('项目 ${project.name} 已经在当前配置中。');
@@ -870,63 +857,45 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
     final draft = _mainBindingDraft;
     return _ConfigSectionCard(
       title: '主工程绑定',
-      subtitle: '配置主工程路径、技术栈类型与默认分支',
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final fieldWidth = ((constraints.maxWidth - 48) / 4).clamp(180.0, double.infinity);
-          return Wrap(
-            spacing: 16,
-            runSpacing: 16,
-            children: [
-              SizedBox(
-                width: fieldWidth,
-                child: _EditorFieldTile(
-                  label: '工程名称',
-                  child: _ReadOnlyField(value: draft.projectName),
-                ),
+      subtitle: '配置主工程路径与默认分支',
+      child: Row(
+        children: [
+          Expanded(
+            child: _EditorFieldTile(
+              label: '工程名称',
+              child: _ReadOnlyField(value: draft.projectName),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _EditorFieldTile(
+              label: '路径选择',
+              child: _PathSelectorField(
+                controller: draft.pathController,
+                options: _pathOptionsForDraft(draft),
+                hintText: '选择或输入相对路径',
+                onPathSelected: (value) {
+                  _applyPathToDraft(draft, value);
+                  unawaited(_refreshBranchOptionsForDraft(draft));
+                },
               ),
-              SizedBox(
-                width: fieldWidth,
-                child: _EditorFieldTile(
-                  label: '路径选择',
-                  child: _PathSelectorField(
-                    controller: draft.pathController,
-                    options: _pathOptionsForDraft(draft),
-                    hintText: '选择或输入相对路径',
-                    onPathSelected: (value) {
-                      _applyPathToDraft(draft, value);
-                      unawaited(_refreshBranchOptionsForDraft(draft));
-                    },
-                  ),
-                ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _EditorFieldTile(
+              label: '默认分支',
+              child: _BranchSelectorField(
+                value: draft.defaultBranchController.text.trim(),
+                options: _branchOptionsForDraft(draft),
+                isLoading: _loadingBranchDrafts.contains(draft),
+                warningMessage: _draftBranchWarnings[draft],
+                onSelected: (value) => _setDraftDefaultBranch(draft, value),
+                onRefresh: () => unawaited(_refreshBranchOptionsForDraft(draft)),
               ),
-              SizedBox(
-                width: fieldWidth,
-                child: _EditorFieldTile(
-                  label: '技术栈类型',
-                  child: _StackTypeSegment(
-                    value: draft.type,
-                    onChanged: (value) => _setDraftType(draft, value),
-                  ),
-                ),
-              ),
-              SizedBox(
-                width: fieldWidth,
-                child: _EditorFieldTile(
-                  label: '默认分支',
-                  child: _BranchSelectorField(
-                    value: draft.defaultBranchController.text.trim(),
-                    options: _branchOptionsForDraft(draft),
-                    isLoading: _loadingBranchDrafts.contains(draft),
-                    warningMessage: _draftBranchWarnings[draft],
-                    onSelected: (value) => _setDraftDefaultBranch(draft, value),
-                    onRefresh: () => unawaited(_refreshBranchOptionsForDraft(draft)),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1033,79 +1002,75 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        _dependencyIconForDraft(draft.type, draft.projectName),
-                        color: MixBuildPalette.muted,
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: _ReadOnlyField(value: draft.projectName),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 4,
-                      child: _PathSelectorField(
-                        controller: draft.pathController,
-                        options: _pathOptionsForDraft(draft),
-                        hintText: '选择模块路径',
-                        onPathSelected: (value) {
-                          _applyPathToDraft(draft, value);
-                          unawaited(_refreshBranchOptionsForDraft(draft));
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    SizedBox(
-                      width: 160,
-                      child: _BranchSelectorField(
-                        value: draft.defaultBranchController.text.trim(),
-                        options: _branchOptionsForDraft(draft),
-                        isLoading: _loadingBranchDrafts.contains(draft),
-                        warningMessage: _draftBranchWarnings[draft],
-                        onSelected: (value) => _setDraftDefaultBranch(draft, value),
-                        onRefresh: () => unawaited(_refreshBranchOptionsForDraft(draft)),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 3,
-                      child: TextField(
-                        controller: draft.restoreCommandController,
-                        decoration: InputDecoration(
-                          isDense: true,
-                          prefixIcon: Icon(
-                            draft.type == MixbuildProjectType.flutter
-                                ? Icons.terminal
-                                : Icons.developer_board_outlined,
+                    Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            _dependencyIconForDraft(draft.type, draft.projectName),
+                            color: MixBuildPalette.muted,
                             size: 18,
                           ),
                         ),
-                        onChanged: (value) {
-                          if (value.contains('flutter')) {
-                            _setDraftType(draft, MixbuildProjectType.flutter);
-                          } else if (value.contains('gradle')) {
-                            _setDraftType(draft, MixbuildProjectType.android);
-                          }
-                        },
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: _ReadOnlyField(value: draft.projectName),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 4,
+                          child: _PathSelectorField(
+                            controller: draft.pathController,
+                            options: _pathOptionsForDraft(draft),
+                            hintText: '选择模块路径',
+                            onPathSelected: (value) {
+                              _applyPathToDraft(draft, value);
+                              unawaited(_refreshBranchOptionsForDraft(draft));
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        SizedBox(
+                          width: 320,
+                          child: _BranchSelectorField(
+                            value: draft.defaultBranchController.text.trim(),
+                            options: _branchOptionsForDraft(draft),
+                            isLoading: _loadingBranchDrafts.contains(draft),
+                            warningMessage: _draftBranchWarnings[draft],
+                            onSelected: (value) => _setDraftDefaultBranch(draft, value),
+                            onRefresh: () => unawaited(_refreshBranchOptionsForDraft(draft)),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          tooltip: '移除依赖',
+                          onPressed: () => _removeDependencyDraft(draft),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      tooltip: '移除依赖',
-                      onPressed: () => _removeDependencyDraft(draft),
-                      icon: const Icon(Icons.close),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: draft.restoreCommandController,
+                      decoration: InputDecoration(
+                        isDense: true,
+                        hintText: 'restore 命令',
+                        prefixIcon: Icon(
+                          draft.type == MixbuildProjectType.flutter
+                              ? Icons.terminal
+                              : Icons.developer_board_outlined,
+                          size: 18,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -1651,79 +1616,6 @@ class _BranchSelectorField extends StatelessWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-class _StackTypeSegment extends StatelessWidget {
-  const _StackTypeSegment({required this.value, required this.onChanged});
-
-  final MixbuildProjectType value;
-  final ValueChanged<MixbuildProjectType> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.24),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _SegmentOption(
-              label: 'Android',
-              selected: value == MixbuildProjectType.android,
-              onTap: () => onChanged(MixbuildProjectType.android),
-            ),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: _SegmentOption(
-              label: 'Flutter',
-              selected: value == MixbuildProjectType.flutter,
-              onTap: () => onChanged(MixbuildProjectType.flutter),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SegmentOption extends StatelessWidget {
-  const _SegmentOption({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? MixBuildPalette.primary.withValues(alpha: 0.16) : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: selected ? MixBuildPalette.primary : MixBuildPalette.muted,
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-      ),
     );
   }
 }
