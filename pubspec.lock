@@ -81,6 +81,22 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.0.9"
+  dio:
+    dependency: transitive
+    description:
+      name: dio
+      sha256: aff32c08f92787a557dd5c0145ac91536481831a01b4648136373cddb0e64f8c
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "5.9.2"
+  dio_web_adapter:
+    dependency: transitive
+    description:
+      name: dio_web_adapter
+      sha256: "2f9e64323a7c3c7ef69567d5c800424a11f8337b8b228bad02524c9fb3c1f340"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.1.2"
   fake_async:
     dependency: transitive
     description:
@@ -224,6 +240,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "4.1.2"
+  intl:
+    dependency: transitive
+    description:
+      name: intl
+      sha256: "3df61194eb431efc39c4ceba583b95633a403f46c9fd341e550ce0bfa50e9aa5"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.20.2"
   jni:
     dependency: transitive
     description:
@@ -280,6 +304,22 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.3.0"
+  logging_appenders:
+    dependency: transitive
+    description:
+      name: logging_appenders
+      sha256: "7fefa09636824f312432721c0bf77967ab19003116650729bd202bdf98142d70"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.4.0+1"
+  macos_secure_bookmarks:
+    dependency: "direct main"
+    description:
+      name: macos_secure_bookmarks
+      sha256: c3163875f8fd530a1654a7cf8aa426e6e208d28bf05724a1d4960e4b7d2ca1c6
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.2.1"
   matcher:
     dependency: transitive
     description:
@@ -304,6 +344,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.18.0"
+  mime:
+    dependency: transitive
+    description:
+      name: mime
+      sha256: "41a20518f0cb1256669420fdba0cd90d21561e560ac240f26ef8322e45bb7ed6"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.0.0"
   objective_c:
     dependency: transitive
     description:

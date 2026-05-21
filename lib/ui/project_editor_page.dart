@@ -7,6 +7,7 @@ import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 import 'package:mixbuild_dashboard/services/git_branch_discovery.dart';
 import 'package:mixbuild_dashboard/services/git_project_discovery.dart';
+import 'package:mixbuild_dashboard/services/workspace_bookmark_service.dart';
 import 'package:mixbuild_dashboard/ui/dashboard_widgets.dart';
 import 'package:path/path.dart' as p;
 
@@ -234,6 +235,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
       if (selectedPath == null || selectedPath.isEmpty) {
         return null;
       }
+      // 持久化该目录的 security-scoped bookmark，下次启动免重授权
+      await WorkspaceBookmarkService().saveBookmark(selectedPath);
       return selectedPath;
     } catch (error) {
       if (mounted) {
@@ -857,7 +860,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
       subtitle: '配置主工程路径、技术栈类型与默认分支',
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final fieldWidth = (constraints.maxWidth - 48) / 4;
+          final fieldWidth = ((constraints.maxWidth - 48) / 4).clamp(180.0, double.infinity);
           return Wrap(
             spacing: 16,
             runSpacing: 16,
