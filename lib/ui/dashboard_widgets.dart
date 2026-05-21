@@ -938,33 +938,88 @@ class TinyBadge extends StatelessWidget {
   }
 }
 
-class StatusChip extends StatelessWidget {
+class StatusChip extends StatefulWidget {
   const StatusChip({super.key, required this.status});
 
   final BuildStatus status;
+
+  @override
+  State<StatusChip> createState() => _StatusChipState();
+}
+
+class _StatusChipState extends State<StatusChip>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    );
+    _pulse = Tween<double>(begin: 1.0, end: 0.6).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    if (widget.status.isPipelineActive) {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(StatusChip oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.status.isPipelineActive && !_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    } else if (!widget.status.isPipelineActive && _controller.isAnimating) {
+      _controller.stop();
+      _controller.value = 1.0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: status.color.withValues(alpha: 0.14),
+        color: widget.status.color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: status.color.withValues(alpha: 0.28)),
+        border: Border.all(
+          color: widget.status.color.withValues(alpha: 0.28),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: status.color, shape: BoxShape.circle),
+          AnimatedBuilder(
+            animation: _pulse,
+            builder: (context, child) {
+              return Opacity(
+                opacity: widget.status.isPipelineActive ? _pulse.value : 1.0,
+                child: child,
+              );
+            },
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: widget.status.color,
+                shape: BoxShape.circle,
+              ),
+            ),
           ),
           const SizedBox(width: 8),
           Text(
-            status.label,
+            widget.status.label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: status.color,
+                  color: widget.status.color,
                 ),
           ),
         ],
@@ -1007,6 +1062,7 @@ class ScenarioActionButton extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.onPressed,
+    this.filled = false,
   });
 
   final Color color;
@@ -1014,15 +1070,35 @@ class ScenarioActionButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final VoidCallback onPressed;
+  final bool filled;
 
   @override
   Widget build(BuildContext context) {
+    if (filled) {
+      return FilledButton.icon(
+        onPressed: enabled ? onPressed : null,
+        icon: Icon(icon, size: 18),
+        style: FilledButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: color.withValues(alpha: 0.5),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        label: Text(label),
+      );
+    }
     return FilledButton.tonalIcon(
       onPressed: enabled ? onPressed : null,
       icon: Icon(icon, size: 18),
       style: FilledButton.styleFrom(
         foregroundColor: color,
         backgroundColor: color.withValues(alpha: 0.14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
       label: Text(label),
     );

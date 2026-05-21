@@ -131,7 +131,7 @@ class MixbuildConfig {
     final workspaceMap = _asMap(root['workspace'], field: 'workspace');
     final mainProjectMap = _asMap(root['main_project'], field: 'main_project');
     final dependencyList = _asOptionalList(root['dependencies']);
-    final scenarioList = _asList(root['build_scenarios'], field: 'build_scenarios');
+    final scenarioList = _asOptionalList(root['build_scenarios']);
 
     return MixbuildConfig(
       filePath: filePath,
@@ -175,7 +175,7 @@ class MixbuildConfig {
             mainProjectMap['default_branch'],
             field: 'main_project.default_branch',
           ),
-          command: _asString(item['command'], field: 'build_scenarios[].command'),
+          command: _asOptionalString(item['command']) ?? '',
           outputDir: _asOptionalString(item['output_dir']),
           autoTag: item['auto_tag'] == true,
           tagPrefix: _asOptionalString(item['tag_prefix']) ?? '',
@@ -207,7 +207,9 @@ class MixbuildConfig {
     );
   }
 
-  String get workspaceSlug => _slugify(workspace.name);
+  String get workspaceSlug => workspaceSlugFor(workspace.name);
+
+  static String workspaceSlugFor(String workspaceName) => _slugify(workspaceName);
 
   String toYamlString() {
     final buffer = StringBuffer()
@@ -259,13 +261,6 @@ const Object _sentinel = Object();
 YamlMap _asMap(Object? value, {required String field}) {
   if (value is! YamlMap) {
     throw FormatException('$field must be a map.');
-  }
-  return value;
-}
-
-YamlList _asList(Object? value, {required String field}) {
-  if (value is! YamlList) {
-    throw FormatException('$field must be a list.');
   }
   return value;
 }

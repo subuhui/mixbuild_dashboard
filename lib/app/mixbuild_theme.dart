@@ -9,8 +9,8 @@ class MixBuildPalette {
   static const surfaceHighest = Color(0xFF353535);
   static const foreground = Color(0xFFE5E2E1);
   static const muted = Color(0xFFC0C6D6);
-  static const primary = Color(0xFF0A84FF);
-  static const primarySoft = Color(0x331EA1FF);
+  static const primary = Color(0xFFAAC7FF);
+  static const primarySoft = Color(0x33AAC7FF);
   static const tertiary = Color(0xFFEB6A12);
   static const success = Color(0xFF45D483);
   static const warning = Color(0xFFFFB55E);

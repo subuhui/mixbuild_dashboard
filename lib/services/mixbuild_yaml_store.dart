@@ -101,6 +101,14 @@ class MixbuildYamlStore {
     return MixbuildConfig.fromFileSync(targetPath);
   }
 
+  MixbuildConfig saveNewConfigSync(MixbuildConfig config) {
+    final targetPath = workspaceYamlPath(config.workspaceSlug);
+    _ensureWorkspaceDirectory();
+    File(targetPath).writeAsStringSync(config.copyWith(filePath: targetPath).toYamlString());
+    _writeLastOpenedWorkspaceSync(targetPath);
+    return MixbuildConfig.fromFileSync(targetPath);
+  }
+
   Stream<FileSystemEvent> watch(String filePath) {
     return File(filePath).watch(events: FileSystemEvent.modify | FileSystemEvent.create | FileSystemEvent.delete);
   }

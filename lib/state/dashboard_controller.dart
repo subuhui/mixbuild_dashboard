@@ -39,9 +39,20 @@ class DashboardController extends Notifier<DashboardState> {
       _yamlWatchSubscription?.cancel();
     });
     final store = ref.read(mixbuildYamlStoreProvider);
-    final config = store.loadInitialConfigSync();
-    _startWatching(config.filePath);
-    return _stateFromConfig(config);
+    final yamlFiles = store.discoverWorkspaceYamlFilesSync();
+    final configs = <MixbuildConfig>[];
+    for (final file in yamlFiles) {
+      try {
+        configs.add(MixbuildConfig.fromFileSync(file.path));
+      } catch (_) {}
+    }
+    if (configs.isEmpty) {
+      final config = store.loadInitialConfigSync();
+      configs.add(config);
+    }
+    final activeConfig = configs.first;
+    _startWatching(activeConfig.filePath);
+    return _stateFromConfigs(configs, activeConfig);
   }
 
   List<String> branchOptions(ProjectBuild project) {
@@ -105,15 +116,54 @@ class DashboardController extends Notifier<DashboardState> {
           content,
           currentFilePath: state.config.filePath,
         );
-    _applyConfig(savedConfig, preserveError: false);
+    _applyConfig(savedConfig, preserveError: false, previousFilePath: state.config.filePath);
   }
 
   void selectScenario(ProjectBuild project, BuildScenario scenario) {
+    _ensureActiveConfig(project);
     state = state.copyWith(
       selectedProjectId: project.id,
       selectedScenarioId: scenario.id,
       lastError: null,
     );
+  }
+
+  void selectProject(ProjectBuild project) {
+    _ensureActiveConfig(project);
+    state = state.copyWith(
+      selectedProjectId: project.id,
+      selectedScenarioId: project.scenarios.first.id,
+      lastError: null,
+    );
+  }
+
+  void _ensureActiveConfig(ProjectBuild project) {
+    if (project.id == state.config.filePath) return;
+    final config = configForProject(project);
+    _startWatching(config.filePath);
+    state = state.copyWith(
+      config: config,
+      globalConfig: GlobalConfig(
+        workspaceRoot: config.workspace.rootPath,
+        activeProjectName: config.workspace.name,
+        mainProjectDefaultBranch: config.mainProject.defaultBranch,
+        bindings: [
+          WorkspaceBinding(
+            projectName: config.mainProject.name,
+            path: config.mainProject.path,
+          ),
+          ...config.dependencies.map(
+            (d) => WorkspaceBinding(projectName: d.name, path: d.path),
+          ),
+        ],
+      ),
+    );
+  }
+
+  MixbuildConfig configForProject(ProjectBuild project) {
+    if (project.id == state.config.filePath) return state.config;
+    final store = ref.read(mixbuildYamlStoreProvider);
+    return store.loadConfigSync(project.id);
   }
 
   void changeProjectBranch(String branch) {
@@ -189,22 +239,27 @@ class DashboardController extends Notifier<DashboardState> {
       dependencies: updatedDependencies,
     );
     final savedConfig = ref.read(mixbuildYamlStoreProvider).saveConfigSync(updatedConfig);
-    _applyConfig(savedConfig, overrideGlobalConfig: config, preserveError: false);
+    _applyConfig(savedConfig, overrideGlobalConfig: config, preserveError: false, previousFilePath: state.config.filePath);
   }
 
   Future<void> updateProjectConfiguration({
     required GlobalConfig config,
     required List<ProjectBindingConfig> bindings,
     required List<BuildScenario> scenarios,
+    String? targetConfigPath,
   }) async {
+    final baseConfig = targetConfigPath != null
+        ? ref.read(mixbuildYamlStoreProvider).loadConfigSync(targetConfigPath)
+        : state.config;
+
     final mainBinding = bindings.firstWhere(
       (binding) => binding.isMainProject,
       orElse: () => ProjectBindingConfig(
-        projectName: state.config.mainProject.name,
-        path: state.config.mainProject.path,
-        type: state.config.mainProject.type,
-        defaultBranch: state.config.mainProject.defaultBranch,
-        restoreCommand: state.config.mainProject.restoreCommand,
+        projectName: baseConfig.mainProject.name,
+        path: baseConfig.mainProject.path,
+        type: baseConfig.mainProject.type,
+        defaultBranch: baseConfig.mainProject.defaultBranch,
+        restoreCommand: baseConfig.mainProject.restoreCommand,
         isMainProject: true,
       ),
     );
@@ -236,12 +291,12 @@ class DashboardController extends Notifier<DashboardState> {
       );
     }).toList(growable: false);
 
-    final updatedConfig = state.config.copyWith(
-      workspace: state.config.workspace.copyWith(
+    final updatedConfig = baseConfig.copyWith(
+      workspace: baseConfig.workspace.copyWith(
         name: config.activeProjectName,
         rootPath: config.workspaceRoot,
       ),
-      mainProject: state.config.mainProject.copyWith(
+      mainProject: baseConfig.mainProject.copyWith(
         name: mainBinding.projectName,
         path: mainBinding.path,
         type: mainBinding.type,
@@ -253,6 +308,88 @@ class DashboardController extends Notifier<DashboardState> {
     );
 
     final savedConfig = ref.read(mixbuildYamlStoreProvider).saveConfigSync(updatedConfig);
+    _applyConfig(savedConfig, overrideGlobalConfig: config, preserveError: false, previousFilePath: baseConfig.filePath);
+  }
+
+  Future<void> createProject({
+    required GlobalConfig config,
+    required List<ProjectBindingConfig> bindings,
+    required List<BuildScenario> scenarios,
+  }) async {
+    final store = ref.read(mixbuildYamlStoreProvider);
+
+    final mainBinding = bindings.firstWhere(
+      (binding) => binding.isMainProject,
+      orElse: () => ProjectBindingConfig(
+        projectName: 'new_project',
+        path: '.',
+        type: MixbuildProjectType.flutter,
+        defaultBranch: 'main',
+        restoreCommand: null,
+        isMainProject: true,
+      ),
+    );
+
+    final newDependencies = bindings
+        .where((binding) => !binding.isMainProject)
+        .map((binding) {
+          return MixbuildRepoConfig(
+            name: binding.projectName,
+            path: binding.path,
+            type: binding.type,
+            defaultBranch: binding.defaultBranch,
+            restoreCommand: binding.restoreCommand,
+          );
+        })
+        .toList(growable: false);
+
+    final newScenarios = scenarios.map((scenario) {
+      return MixbuildScenarioConfig(
+        id: scenario.id,
+        name: scenario.name,
+        mainBranch: scenario.mainBranch.trim().isEmpty
+            ? mainBinding.defaultBranch
+            : scenario.mainBranch.trim(),
+        command: scenario.command,
+        outputDir: scenario.outputPath.trim().isEmpty ? null : scenario.outputPath.trim(),
+        autoTag: scenario.autoTag,
+        tagPrefix: scenario.tagPrefix,
+      );
+    }).toList(growable: false);
+
+    var workspaceName = config.activeProjectName.trim();
+    if (workspaceName.isEmpty) {
+      workspaceName = 'workspace-${DateTime.now().millisecondsSinceEpoch}';
+    }
+
+    var targetPath = store.workspaceYamlPath(
+      MixbuildConfig.workspaceSlugFor(workspaceName),
+    );
+    if (File(targetPath).existsSync()) {
+      workspaceName = '$workspaceName-${DateTime.now().millisecondsSinceEpoch}';
+      targetPath = store.workspaceYamlPath(
+        MixbuildConfig.workspaceSlugFor(workspaceName),
+      );
+    }
+
+    final newConfig = MixbuildConfig(
+      filePath: '',
+      workspace: MixbuildWorkspaceConfig(
+        name: workspaceName,
+        rootPath: config.workspaceRoot,
+      ),
+      mainProject: MixbuildRepoConfig(
+        name: mainBinding.projectName,
+        path: mainBinding.path,
+        type: mainBinding.type,
+        defaultBranch: mainBinding.defaultBranch,
+        restoreCommand: mainBinding.restoreCommand,
+      ),
+      dependencies: newDependencies,
+      buildScenarios: newScenarios,
+    );
+
+    final savedConfig = store.saveNewConfigSync(newConfig);
     _applyConfig(savedConfig, overrideGlobalConfig: config, preserveError: false);
   }
 
@@ -414,77 +551,114 @@ class DashboardController extends Notifier<DashboardState> {
     );
   }
 
-  DashboardState _stateFromConfig(MixbuildConfig config) {
-    final project = _projectFromConfig(config);
+  DashboardState _stateFromConfigs(
+    List<MixbuildConfig> configs,
+    MixbuildConfig activeConfig,
+  ) {
+    final projects = configs.map(_projectFromConfig).toList(growable: false);
+    final allScenarios = projects.expand((p) => p.scenarios).toList(growable: false);
+    final activeProject = projects.firstWhere(
+      (p) => p.id == activeConfig.filePath,
+      orElse: () => projects.first,
+    );
     final cleanFlags = <String, bool>{
-      for (final scenario in project.scenarios) scenario.id: false,
+      for (final scenario in allScenarios) scenario.id: false,
     };
     return DashboardState(
-      config: config,
-      projects: [project],
+      config: activeConfig,
+      projects: projects,
       globalConfig: GlobalConfig(
-        workspaceRoot: config.workspace.rootPath,
-        activeProjectName: config.workspace.name,
+        workspaceRoot: activeConfig.workspace.rootPath,
+        activeProjectName: activeConfig.workspace.name,
+        mainProjectDefaultBranch: activeConfig.mainProject.defaultBranch,
         bindings: [
-          WorkspaceBinding(projectName: config.mainProject.name, path: config.mainProject.path),
-          ...config.dependencies.map(
-            (dependency) => WorkspaceBinding(
-              projectName: dependency.name,
-              path: dependency.path,
-            ),
+          WorkspaceBinding(
+            projectName: activeConfig.mainProject.name,
+            path: activeConfig.mainProject.path,
+          ),
+          ...activeConfig.dependencies.map(
+            (d) => WorkspaceBinding(projectName: d.name, path: d.path),
           ),
         ],
       ),
-      metrics: _buildMetrics(project.scenarios),
+      metrics: _buildMetrics(allScenarios),
       availableWorkspaceNames: _workspaceNames(),
-      selectedProjectId: project.id,
-      selectedScenarioId: project.scenarios.first.id,
+      selectedProjectId: activeProject.id,
+      selectedScenarioId: activeProject.scenarios.first.id,
       cleanBeforeBuild: cleanFlags,
     );
   }
 
   ProjectBuild _projectFromConfig(MixbuildConfig config) {
-    return ProjectBuild(
-      id: 'workspace-main',
-      emoji: '🚚',
-      name: '项目 A：${config.workspace.name}',
-      description: 'YAML Engine / ${config.mainProject.type.name}',
-      branch: config.mainProject.defaultBranch,
-      scenarios: config.buildScenarios.map((scenarioConfig) {
-        return BuildScenario(
-          id: scenarioConfig.id,
-          name: scenarioConfig.name,
-          subtitle: '由 YAML 场景驱动',
-          environment: config.workspace.name,
-          mainBranch: scenarioConfig.mainBranch,
-          command: scenarioConfig.command,
-          status: BuildStatus.idle,
-          progress: 0,
-          outputPath: scenarioConfig.outputDir ?? '',
-          autoTag: scenarioConfig.autoTag,
-          tagPrefix: scenarioConfig.tagPrefix,
-          yamlOverride: _scenarioOverrideTemplate(config, scenarioConfig),
-          dependencies: config.dependencies.map((dependency) {
-            return DependencyBranch(
-              name: dependency.name,
-              branch: dependency.defaultBranch,
-              icon: _dependencyIcon(dependency.type, dependency.name),
+    final scenarioConfigs = config.buildScenarios;
+    final scenarios = scenarioConfigs.isEmpty
+        ? [
+            BuildScenario(
+              id: '${config.filePath}#default',
+              name: 'Default Build',
+              subtitle: 'YAML 中未定义构建场景',
+              environment: config.workspace.name,
+              mainBranch: config.mainProject.defaultBranch,
+              command: '',
+              status: BuildStatus.idle,
+              progress: 0,
+              outputPath: '',
+              autoTag: false,
+              tagPrefix: '',
+              yamlOverride: '',
+              dependencies: const [],
+              logs: [
+                _log(
+                  level: 'WARN',
+                  message: '该 YAML 未定义 build_scenarios，请在编辑器中添加。',
+                  accent: MixBuildPalette.warning,
+                ),
+              ],
+            ),
+          ]
+        : scenarioConfigs.map((scenarioConfig) {
+            return BuildScenario(
+              id: scenarioConfig.id,
+              name: scenarioConfig.name,
+              subtitle: '由 YAML 场景驱动',
+              environment: config.workspace.name,
+              mainBranch: scenarioConfig.mainBranch,
+              command: scenarioConfig.command,
+              status: BuildStatus.idle,
+              progress: 0,
+              outputPath: scenarioConfig.outputDir ?? '',
+              autoTag: scenarioConfig.autoTag,
+              tagPrefix: scenarioConfig.tagPrefix,
+              yamlOverride: _scenarioOverrideTemplate(config, scenarioConfig),
+              dependencies: config.dependencies.map((dependency) {
+                return DependencyBranch(
+                  name: dependency.name,
+                  branch: dependency.defaultBranch,
+                  icon: _dependencyIcon(dependency.type, dependency.name),
+                );
+              }).toList(growable: false),
+              logs: [
+                _log(
+                  level: 'INIT',
+                  message: 'Ready to receive build command for project: ${config.workspace.name}',
+                  accent: MixBuildPalette.primary,
+                ),
+                _log(
+                  level: 'INFO',
+                  message: 'Topology loaded from ${config.filePath}',
+                  accent: MixBuildPalette.success,
+                ),
+              ],
             );
-          }).toList(growable: false),
-          logs: [
-            _log(
-              level: 'INIT',
-              message: 'Ready to receive build command for project: ${config.workspace.name}',
-              accent: MixBuildPalette.primary,
-            ),
-            _log(
-              level: 'INFO',
-              message: 'Topology loaded from ${config.filePath}',
-              accent: MixBuildPalette.success,
-            ),
-          ],
-        );
-      }).toList(growable: false),
+          }).toList(growable: false);
+
+    return ProjectBuild(
+      id: config.filePath,
+      emoji: '📦',
+      name: config.workspace.name,
+      description: '${config.mainProject.type.name} / ${config.mainProject.defaultBranch}',
+      branch: config.mainProject.defaultBranch,
+      scenarios: scenarios,
     );
   }
 
@@ -581,10 +755,48 @@ class DashboardController extends Notifier<DashboardState> {
     MixbuildConfig config, {
     GlobalConfig? overrideGlobalConfig,
     required bool preserveError,
+    String? previousFilePath,
   }) {
-    final nextState = _stateFromConfig(config);
-    state = nextState.copyWith(
-      globalConfig: overrideGlobalConfig ?? nextState.globalConfig,
+    final updatedProject = _projectFromConfig(config);
+    final existingProjects = state.projects;
+    final removePath = previousFilePath ?? config.filePath;
+    final merged = existingProjects
+        .where((p) => p.id != removePath)
+        .toList(growable: true);
+    final insertIndex = merged.indexWhere((p) => p.id == config.filePath);
+    if (insertIndex >= 0) {
+      merged[insertIndex] = updatedProject;
+    } else {
+      merged.add(updatedProject);
+    }
+
+    final allScenarios = merged.expand((p) => p.scenarios).toList(growable: false);
+    final cleanFlags = <String, bool>{
+      for (final scenario in allScenarios) scenario.id: false,
+    };
+    state = DashboardState(
+      config: config,
+      projects: merged,
+      globalConfig: overrideGlobalConfig ??
+          GlobalConfig(
+            workspaceRoot: config.workspace.rootPath,
+            activeProjectName: config.workspace.name,
+            mainProjectDefaultBranch: config.mainProject.defaultBranch,
+            bindings: [
+              WorkspaceBinding(
+                projectName: config.mainProject.name,
+                path: config.mainProject.path,
+              ),
+              ...config.dependencies.map(
+                (d) => WorkspaceBinding(projectName: d.name, path: d.path),
+              ),
+            ],
+          ),
+      metrics: _buildMetrics(allScenarios),
+      availableWorkspaceNames: _workspaceNames(),
+      selectedProjectId: config.filePath,
+      selectedScenarioId: updatedProject.scenarios.first.id,
+      cleanBeforeBuild: cleanFlags,
       lastError: preserveError ? state.lastError : null,
     );
     _startWatching(config.filePath);

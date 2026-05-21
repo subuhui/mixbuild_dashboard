@@ -128,6 +128,19 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   }
 
   List<_ProjectBindingDraft> _createBindingDrafts() {
+    final defaultBranch = widget.config.mainProjectDefaultBranch;
+    if (widget.config.bindings.isEmpty) {
+      return [
+        _ProjectBindingDraft(
+          projectName: 'new_project',
+          isMainProject: true,
+          path: '.',
+          type: MixbuildProjectType.flutter,
+          defaultBranch: defaultBranch,
+          restoreCommand: null,
+        ),
+      ];
+    }
     return widget.config.bindings.asMap().entries.map((entry) {
       final index = entry.key;
       final binding = entry.value;
@@ -140,8 +153,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
         path: binding.path,
         type: inferredType,
         defaultBranch: isMainProject
-            ? 'develop'
-            : (dependency.isNotEmpty ? dependency.first.branch : 'develop'),
+            ? defaultBranch
+            : (dependency.isNotEmpty ? dependency.first.branch : defaultBranch),
         restoreCommand: isMainProject ? null : _defaultRestoreCommand(inferredType),
       );
     }).toList();

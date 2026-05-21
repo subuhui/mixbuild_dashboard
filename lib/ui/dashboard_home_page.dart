@@ -28,11 +28,27 @@ class DashboardHomePage extends ConsumerWidget {
       await controller.saveCurrentYaml(result);
     }
 
-    Future<void> openProjectEditor({required String title}) async {
+    Future<void> openProjectEditor({required String title, ProjectBuild? targetProject}) async {
+      final project = targetProject ?? ref.read(dashboardControllerProvider).selectedProject;
+      final projectConfig = controller.configForProject(project);
+      final projectGlobalConfig = GlobalConfig(
+        workspaceRoot: projectConfig.workspace.rootPath,
+        activeProjectName: projectConfig.workspace.name,
+        mainProjectDefaultBranch: projectConfig.mainProject.defaultBranch,
+        bindings: [
+          WorkspaceBinding(
+            projectName: projectConfig.mainProject.name,
+            path: projectConfig.mainProject.path,
+          ),
+          ...projectConfig.dependencies.map(
+            (d) => WorkspaceBinding(projectName: d.name, path: d.path),
+          ),
+        ],
+      );
       final result = await ProjectEditorPage.show(
         context,
-        config: dashboardState.globalConfig,
-        scenarios: dashboardState.selectedProject.scenarios,
+        config: projectGlobalConfig,
+        scenarios: project.scenarios,
         baseDependencies: controller.editorBaseDependencies(),
         title: title,
         primaryActionLabel: title == '新增项目' ? '创建项目' : '保存项目配置',
@@ -40,7 +56,33 @@ class DashboardHomePage extends ConsumerWidget {
       if (result == null) {
         return;
       }
+      controller.selectProject(project);
       await controller.updateProjectConfiguration(
+        config: result.config,
+        bindings: result.bindings,
+        scenarios: result.scenarios,
+        targetConfigPath: project.id,
+      );
+    }
+
+    Future<void> createNewProject() async {
+      final emptyConfig = GlobalConfig(
+        workspaceRoot: dashboardState.globalConfig.workspaceRoot,
+        activeProjectName: '',
+        bindings: const [],
+      );
+      final result = await ProjectEditorPage.show(
+        context,
+        config: emptyConfig,
+        scenarios: const [],
+        baseDependencies: const [],
+        title: '新增项目',
+        primaryActionLabel: '创建项目',
+      );
+      if (result == null) {
+        return;
+      }
+      await controller.createProject(
         config: result.config,
         bindings: result.bindings,
         scenarios: result.scenarios,
@@ -67,7 +109,7 @@ class DashboardHomePage extends ConsumerWidget {
             child: Row(
               children: [
                 _DashboardNavRail(
-                  onCreateProject: () => openProjectEditor(title: '新增项目'),
+                  onCreateProject: createNewProject,
                 ),
                 Expanded(
                   child: Padding(
@@ -99,8 +141,10 @@ class DashboardHomePage extends ConsumerWidget {
                                     return ProjectOverviewCard(
                                       project: project,
                                       selectedScenarioId: dashboardState.selectedScenarioId,
-                                      onOpenProject: () =>
-                                          openDetail(project, project.scenarios.first),
+                                      onEdit: () => openProjectEditor(
+                                        title: '项目编辑',
+                                        targetProject: project,
+                                      ),
                                       onOpenScenario: (scenario) =>
                                           openDetail(project, scenario),
                                       onOpenYaml: () async {
@@ -291,14 +335,14 @@ class ProjectOverviewCard extends StatelessWidget {
     super.key,
     required this.project,
     required this.selectedScenarioId,
-    required this.onOpenProject,
+    required this.onEdit,
     required this.onOpenScenario,
     required this.onOpenYaml,
   });
 
   final ProjectBuild project;
   final String selectedScenarioId;
-  final VoidCallback onOpenProject;
+  final VoidCallback onEdit;
   final ValueChanged<BuildScenario> onOpenScenario;
   final VoidCallback onOpenYaml;
 
@@ -339,9 +383,9 @@ class ProjectOverviewCard extends StatelessWidget {
                   color: MixBuildPalette.muted,
                 ),
                 FilledButton.tonalIcon(
-                  onPressed: onOpenProject,
-                  icon: const Icon(Icons.open_in_new, size: 18),
-                  label: const Text('详情'),
+                  onPressed: onEdit,
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  label: const Text('编辑'),
                 ),
               ],
             ),
@@ -383,32 +427,52 @@ class _ScenarioPreviewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final actionLabel = scenario.status.canStop ? '停止' : '查看';
-    final actionColor = scenario.status.canStop
-        ? MixBuildPalette.error
-        : MixBuildPalette.primary;
+    final isActive = scenario.status.isPipelineActive;
+    final canStop = scenario.status.canStop;
+    final actionLabel = canStop ? '停止' : '查看';
+    final actionColor = canStop ? MixBuildPalette.error : MixBuildPalette.primary;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         decoration: BoxDecoration(
-          color: selected
-              ? scenario.status.color.withValues(alpha: 0.1)
-              : Colors.white.withValues(alpha: 0.03),
+          color: isActive
+              ? scenario.status.color.withValues(alpha: 0.05)
+              : selected
+                  ? scenario.status.color.withValues(alpha: 0.1)
+                  : Colors.white.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: selected
-                ? scenario.status.color.withValues(alpha: 0.24)
-                : Colors.white.withValues(alpha: 0.06),
+          border: Border(
+            left: isActive
+                ? BorderSide(color: scenario.status.color, width: 2)
+                : BorderSide.none,
+            top: BorderSide(
+              color: selected && !isActive
+                  ? scenario.status.color.withValues(alpha: 0.24)
+                  : Colors.white.withValues(alpha: 0.06),
+            ),
+            right: BorderSide(
+              color: selected && !isActive
+                  ? scenario.status.color.withValues(alpha: 0.24)
+                  : Colors.white.withValues(alpha: 0.06),
+            ),
+            bottom: BorderSide(
+              color: selected && !isActive
+                  ? scenario.status.color.withValues(alpha: 0.24)
+                  : Colors.white.withValues(alpha: 0.06),
+            ),
           ),
         ),
         child: Column(
           children: [
+            // 12-column grid row matching HTML layout
             Row(
               children: [
+                // Col 1-3: Name + Subtitle
                 Expanded(
-                  flex: 5,
+                  flex: 3,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -421,42 +485,54 @@ class _ScenarioPreviewTile extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         scenario.subtitle,
-                        style: theme.textTheme.bodySmall,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: isActive
+                              ? scenario.status.color.withValues(alpha: 0.6)
+                              : null,
+                        ),
                       ),
                     ],
                   ),
                 ),
+                // Col 4-5: Status chip (centered)
                 Expanded(
                   flex: 2,
-                  child: Align(
-                    alignment: Alignment.center,
+                  child: Center(
                     child: StatusChip(status: scenario.status),
                   ),
                 ),
+                // Col 6-12: Action buttons (right-aligned)
                 Expanded(
-                  flex: 2,
+                  flex: 7,
                   child: Align(
                     alignment: Alignment.centerRight,
-                    child: ScenarioActionButton(
-                      color: actionColor,
-                      enabled: true,
-                      label: actionLabel,
-                      icon: scenario.status.canStop
-                          ? Icons.stop_circle_outlined
-                          : Icons.arrow_forward,
-                      onPressed: onTap,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ScenarioActionButton(
+                          color: actionColor,
+                          enabled: true,
+                          label: actionLabel,
+                          icon: canStop
+                              ? Icons.stop_circle_outlined
+                              : Icons.rocket_launch_outlined,
+                          filled: canStop,
+                          onPressed: onTap,
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ],
             ),
-            if (scenario.status.isPipelineActive) ...[
+            // Active scenario: terminal log panel + progress bar
+            if (isActive) ...[
               const SizedBox(height: 14),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.24),
+                  color: Colors.black.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
                 ),
@@ -495,11 +571,30 @@ class _ScenarioPreviewTile extends StatelessWidget {
                     const SizedBox(height: 6),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(999),
-                      child: LinearProgressIndicator(
-                        value: scenario.progress,
-                        minHeight: 4,
-                        backgroundColor: Colors.white.withValues(alpha: 0.08),
-                        valueColor: AlwaysStoppedAnimation<Color>(scenario.status.color),
+                      child: Stack(
+                        children: [
+                          LinearProgressIndicator(
+                            value: scenario.progress,
+                            minHeight: 3,
+                            backgroundColor: Colors.white.withValues(alpha: 0.08),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              scenario.status.color,
+                            ),
+                          ),
+                          Positioned.fill(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: scenario.status.color.withValues(alpha: 0.4),
+                                    blurRadius: 8,
+                                    spreadRadius: -1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],

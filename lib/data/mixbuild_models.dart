@@ -308,21 +308,25 @@ class GlobalConfig {
     required this.workspaceRoot,
     required this.activeProjectName,
     required this.bindings,
+    this.mainProjectDefaultBranch = 'main',
   });
 
   final String workspaceRoot;
   final String activeProjectName;
   final List<WorkspaceBinding> bindings;
+  final String mainProjectDefaultBranch;
 
   GlobalConfig copyWith({
     String? workspaceRoot,
     String? activeProjectName,
     List<WorkspaceBinding>? bindings,
+    String? mainProjectDefaultBranch,
   }) {
     return GlobalConfig(
       workspaceRoot: workspaceRoot ?? this.workspaceRoot,
       activeProjectName: activeProjectName ?? this.activeProjectName,
       bindings: bindings ?? this.bindings,
+      mainProjectDefaultBranch: mainProjectDefaultBranch ?? this.mainProjectDefaultBranch,
     );
   }
 }
