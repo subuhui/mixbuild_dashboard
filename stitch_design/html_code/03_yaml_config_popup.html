@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MixBuild YAML Configuration Modal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "primary": "#1685f3",
+          "background-light": "#f5f7f8",
+          "background-dark": "#101922",
+          "surface": "rgba(40, 40, 40, 0.65)",
+          "surface-hover": "rgba(255, 255, 255, 0.08)",
+          "text-muted": "#98989D",
+        },
+        fontFamily: {
+          "display": ["SF Pro Display", "-apple-system", "sans-serif"],
+          "body": ["SF Pro Text", "-apple-system", "sans-serif"],
+          "mono": ["SF Mono", "monospace"],
+        },
+        borderRadius: {
+          "DEFAULT": "0.5rem",
+          "lg": "12px",
+          "xl": "1.5rem",
+          "full": "9999px"
+        },
+        boxShadow: {
+          'glass': '0 4px 16px rgba(0, 0, 0, 0.4)',
+        }
+      },
+    },
+  }
+</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+  
+  body {
+    font-family: 'SF Pro Text', -apple-system, sans-serif;
+    background-color: #1E1E1E;
+    /* Simulated background to show glass effect */
+    background-image: radial-gradient(circle at 20% 30%, rgba(22, 133, 243, 0.15) 0%, transparent 50%),
+                      radial-gradient(circle at 80% 80%, rgba(255, 69, 58, 0.1) 0%, transparent 50%);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'SF Pro Display', -apple-system, sans-serif;
+  }
+
+  .font-mono {
+    font-family: 'SF Mono', monospace;
+  }
+
+  /* Custom scrollbar for the textarea */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  /* Modal animation classes */
+  .modal-enter {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  .modal-enter-active {
+    opacity: 1;
+    transform: scale(1);
+    transition: opacity 200ms ease-out, transform 200ms ease-out;
+  }
+  .modal-exit {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .modal-exit-active {
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 200ms ease-in, transform 200ms ease-in;
+  }
+</style>
+
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+<body class="min-h-screen text-white antialiased flex items-center justify-center p-4">
+<!-- Modal Overlay -->
+<div class="fixed inset-0 bg-black/40 backdrop-blur-[12px] z-40 flex items-center justify-center transition-opacity duration-200" id="modal-overlay">
+<!-- Modal Container -->
+<div class="w-full max-w-[640px] flex flex-col bg-surface backdrop-blur-[24px] saturate-150 border border-white/10 shadow-glass rounded-lg overflow-hidden transform transition-all duration-200" id="yaml-modal" style="max-height: 600px;">
+<!-- Modal Header -->
+<div class="flex items-center justify-between px-5 py-4 border-b border-white/10">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-text-muted text-xl" style="font-variation-settings: 'FILL' 0;">data_object</span>
+<h2 class="text-white text-[24px] font-semibold tracking-[-0.5px] leading-tight">YAML Configuration Override</h2>
+</div>
+<button class="text-text-muted hover:text-white transition-colors cursor-pointer rounded-md p-1 hover:bg-surface-hover" id="close-btn">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 0;">close</span>
+</button>
+</div>
+<!-- Editor Body -->
+<div class="flex-1 flex flex-col min-h-[300px] relative bg-black/20">
+<!-- Line Numbers & Editor Container (Simulated Monaco/CodeMirror) -->
+<div class="flex flex-1 absolute inset-0">
+<!-- Line Numbers -->
+<div class="w-12 bg-black/10 border-r border-white/5 py-4 flex flex-col items-end pr-3 text-text-muted/50 font-mono text-[13px] leading-[1.6] select-none">
+<span>1</span>
+<span>2</span>
+<span>3</span>
+<span>4</span>
+<span>5</span>
+<span>6</span>
+<span>7</span>
+<span>8</span>
+<span>9</span>
+<span>10</span>
+</div>
+<!-- Textarea -->
+<textarea class="flex-1 bg-transparent border-none focus:ring-0 text-white font-mono text-[13px] leading-[1.6] p-4 resize-none placeholder:text-text-muted/40" placeholder='# Force environment parameters for dependencies
+dependencies:
+  lodash:
+    version: "^4.17.21"
+    resolution: force
+  react:
+    env:
+      NODE_ENV: "production"
+      EXPERIMENTAL_FEATURES: true' spellcheck="false"></textarea>
+</div>
+</div>
+<!-- Modal Footer Action Bar -->
+<div class="flex justify-end items-center gap-3 px-5 py-4 border-t border-white/10 bg-black/10">
+<button class="flex items-center justify-center h-9 px-5 rounded-md text-[14px] font-medium text-white bg-transparent border border-transparent hover:bg-surface-hover transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/20" id="cancel-btn">
+          Cancel
+        </button>
+<button class="flex items-center justify-center h-9 px-5 rounded-md text-[14px] font-medium text-white bg-primary hover:bg-primary/90 transition-colors shadow-[0_2px_8px_rgba(22,133,243,0.3)] cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50">
+          Save Configuration
+        </button>
+</div>
+</div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const modalOverlay = document.getElementById('modal-overlay');
+      const modal = document.getElementById('yaml-modal');
+      const cancelBtn = document.getElementById('cancel-btn');
+      const closeBtn = document.getElementById('close-btn');
+
+      const closeModal = () => {
+        // Apply exit animation classes
+        modal.style.transform = 'scale(0.95)';
+        modal.style.opacity = '0';
+        modalOverlay.style.opacity = '0';
+        
+        setTimeout(() => {
+          modalOverlay.style.display = 'none';
+        }, 200);
+      };
+
+      cancelBtn.addEventListener('click', closeModal);
+      closeBtn.addEventListener('click', closeModal);
+      
+      // Close on clicking outside the modal
+      modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+          closeModal();
+        }
+      });
+    });
+  </script>
+</body></html>

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MixBuild Dashboard - 新增构建场景</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        @font-face { font-family: 'metropolis'; src: url('https://fonts.googleapis.com/css2?family=Metropolis:wght@400;600;700&display=swap'); }
+        @font-face { font-family: 'inter'; src: url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap'); }
+        @font-face { font-family: 'jetbrainsMono'; src: url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap'); }
+
+        .glass-mica {
+            background: rgba(19, 19, 19, 0.7);
+            backdrop-filter: blur(40px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+        }
+
+        .inner-glow {
+            box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+        .primary-glow-button {
+            box-shadow: 0 0 15px rgba(10, 132, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#3e90ff",
+                        "on-primary-fixed": "#001b3e",
+                        "tertiary-fixed-dim": "#ffb691",
+                        "surface-container-low": "#1b1b1c",
+                        "secondary-fixed-dim": "#c2c1ff",
+                        "on-tertiary": "#552000",
+                        "on-error": "#690005",
+                        "inverse-surface": "#e5e2e1",
+                        "surface": "#131313",
+                        "error": "#ffb4ab",
+                        "primary-fixed-dim": "#aac7ff",
+                        "on-secondary-fixed": "#0c006b",
+                        "on-primary-fixed-variant": "#00468d",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#341100",
+                        "on-secondary": "#1800a7",
+                        "surface-container-high": "#2a2a2a",
+                        "surface-tint": "#aac7ff",
+                        "tertiary": "#ffb691",
+                        "surface-container-highest": "#353535",
+                        "tertiary-fixed": "#ffdbcb",
+                        "surface-container": "#202020",
+                        "surface-bright": "#393939",
+                        "on-tertiary-fixed-variant": "#793100",
+                        "on-tertiary-container": "#4a1b00",
+                        "on-secondary-fixed-variant": "#332dbc",
+                        "inverse-on-surface": "#303030",
+                        "outline-variant": "#414754",
+                        "primary": "#aac7ff",
+                        "secondary-fixed": "#e2dfff",
+                        "error-container": "#93000a",
+                        "inverse-primary": "#005db8",
+                        "secondary-container": "#3630bf",
+                        "tertiary-container": "#eb6a12",
+                        "secondary": "#c2c1ff",
+                        "on-surface": "#e5e2e1",
+                        "primary-fixed": "#d6e3ff",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-primary-container": "#002957",
+                        "background": "#131313",
+                        "on-secondary-container": "#b1b1ff",
+                        "surface-dim": "#131313",
+                        "on-background": "#e5e2e1",
+                        "outline": "#8b91a0",
+                        "surface-variant": "#353535",
+                        "on-surface-variant": "#c0c6d6",
+                        "on-primary": "#003064"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "base": "8px",
+                        "xl": "32px",
+                        "lg": "24px",
+                        "gutter": "16px",
+                        "container-margin": "24px",
+                        "sm": "12px",
+                        "md": "16px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["inter"],
+                        "body-md": ["inter"],
+                        "code-sm": ["jetbrainsMono"],
+                        "headline-md": ["metropolis"],
+                        "display-lg": ["metropolis"],
+                        "label-caps": ["inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["17px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "400"}],
+                        "body-md": ["15px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "code-sm": ["13px", {"lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "450"}],
+                        "headline-md": ["24px", {"lineHeight": "30px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "display-lg": ["34px", {"lineHeight": "41px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen overflow-hidden select-none">
+<!-- BACKGROUND CONTENT (SCREEN_9 Mockup) -->
+<div class="fixed inset-0 z-0 flex blur-[20px] grayscale-[0.2] opacity-50 scale-105 pointer-events-none">
+<!-- SideNavBar -->
+<aside class="w-64 flex flex-col h-full py-lg bg-surface-container-low/90 border-r border-white/10">
+<div class="px-lg mb-xl">
+<h1 class="text-headline-md font-headline-md text-primary">MixBuild</h1>
+<p class="text-label-caps font-label-caps text-on-surface-variant opacity-60">v3.1.0-stable</p>
+</div>
+<nav class="flex-1 space-y-base px-sm">
+<div class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-body-md font-body-md">Dashboard</span>
+</div>
+<div class="flex items-center gap-md px-md py-sm rounded-lg text-primary bg-primary/10 border-r-2 border-primary">
+<span class="material-symbols-outlined">terminal</span>
+<span class="text-body-md font-body-md">Projects</span>
+</div>
+<div class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant">
+<span class="material-symbols-outlined">list_alt</span>
+<span class="text-body-md font-body-md">Build Logs</span>
+</div>
+<div class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-body-md font-body-md">Settings</span>
+</div>
+</nav>
+</aside>
+<!-- Main Content Area Mock -->
+<main class="flex-1 flex flex-col">
+<header class="flex justify-between items-center w-full px-lg h-12 border-b border-white/10 bg-surface/80">
+<span class="text-body-lg font-headline-md text-on-surface tracking-tight">MixBuild Dashboard v3.1</span>
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant">refresh</span>
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+<button class="bg-primary/10 text-primary px-md py-xs rounded-full text-label-caps font-label-caps">Global Config</button>
+</div>
+</header>
+<div class="p-xl grid grid-cols-3 gap-lg h-full">
+<div class="col-span-2 glass-mica rounded-xl p-lg"></div>
+<div class="glass-mica rounded-xl p-lg"></div>
+</div>
+</main>
+</div>
+<!-- MODAL OVERLAY -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-md bg-black/60 backdrop-blur-[4px] transition-all duration-300" id="modal-container">
+<!-- MODAL WINDOW -->
+<div class="glass-mica inner-glow rounded-xl w-full max-w-[640px] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
+<!-- Header -->
+<div class="flex justify-between items-center px-lg py-md border-b border-white/5">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">add_box</span>
+<h2 class="text-headline-md font-headline-md text-on-surface">新增构建场景</h2>
+</div>
+<button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-on-surface-variant" onclick="document.getElementById('modal-container').classList.add('hidden')">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Content Area (Scrollable) -->
+<div class="flex-1 overflow-y-auto p-lg space-y-xl max-h-[716px]">
+<!-- Section 1: Basic Info -->
+<section class="space-y-md">
+<h3 class="text-label-caps font-label-caps text-on-surface-variant tracking-widest uppercase">基本信息</h3>
+<div class="space-y-sm">
+<label class="text-body-md font-body-md text-on-surface-variant">场景名称</label>
+<div class="relative group">
+<input class="w-full bg-black/30 border border-white/10 rounded-lg px-md py-sm text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-on-surface-variant/30" placeholder="🚀 Production_v1" type="text"/>
+<div class="absolute right-3 top-2.5 flex items-center gap-xs opacity-40 group-focus-within:opacity-100">
+<span class="material-symbols-outlined text-sm">edit</span>
+</div>
+</div>
+</div>
+<div class="space-y-sm">
+<label class="text-body-md font-body-md text-on-surface-variant">构建命令</label>
+<textarea class="w-full bg-black/30 border border-white/10 rounded-lg px-md py-sm text-code-sm font-code-sm text-primary-fixed focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none placeholder:text-on-surface-variant/30" placeholder="./gradlew assembleRelease" rows="3"></textarea>
+</div>
+</section>
+<!-- Section 2: Dependency Branch Overrides -->
+<section class="space-y-md">
+<div class="flex justify-between items-center">
+<h3 class="text-label-caps font-label-caps text-on-surface-variant tracking-widest uppercase">依赖分支覆盖</h3>
+<span class="text-code-sm text-on-surface-variant/50">2 Dependencies Detected</span>
+</div>
+<div class="space-y-base">
+<!-- Item: common_ui -->
+<div class="flex items-center justify-between p-md bg-white/5 rounded-lg border border-white/5">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-tertiary">layers</span>
+<span class="text-body-md font-body-md">common_ui</span>
+</div>
+<div class="relative">
+<select class="appearance-none bg-surface-container-high border border-white/10 rounded-md px-md pr-xl py-xs text-body-md text-on-surface focus:outline-none focus:border-primary cursor-pointer min-w-[140px]">
+<option>master</option>
+<option>develop</option>
+<option>feature/v1</option>
+<option>release/2.4</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1.5 pointer-events-none text-sm opacity-50">expand_more</span>
+</div>
+</div>
+<!-- Item: net_bridge -->
+<div class="flex items-center justify-between p-md bg-white/5 rounded-lg border border-white/5">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-secondary">hub</span>
+<span class="text-body-md font-body-md">net_bridge</span>
+</div>
+<div class="relative">
+<select class="appearance-none bg-surface-container-high border border-white/10 rounded-md px-md pr-xl py-xs text-body-md text-on-surface focus:outline-none focus:border-primary cursor-pointer min-w-[140px]">
+<option>develop</option>
+<option>master</option>
+<option>feature/v1</option>
+<option>bugfix/net-01</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1.5 pointer-events-none text-sm opacity-50">expand_more</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 3: Advanced Options -->
+<section class="space-y-md">
+<h3 class="text-label-caps font-label-caps text-on-surface-variant tracking-widest uppercase">高级选项</h3>
+<div class="space-y-lg">
+<!-- Output Path -->
+<div class="space-y-sm">
+<label class="text-body-md font-body-md text-on-surface-variant">输出路径</label>
+<div class="flex gap-base">
+<div class="relative flex-1">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant/50">folder_open</span>
+<input class="w-full bg-black/30 border border-white/10 rounded-lg pl-xl pr-md py-sm text-code-sm font-code-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50" type="text" value="output_dir/"/>
+</div>
+<button class="px-md bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-colors">
+<span class="material-symbols-outlined">open_in_new</span>
+</button>
+</div>
+</div>
+<!-- Auto Tag Toggle -->
+<div class="space-y-md p-md bg-primary/5 rounded-xl border border-primary/10">
+<div class="flex items-center justify-between">
+<div class="flex flex-col gap-1">
+<span class="text-body-md font-semibold">自动打标签 (Auto Tag)</span>
+<span class="text-label-caps text-on-surface-variant/60">构建成功后自动应用 Git Tag</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" id="tagToggle" type="checkbox"/>
+<div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="space-y-sm transition-all duration-300" id="tagPrefixContainer">
+<label class="text-body-md font-body-md text-on-surface-variant">标签前缀</label>
+<input class="w-full bg-black/30 border border-white/10 rounded-lg px-md py-sm text-code-sm font-code-sm text-on-surface focus:outline-none focus:border-primary transition-all" placeholder="release_" type="text"/>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer Action Bar -->
+<div class="px-lg py-lg bg-surface-container-highest/30 border-t border-white/10 flex justify-end gap-md items-center">
+<button class="px-lg py-sm text-on-surface-variant hover:text-on-surface hover:bg-white/5 rounded-lg transition-all font-body-md" onclick="document.getElementById('modal-container').classList.add('hidden')">
+                    取消
+                </button>
+<button class="primary-glow-button px-xl py-sm bg-[#0A84FF] text-white rounded-lg font-headline-md text-body-md hover:scale-[1.02] active:scale-[0.98] transition-all">
+                    确认新增场景
+                </button>
+</div>
+</div>
+</div>
+<!-- Stats Footer -->
+<footer class="fixed bottom-0 w-full flex justify-between items-center px-lg py-xs z-40 bg-surface-container-lowest/50 backdrop-blur-md border-t border-white/10">
+<span class="text-label-caps font-label-caps text-on-surface-variant">© 2026 MixBuild Systems</span>
+<div class="flex gap-lg">
+<span class="text-code-sm font-code-sm text-tertiary">CPU: 12%</span>
+<span class="text-code-sm font-code-sm text-tertiary">MEM: 4.2GB</span>
+<span class="text-code-sm font-code-sm text-tertiary flex items-center gap-xs">
+<span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                Connected
+            </span>
+</div>
+</footer>
+<script>
+        // Micro-interaction for toggle
+        const toggle = document.getElementById('tagToggle');
+        const container = document.getElementById('tagPrefixContainer');
+        
+        toggle.addEventListener('change', function() {
+            if (this.checked) {
+                container.style.opacity = '1';
+                container.style.pointerEvents = 'auto';
+                container.style.transform = 'translateY(0)';
+            } else {
+                container.style.opacity = '0.3';
+                container.style.pointerEvents = 'none';
+                container.style.transform = 'translateY(-5px)';
+            }
+        });
+
+        // Simple Close listener
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal-container');
+            if (event.target == modal) {
+                modal.classList.add('hidden');
+            }
+        }
+    </script>
+</body></html>

@@ -1,0 +1,34 @@
+workspace:
+  name: "物流核心平台 (隔离打包区)"
+  root_path: "/Users/develop-mbp-02/AndroidStudioProjects/mixbuild_dashboard/mock_workspace"
+main_project:
+  name: "LogisticsClient"
+  path: "LogisticsClient"
+  type: "android"
+  default_branch: "release/v3.1"
+dependencies:
+  - name: "common_ui"
+    path: "modules/common_ui"
+    type: "flutter"
+    default_branch: "develop"
+    restore_command: "fvm flutter pub get"
+  - name: "analytics_sdk"
+    path: "modules/analytics_sdk"
+    type: "flutter"
+    default_branch: "main"
+    restore_command: "fvm flutter pub get"
+  - name: "net_bridge"
+    path: "modules/net_bridge"
+    type: "android"
+    default_branch: "master"
+build_scenarios:
+  - name: "常规测试包 (Debug)"
+    command: "./gradlew assembleDebug"
+    output_dir: "LogisticsClient/build/outputs/debug"
+    auto_tag: false
+    tag_prefix: "debug_"
+  - name: "FVM 生产发布包 (Release)"
+    command: "fvm flutter build ipa --release"
+    output_dir: "LogisticsClient/build/outputs/release"
+    auto_tag: true
+    tag_prefix: "release_"

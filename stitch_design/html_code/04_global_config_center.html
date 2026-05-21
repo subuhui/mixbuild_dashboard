@@ -1,0 +1,352 @@
+<!DOCTYPE html><html class="dark" lang="zh-CN" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>MixBuild Dashboard v3.1 - 可视化配置</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@450&display=swap');
+        
+        :root {
+            --acrylic-blur: 40px;
+            --mica-opacity: 0.7;
+        }
+
+        body {
+            background-color: #0e0e0e;
+            color: #e5e2e1;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .mica-surface {
+            background: rgba(19, 19, 19, var(--mica-opacity));
+            backdrop-filter: blur(var(--acrylic-blur));
+            -webkit-backdrop-filter: blur(var(--acrylic-blur));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .inner-glow {
+            box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .sharp-layer {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2), 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+
+        /* Hide scrollbar but keep functionality */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .glass-input:focus {
+            box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.4);
+            border-color: #0A84FF;
+            outline: none;
+        }
+
+        .segmented-control-active {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary": "#552000",
+                      "inverse-primary": "#005db8",
+                      "secondary-fixed": "#e2dfff",
+                      "surface": "#131313",
+                      "secondary-container": "#3630bf",
+                      "on-background": "#e5e2e1",
+                      "on-secondary": "#1800a7",
+                      "inverse-on-surface": "#303030",
+                      "on-primary": "#003064",
+                      "surface-container-high": "#2a2a2a",
+                      "primary": "#aac7ff",
+                      "error": "#ffb4ab",
+                      "tertiary-container": "#eb6a12",
+                      "primary-container": "#3e90ff",
+                      "tertiary-fixed-dim": "#ffb691",
+                      "on-surface-variant": "#c0c6d6",
+                      "tertiary": "#ffb691",
+                      "outline-variant": "#414754",
+                      "on-secondary-fixed": "#0c006b",
+                      "inverse-surface": "#e5e2e1",
+                      "outline": "#8b91a0",
+                      "secondary-fixed-dim": "#c2c1ff",
+                      "primary-fixed-dim": "#aac7ff",
+                      "error-container": "#93000a",
+                      "on-error-container": "#ffdad6",
+                      "on-primary-fixed": "#001b3e",
+                      "on-surface": "#e5e2e1",
+                      "on-primary-container": "#002957",
+                      "on-secondary-container": "#b1b1ff",
+                      "tertiary-fixed": "#ffdbcb",
+                      "on-tertiary-fixed": "#341100",
+                      "background": "#131313",
+                      "on-error": "#690005",
+                      "surface-tint": "#aac7ff",
+                      "on-tertiary-fixed-variant": "#793100",
+                      "surface-container": "#202020",
+                      "on-tertiary-container": "#4a1b00",
+                      "on-secondary-fixed-variant": "#332dbc",
+                      "surface-dim": "#131313",
+                      "surface-container-highest": "#353535",
+                      "surface-variant": "#353535",
+                      "primary-fixed": "#d6e3ff",
+                      "surface-bright": "#393939",
+                      "surface-container-lowest": "#0e0e0e",
+                      "on-primary-fixed-variant": "#00468d",
+                      "secondary": "#c2c1ff",
+                      "surface-container-low": "#1b1b1c"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "base": "8px",
+                      "container-margin": "24px",
+                      "sm": "12px",
+                      "md": "16px",
+                      "xs": "4px",
+                      "lg": "24px",
+                      "xl": "32px",
+                      "gutter": "16px"
+              },
+              "fontFamily": {
+                      "body-md": ["inter"],
+                      "label-caps": ["inter"],
+                      "code-sm": ["jetbrainsMono"],
+                      "display-lg": ["metropolis"],
+                      "headline-md": ["metropolis"],
+                      "body-lg": ["inter"]
+              },
+              "fontSize": {
+                      "body-md": ["15px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                      "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "code-sm": ["13px", {"lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "450"}],
+                      "display-lg": ["34px", {"lineHeight": "41px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-md": ["24px", {"lineHeight": "30px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "body-lg": ["17px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+      </script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@450&amp;display=swap" data-snapdom="injected-import"></head>
+<body class="bg-background min-h-screen">
+<!-- Dashboard Background (Underlay) -->
+<!-- Modal Backdrop -->
+<div class="inset-0 z-[100] flex items-center justify-center p-xl">
+<!-- Main Modal Container -->
+<div class="mica-surface inner-glow sharp-layer w-full max-h-[85vh] rounded-[24px] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300 flex-1 border-none">
+<!-- Header: Project Tabs -->
+<header class="px-lg pt-lg flex items-center justify-between border-b border-white/5"><div class="flex items-center justify-between w-full h-16 px-lg">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant">arrow_back</span>
+<h2 class="text-headline-md font-bold">工程配置中心</h2>
+</div>
+<div class="flex items-end gap-xs">
+<input type="text" value="项目A (物流)" class="px-md py-2 bg-primary-container/30 rounded-lg text-primary font-medium border border-primary/20 focus:outline-none focus:ring-1 focus:ring-primary/50 w-48">
+
+
+</div>
+</div></header>
+<!-- Form Content (Scrollable Container) -->
+<div class="flex-1 overflow-y-auto no-scrollbar p-xl space-y-xl">
+<!-- Section: 工作区根路径 -->
+<section class="space-y-md">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider block">工作区根路径</label>
+<div class="flex gap-sm">
+<input class="flex-1 bg-black/20 border border-white/10 rounded-lg px-md py-sm font-code-sm text-code-sm glass-input text-on-surface" placeholder="输入根路径..." type="text" value="/Users/admin/Dev/mixbuild_workspace">
+<button class="px-lg py-sm bg-surface-container-highest border border-white/10 rounded-lg font-body-md text-on-surface hover:bg-white/10 transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined">folder_open</span>
+                            浏览...
+                        </button>
+</div>
+</section>
+<!-- Section: 主工程绑定 -->
+<section class="space-y-md">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider block">主工程绑定</label>
+<div class="grid grid-cols-4 gap-lg">
+<div class="col-span-1 space-y-xs">
+<span class="text-on-surface-variant text-[11px] font-bold">工程名称</span>
+<input class="w-full bg-black/20 border border-white/10 rounded-lg px-md py-sm font-code-sm text-code-sm glass-input text-on-surface" type="text" value="MainRunner">
+</div>
+<div class="col-span-1 space-y-xs">
+<span class="text-on-surface-variant text-[11px] font-bold">路径选择</span>
+<div class="relative">
+<select class="w-full appearance-none bg-black/20 border border-white/10 rounded-lg px-md py-sm font-code-sm text-code-sm glass-input text-on-surface pr-8">
+<option>./core/app</option>
+<option>./modules/shared</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<div class="col-span-1 space-y-xs">
+<span class="text-on-surface-variant text-[11px] font-bold">技术栈类型</span>
+<div class="flex bg-black/30 p-1 rounded-lg border border-white/5">
+<button class="flex-1 py-1 text-[12px] font-bold rounded-md transition-all text-on-surface-variant" id="btn-android" onclick="togglePlatform('android')">Android</button>
+<button class="flex-1 py-1 text-[12px] font-bold rounded-md transition-all bg-primary-container/40 text-primary segmented-control-active" id="btn-flutter" onclick="togglePlatform('flutter')">Flutter</button>
+</div>
+</div>
+<div class="col-span-1 space-y-xs">
+<span class="text-on-surface-variant text-[11px] font-bold">默认分支</span>
+<input class="w-full bg-black/20 border border-white/10 rounded-lg px-md py-sm font-code-sm text-code-sm glass-input text-on-surface" type="text" value="develop">
+</div>
+</div>
+</section>
+<!-- Section: 依赖项拓扑编排 -->
+<section class="space-y-md">
+<div class="flex justify-between items-center">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">依赖项拓扑编排</label>
+<span class="text-[11px] text-primary/60 font-code-sm">自动解析 12 个模块</span>
+</div>
+<div class="space-y-sm">
+<!-- Row 1 -->
+<div class="flex items-center gap-md p-sm bg-white/5 border border-white/5 rounded-xl group hover:border-primary/30 transition-all">
+<span class="material-symbols-outlined text-on-surface-variant cursor-grab active:cursor-grabbing">drag_indicator</span>
+<input class="w-32 bg-transparent border-none font-bold text-on-surface focus:ring-0" type="text" value="common_ui">
+<div class="relative flex-1">
+<select class="w-full appearance-none bg-black/20 border border-white/10 rounded-lg px-md py-1.5 font-code-sm text-code-sm glass-input text-on-surface pr-8">
+<option>../modules/ui_lib</option>
+</select>
+</div>
+<div class="flex flex-col gap-xs w-32"><span class="text-on-surface-variant text-[10px] font-bold uppercase opacity-60">默认分支</span><input class="bg-black/20 border border-white/10 rounded-lg px-2 py-1 font-code-sm text-[11px] glass-input text-on-surface" type="text" value="main"></div>
+<div class="flex items-center gap-sm bg-black/20 px-sm py-1.5 rounded-lg border border-white/10" id="restore-cmd-1">
+<span class="material-symbols-outlined text-[16px] text-primary">terminal</span>
+<input class="bg-transparent border-none text-[12px] font-code-sm w-36 focus:ring-0" type="text" value="fvm flutter pub get">
+</div>
+</div>
+<!-- Row 2 -->
+<div class="flex items-center gap-md p-sm bg-white/5 border border-white/5 rounded-xl group hover:border-primary/30 transition-all">
+<span class="material-symbols-outlined text-on-surface-variant cursor-grab active:cursor-grabbing">drag_indicator</span>
+<input class="w-32 bg-transparent border-none font-bold text-on-surface focus:ring-0" type="text" value="net_bridge">
+<div class="relative flex-1">
+<select class="w-full appearance-none bg-black/20 border border-white/10 rounded-lg px-md py-1.5 font-code-sm text-code-sm glass-input text-on-surface pr-8">
+<option>../modules/network</option>
+</select>
+</div>
+<div class="flex flex-col gap-xs w-32"><span class="text-on-surface-variant text-[10px] font-bold uppercase opacity-60">默认分支</span><input class="bg-black/20 border border-white/10 rounded-lg px-2 py-1 font-code-sm text-[11px] glass-input text-on-surface" type="text" value="develop"></div>
+<div class="flex items-center gap-sm bg-black/20 px-sm py-1.5 rounded-lg border border-white/10" id="restore-cmd-2">
+<span class="material-symbols-outlined text-[16px] text-primary">terminal</span>
+<input class="bg-transparent border-none text-[12px] font-code-sm w-36 focus:ring-0" type="text" value="fvm flutter pub get">
+</div>
+</div>
+</div>
+</section>
+<!-- Section: 构建场景矩阵编辑器 -->
+<section class="space-y-md">
+<div class="flex justify-between items-center">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">构建场景矩阵编辑器</label>
+<button class="text-primary font-body-md flex items-center gap-xs hover:underline">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+                            新增构建场景
+                        </button>
+</div>
+<div class="grid grid-cols-2 gap-lg">
+<!-- Scenario Card 1 -->
+<div class="bg-surface-container-high/40 border border-white/10 rounded-2xl p-lg space-y-md inner-glow sharp-layer"><div class="flex justify-between items-start mb-md"><div class="flex items-center gap-md"><div class="w-12 h-12 bg-primary\/10 rounded-xl flex items-center justify-center text-2xl">🚀</div><div><h4 class="font-headline-md text-on-surface text-[17px]">Release_Pro</h4><p class="text-[11px] text-on-surface-variant font-code-sm">Production Stable</p></div></div><span class="material-symbols-outlined text-on-surface-variant opacity-40">drag_handle</span></div><div class="grid grid-cols-2 gap-md pt-sm border-t border-white\/5"><div class="space-y-1"><span class="text-on-surface-variant text-[10px] font-bold uppercase opacity-60 block">指令 (Command)</span><code class="text-primary text-[12px] font-code-sm break-all">mixbuild build --target=prod --mode=release</code></div><div class="space-y-1"><span class="text-on-surface-variant text-[10px] font-bold uppercase opacity-60 block">默认分支 (Branch)</span><p class="text-on-surface text-[12px]">release/v3.1</p></div><div class="space-y-1"><span class="text-on-surface-variant text-[10px] font-bold uppercase opacity-60 block">自动生成 Tag</span><div class="flex items-center gap-1"><span class="material-symbols-outlined text-primary text-[14px]">check_circle</span><span class="text-on-surface text-[12px]">release_v*</span></div></div><div class="space-y-1"><span class="text-on-surface-variant text-[10px] font-bold uppercase opacity-60 block">输出目录 (Output)</span><p class="text-on-surface text-[12px] font-code-sm">./build/app/outputs/</p></div></div></div>
+<!-- Scenario Card 2 -->
+<div class="bg-surface-container-high/40 border border-white/10 rounded-2xl p-lg space-y-md inner-glow sharp-layer opacity-80">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center text-2xl">🧪</div>
+<div>
+<h4 class="font-headline-md text-on-surface text-[17px]">Debug_QA</h4>
+<p class="text-[11px] text-on-surface-variant font-code-sm">Internal Testing</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant opacity-40">drag_handle</span>
+</div>
+<div class="space-y-xs">
+<span class="text-on-surface-variant text-[11px] font-bold">执行指令</span>
+<input class="w-full bg-black/40 border border-white/10 rounded-lg px-md py-sm font-code-sm text-code-sm text-primary" type="text" value="mixbuild build --target=qa --mode=debug">
+</div>
+<details class="group">
+<summary class="list-none flex items-center gap-xs text-[12px] text-on-surface-variant cursor-pointer hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px] group-open:rotate-90 transition-transform">chevron_right</span>
+                                    高级配置
+                                </summary>
+<div class="pt-md space-y-sm">
+<label class="flex items-center gap-sm cursor-pointer group">
+<input class="rounded border-white/20 bg-black/40 text-primary-container focus:ring-offset-0 focus:ring-0" type="checkbox">
+<span class="text-[13px] text-on-surface-variant group-hover:text-on-surface">自动触达产物 (output_dir)</span>
+</label>
+<label class="flex items-center gap-sm cursor-pointer group">
+<input class="rounded border-white/20 bg-black/40 text-primary-container focus:ring-offset-0 focus:ring-0" type="checkbox">
+<span class="text-[13px] text-on-surface-variant group-hover:text-on-surface">自动生成 Git Tag (tag_prefix)</span>
+</label>
+</div>
+</details>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer: Fixed bottom bar -->
+<footer class="h-20 bg-surface-container-lowest/60 backdrop-blur-xl border-t border-white/10 px-xl flex items-center justify-between z-[110] sticky bottom-0">
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">info</span>
+<p class="text-[12px]">所有更改将即时同步至本地 <code>mixbuild.config.yaml</code></p>
+</div>
+<div class="flex gap-md">
+<button class="px-xl py-sm rounded-lg font-body-md text-on-surface hover:bg-white/10 transition-colors">取消</button>
+<button class="px-xl py-sm bg-[#0A84FF] text-white rounded-lg font-body-md font-bold shadow-[0_0_20px_rgba(10,132,255,0.4)] hover:brightness-110 active:scale-95 transition-all flex items-center gap-sm">
+<span class="material-symbols-outlined">save</span>
+                        保存并应用配置
+                    </button>
+</div>
+</footer>
+</div>
+</div>
+<!-- Background Decoration -->
+<div class="fixed top-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/20 blur-[120px] rounded-full pointer-events-none -z-10"></div>
+<div class="fixed bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-secondary-container/20 blur-[100px] rounded-full pointer-events-none -z-10"></div>
+<script>
+        function togglePlatform(type) {
+            const btnAndroid = document.getElementById('btn-android');
+            const btnFlutter = document.getElementById('btn-flutter');
+            const restoreCmds = [document.getElementById('restore-cmd-1'), document.getElementById('restore-cmd-2')];
+
+            if (type === 'android') {
+                btnAndroid.classList.add('bg-primary-container/40', 'text-primary', 'segmented-control-active');
+                btnFlutter.classList.remove('bg-primary-container/40', 'text-primary', 'segmented-control-active');
+                btnFlutter.classList.add('text-on-surface-variant');
+                btnAndroid.classList.remove('text-on-surface-variant');
+                
+                restoreCmds.forEach(cmd => {
+                    cmd.querySelector('input').value = './gradlew assembleRelease';
+                    cmd.querySelector('span').innerText = 'settings_system_daydream';
+                });
+            } else {
+                btnFlutter.classList.add('bg-primary-container/40', 'text-primary', 'segmented-control-active');
+                btnAndroid.classList.remove('bg-primary-container/40', 'text-primary', 'segmented-control-active');
+                btnAndroid.classList.add('text-on-surface-variant');
+                btnFlutter.classList.remove('text-on-surface-variant');
+
+                restoreCmds.forEach(cmd => {
+                    cmd.querySelector('input').value = 'fvm flutter pub get';
+                    cmd.querySelector('span').innerText = 'terminal';
+                });
+            }
+        }
+    </script>
+
+
+</body></html>
