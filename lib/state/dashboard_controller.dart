@@ -25,7 +25,8 @@ final mixbuildYamlStoreProvider = Provider<MixbuildYamlStore>((ref) {
 });
 
 final dashboardControllerProvider =
-    NotifierProvider<DashboardController, DashboardState>(DashboardController.new);
+    NotifierProvider<DashboardController, DashboardState>(
+        DashboardController.new);
 
 class DashboardController extends Notifier<DashboardState> {
   bool _stopRequested = false;
@@ -67,7 +68,8 @@ class DashboardController extends Notifier<DashboardState> {
   }
 
   List<String> dependencyBranchOptions(DependencyBranch dependency) {
-    final configDependency = state.config.dependencies.where((item) => item.name == dependency.name);
+    final configDependency =
+        state.config.dependencies.where((item) => item.name == dependency.name);
     return <String>{
       dependency.branch,
       if (configDependency.isNotEmpty) configDependency.first.defaultBranch,
@@ -81,7 +83,8 @@ class DashboardController extends Notifier<DashboardState> {
 
   List<DependencyBranch> editorBaseDependencies() {
     final selectedByName = <String, DependencyBranch>{
-      for (final dependency in state.selectedScenario.dependencies) dependency.name: dependency,
+      for (final dependency in state.selectedScenario.dependencies)
+        dependency.name: dependency,
     };
     final matchingScenarios = state.config.buildScenarios
         .where((s) => s.id == state.selectedScenarioId);
@@ -94,7 +97,8 @@ class DashboardController extends Notifier<DashboardState> {
       return DependencyBranch(
         name: dependency.name,
         branch: selected?.branch ?? overrideBranch ?? dependency.defaultBranch,
-        icon: selected?.icon ?? _dependencyIcon(dependency.type, dependency.name),
+        icon:
+            selected?.icon ?? _dependencyIcon(dependency.type, dependency.name),
         highlight: selected?.highlight,
       );
     }).toList(growable: false);
@@ -102,7 +106,9 @@ class DashboardController extends Notifier<DashboardState> {
 
   Future<void> reloadTopology() async {
     try {
-      final config = ref.read(mixbuildYamlStoreProvider).loadConfigSync(state.config.filePath);
+      final config = ref
+          .read(mixbuildYamlStoreProvider)
+          .loadConfigSync(state.config.filePath);
       _applyConfig(config, preserveError: false);
     } catch (error) {
       state = state.copyWith(lastError: '$error');
@@ -110,11 +116,15 @@ class DashboardController extends Notifier<DashboardState> {
   }
 
   Future<void> openYamlInEditor() async {
-    await ref.read(mixbuildCommandRunnerProvider).openPath(state.config.filePath);
+    await ref
+        .read(mixbuildCommandRunnerProvider)
+        .openPath(state.config.filePath);
   }
 
   String readCurrentYaml() {
-    return ref.read(mixbuildYamlStoreProvider).readYamlSync(state.config.filePath);
+    return ref
+        .read(mixbuildYamlStoreProvider)
+        .readYamlSync(state.config.filePath);
   }
 
   Future<void> saveCurrentYaml(String content) async {
@@ -122,7 +132,8 @@ class DashboardController extends Notifier<DashboardState> {
           content,
           currentFilePath: state.config.filePath,
         );
-    _applyConfig(savedConfig, preserveError: false, previousFilePath: state.config.filePath);
+    _applyConfig(savedConfig,
+        preserveError: false, previousFilePath: state.config.filePath);
   }
 
   void selectScenario(ProjectBuild project, BuildScenario scenario) {
@@ -157,9 +168,18 @@ class DashboardController extends Notifier<DashboardState> {
           WorkspaceBinding(
             projectName: config.mainProject.name,
             path: config.mainProject.path,
+            type: config.mainProject.type,
+            defaultBranch: config.mainProject.defaultBranch,
+            restoreCommand: config.mainProject.restoreCommand,
           ),
           ...config.dependencies.map(
-            (d) => WorkspaceBinding(projectName: d.name, path: d.path),
+            (d) => WorkspaceBinding(
+              projectName: d.name,
+              path: d.path,
+              type: d.type,
+              defaultBranch: d.defaultBranch,
+              restoreCommand: d.restoreCommand,
+            ),
           ),
         ],
       ),
@@ -201,12 +221,15 @@ class DashboardController extends Notifier<DashboardState> {
       if (scenarioConfig.id != currentScenarioId) {
         return scenarioConfig;
       }
-      final overrides = Map<String, String>.from(scenarioConfig.dependencyOverrides)
-        ..[dependencyName] = branch;
+      final overrides =
+          Map<String, String>.from(scenarioConfig.dependencyOverrides)
+            ..[dependencyName] = branch;
       return scenarioConfig.copyWith(dependencyOverrides: overrides);
     }).toList(growable: false);
-    final updatedConfig = state.config.copyWith(buildScenarios: updatedScenarios);
-    final savedConfig = ref.read(mixbuildYamlStoreProvider).saveConfigSync(updatedConfig);
+    final updatedConfig =
+        state.config.copyWith(buildScenarios: updatedScenarios);
+    final savedConfig =
+        ref.read(mixbuildYamlStoreProvider).saveConfigSync(updatedConfig);
     _applyConfig(
       savedConfig,
       preserveError: false,
@@ -223,7 +246,8 @@ class DashboardController extends Notifier<DashboardState> {
 
   Future<void> updateGlobalConfig(GlobalConfig config) async {
     final updatedDependencies = state.config.dependencies.map((dependency) {
-      final binding = config.bindings.where((item) => item.projectName == dependency.name);
+      final binding =
+          config.bindings.where((item) => item.projectName == dependency.name);
       if (binding.isEmpty) {
         return dependency;
       }
@@ -237,8 +261,12 @@ class DashboardController extends Notifier<DashboardState> {
       ),
       dependencies: updatedDependencies,
     );
-    final savedConfig = ref.read(mixbuildYamlStoreProvider).saveConfigSync(updatedConfig);
-    _applyConfig(savedConfig, overrideGlobalConfig: config, preserveError: false, previousFilePath: state.config.filePath);
+    final savedConfig =
+        ref.read(mixbuildYamlStoreProvider).saveConfigSync(updatedConfig);
+    _applyConfig(savedConfig,
+        overrideGlobalConfig: config,
+        preserveError: false,
+        previousFilePath: state.config.filePath);
   }
 
   Future<void> updateProjectConfiguration({
@@ -263,25 +291,22 @@ class DashboardController extends Notifier<DashboardState> {
       ),
     );
 
-    final updatedDependencies = bindings
-        .where((binding) => !binding.isMainProject)
-        .map((binding) {
-          return MixbuildRepoConfig(
-            name: binding.projectName,
-            path: binding.path,
-            type: binding.type,
-            defaultBranch: binding.defaultBranch,
-            restoreCommand: binding.restoreCommand,
-          );
-        })
-        .toList(growable: false);
+    final updatedDependencies =
+        bindings.where((binding) => !binding.isMainProject).map((binding) {
+      return MixbuildRepoConfig(
+        name: binding.projectName,
+        path: binding.path,
+        type: binding.type,
+        defaultBranch: binding.defaultBranch,
+        restoreCommand: binding.restoreCommand,
+      );
+    }).toList(growable: false);
 
     final updatedScenarios = scenarios.map((scenario) {
-      final baseScenarioMatches = baseConfig.buildScenarios
-          .where((s) => s.id == scenario.id);
-      final baseScenario = baseScenarioMatches.isNotEmpty
-          ? baseScenarioMatches.first
-          : null;
+      final baseScenarioMatches =
+          baseConfig.buildScenarios.where((s) => s.id == scenario.id);
+      final baseScenario =
+          baseScenarioMatches.isNotEmpty ? baseScenarioMatches.first : null;
       final overrides = <String, String>{
         if (baseScenario != null) ...baseScenario.dependencyOverrides,
         for (final dep in scenario.dependencies) dep.name: dep.branch,
@@ -293,7 +318,9 @@ class DashboardController extends Notifier<DashboardState> {
             ? mainBinding.defaultBranch
             : scenario.mainBranch.trim(),
         command: scenario.command,
-        outputDir: scenario.outputPath.trim().isEmpty ? null : scenario.outputPath.trim(),
+        outputDir: scenario.outputPath.trim().isEmpty
+            ? null
+            : scenario.outputPath.trim(),
         autoTag: scenario.autoTag,
         tagPrefix: scenario.tagPrefix,
         dependencyOverrides: overrides,
@@ -316,8 +343,12 @@ class DashboardController extends Notifier<DashboardState> {
       buildScenarios: updatedScenarios,
     );
 
-    final savedConfig = ref.read(mixbuildYamlStoreProvider).saveConfigSync(updatedConfig);
-    _applyConfig(savedConfig, overrideGlobalConfig: config, preserveError: false, previousFilePath: baseConfig.filePath);
+    final savedConfig =
+        ref.read(mixbuildYamlStoreProvider).saveConfigSync(updatedConfig);
+    _applyConfig(savedConfig,
+        overrideGlobalConfig: config,
+        preserveError: false,
+        previousFilePath: baseConfig.filePath);
   }
 
   Future<void> createProject({
@@ -339,18 +370,16 @@ class DashboardController extends Notifier<DashboardState> {
       ),
     );
 
-    final newDependencies = bindings
-        .where((binding) => !binding.isMainProject)
-        .map((binding) {
-          return MixbuildRepoConfig(
-            name: binding.projectName,
-            path: binding.path,
-            type: binding.type,
-            defaultBranch: binding.defaultBranch,
-            restoreCommand: binding.restoreCommand,
-          );
-        })
-        .toList(growable: false);
+    final newDependencies =
+        bindings.where((binding) => !binding.isMainProject).map((binding) {
+      return MixbuildRepoConfig(
+        name: binding.projectName,
+        path: binding.path,
+        type: binding.type,
+        defaultBranch: binding.defaultBranch,
+        restoreCommand: binding.restoreCommand,
+      );
+    }).toList(growable: false);
 
     final newScenarios = scenarios.map((scenario) {
       return MixbuildScenarioConfig(
@@ -360,7 +389,9 @@ class DashboardController extends Notifier<DashboardState> {
             ? mainBinding.defaultBranch
             : scenario.mainBranch.trim(),
         command: scenario.command,
-        outputDir: scenario.outputPath.trim().isEmpty ? null : scenario.outputPath.trim(),
+        outputDir: scenario.outputPath.trim().isEmpty
+            ? null
+            : scenario.outputPath.trim(),
         autoTag: scenario.autoTag,
         tagPrefix: scenario.tagPrefix,
         dependencyOverrides: {
@@ -392,14 +423,17 @@ class DashboardController extends Notifier<DashboardState> {
     );
 
     final savedConfig = store.saveNewConfigSync(newConfig);
-    _applyConfig(savedConfig, overrideGlobalConfig: config, preserveError: false);
+    _applyConfig(savedConfig,
+        overrideGlobalConfig: config, preserveError: false);
   }
 
   Future<void> switchWorkspace(String workspaceName) async {
     final store = ref.read(mixbuildYamlStoreProvider);
     File matchedFile = File(state.config.filePath);
-    for (final file in store.discoverWorkspaceYamlFilesSync().whereType<File>()) {
-      if (MixbuildConfig.fromFileSync(file.path).workspace.name == workspaceName) {
+    for (final file
+        in store.discoverWorkspaceYamlFilesSync().whereType<File>()) {
+      if (MixbuildConfig.fromFileSync(file.path).workspace.name ==
+          workspaceName) {
         matchedFile = file;
         break;
       }
@@ -481,31 +515,33 @@ class DashboardController extends Notifier<DashboardState> {
 
     try {
       await ref.read(mixbuildEngineProvider).runPipeline(
-        config: state.config,
-        project: state.selectedProject,
-        scenario: state.selectedScenario,
-        cleanBeforeBuild: state.cleanBeforeBuild[scenario.id] ?? false,
-        dependencyOverrides: {
-          for (final dependency in state.selectedScenario.dependencies)
-            if (dependency.isOverride) dependency.name: dependency.branch,
-        },
-        onProgress: (status, progress) {
-          _updateScenario(
-            projectId: project.id,
-            scenarioId: scenario.id,
-            transform: (current) => current.copyWith(status: status, progress: progress),
+            config: state.config,
+            project: state.selectedProject,
+            scenario: state.selectedScenario,
+            cleanBeforeBuild: state.cleanBeforeBuild[scenario.id] ?? false,
+            dependencyOverrides: {
+              for (final dependency in state.selectedScenario.dependencies)
+                if (dependency.isOverride) dependency.name: dependency.branch,
+            },
+            onProgress: (status, progress) {
+              _updateScenario(
+                projectId: project.id,
+                scenarioId: scenario.id,
+                transform: (current) =>
+                    current.copyWith(status: status, progress: progress),
+              );
+            },
+            onLog: (entry) {
+              _updateScenario(
+                projectId: project.id,
+                scenarioId: scenario.id,
+                transform: (current) => current.copyWith(
+                  logs:
+                      [entry, ...current.logs].take(12).toList(growable: false),
+                ),
+              );
+            },
           );
-        },
-        onLog: (entry) {
-          _updateScenario(
-            projectId: project.id,
-            scenarioId: scenario.id,
-            transform: (current) => current.copyWith(
-              logs: [entry, ...current.logs].take(12).toList(growable: false),
-            ),
-          );
-        },
-      );
     } catch (error) {
       if (_stopRequested) {
         return;
@@ -545,7 +581,8 @@ class DashboardController extends Notifier<DashboardState> {
         logs: [
           _log(
             level: 'WARN',
-            message: 'Safe Kill dispatched. All child processes and Gradle daemons were terminated.',
+            message:
+                'Safe Kill dispatched. All child processes and Gradle daemons were terminated.',
             accent: MixBuildPalette.error,
           ),
           ...current.logs,
@@ -559,7 +596,8 @@ class DashboardController extends Notifier<DashboardState> {
     MixbuildConfig activeConfig,
   ) {
     final projects = configs.map(_projectFromConfig).toList(growable: false);
-    final allScenarios = projects.expand((p) => p.scenarios).toList(growable: false);
+    final allScenarios =
+        projects.expand((p) => p.scenarios).toList(growable: false);
     final activeProject = projects.firstWhere(
       (p) => p.id == activeConfig.filePath,
       orElse: () => projects.first,
@@ -578,9 +616,18 @@ class DashboardController extends Notifier<DashboardState> {
           WorkspaceBinding(
             projectName: activeConfig.mainProject.name,
             path: activeConfig.mainProject.path,
+            type: activeConfig.mainProject.type,
+            defaultBranch: activeConfig.mainProject.defaultBranch,
+            restoreCommand: activeConfig.mainProject.restoreCommand,
           ),
           ...activeConfig.dependencies.map(
-            (d) => WorkspaceBinding(projectName: d.name, path: d.path),
+            (d) => WorkspaceBinding(
+              projectName: d.name,
+              path: d.path,
+              type: d.type,
+              defaultBranch: d.defaultBranch,
+              restoreCommand: d.restoreCommand,
+            ),
           ),
         ],
       ),
@@ -634,7 +681,8 @@ class DashboardController extends Notifier<DashboardState> {
               tagPrefix: scenarioConfig.tagPrefix,
               yamlOverride: _scenarioOverrideTemplate(config, scenarioConfig),
               dependencies: config.dependencies.map((dependency) {
-                final overrideBranch = scenarioConfig.dependencyOverrides[dependency.name];
+                final overrideBranch =
+                    scenarioConfig.dependencyOverrides[dependency.name];
                 final isOverride = overrideBranch != null;
                 return DependencyBranch(
                   name: dependency.name,
@@ -647,7 +695,8 @@ class DashboardController extends Notifier<DashboardState> {
               logs: [
                 _log(
                   level: 'INIT',
-                  message: 'Ready to receive build command for project: ${config.workspace.name}',
+                  message:
+                      'Ready to receive build command for project: ${config.workspace.name}',
                   accent: MixBuildPalette.primary,
                 ),
                 _log(
@@ -663,15 +712,18 @@ class DashboardController extends Notifier<DashboardState> {
       id: config.filePath,
       emoji: '📦',
       name: config.workspace.name,
-      description: '${config.mainProject.type.name} / ${config.mainProject.defaultBranch}',
+      description:
+          '${config.mainProject.type.name} / ${config.mainProject.defaultBranch}',
       branch: config.mainProject.defaultBranch,
       scenarios: scenarios,
     );
   }
 
   List<ResourceMetric> _buildMetrics(List<BuildScenario> scenarios) {
-    final running = scenarios.where((item) => item.status.isPipelineActive).length;
-    final failed = scenarios.where((item) => item.status == BuildStatus.failed).length;
+    final running =
+        scenarios.where((item) => item.status.isPipelineActive).length;
+    final failed =
+        scenarios.where((item) => item.status == BuildStatus.failed).length;
     final coverage = scenarios.isEmpty ? 0.0 : running / scenarios.length;
     return [
       ResourceMetric(
@@ -716,7 +768,9 @@ class DashboardController extends Notifier<DashboardState> {
     state = state.copyWith(
       projects: updatedProjects,
       metrics: _buildMetrics(
-        updatedProjects.expand((project) => project.scenarios).toList(growable: false),
+        updatedProjects
+            .expand((project) => project.scenarios)
+            .toList(growable: false),
       ),
     );
   }
@@ -728,7 +782,8 @@ class DashboardController extends Notifier<DashboardState> {
   }) {
     final now = DateTime.now();
     return LogEntry(
-      time: '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}',
+      time:
+          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}',
       level: level,
       message: message,
       accent: accent,
@@ -739,13 +794,12 @@ class DashboardController extends Notifier<DashboardState> {
     MixbuildConfig config,
     MixbuildScenarioConfig scenarioConfig,
   ) {
-    final dependencyLines = config.dependencies
-        .map((dependency) {
-          final overrideBranch = scenarioConfig.dependencyOverrides[dependency.name];
-          final branch = overrideBranch ?? dependency.defaultBranch;
-          return '  ${dependency.name}:\n    branch: $branch';
-        })
-        .join('\n');
+    final dependencyLines = config.dependencies.map((dependency) {
+      final overrideBranch =
+          scenarioConfig.dependencyOverrides[dependency.name];
+      final branch = overrideBranch ?? dependency.defaultBranch;
+      return '  ${dependency.name}:\n    branch: $branch';
+    }).join('\n');
     return 'workspace:\n  root_path: ${config.workspace.rootPath}\nscenario:\n  name: ${scenarioConfig.name}\n  main_branch: ${scenarioConfig.mainBranch}\ndependencies:\n$dependencyLines\n';
   }
 
@@ -783,13 +837,15 @@ class DashboardController extends Notifier<DashboardState> {
       merged.add(updatedProject);
     }
 
-    final allScenarios = merged.expand((p) => p.scenarios).toList(growable: false);
+    final allScenarios =
+        merged.expand((p) => p.scenarios).toList(growable: false);
     final cleanFlags = <String, bool>{
       for (final scenario in allScenarios) scenario.id: false,
     };
 
     final selectedProjectId = preserveSelectedProjectId ?? config.filePath;
-    final selectedScenarioId = preserveSelectedScenarioId ?? updatedProject.scenarios.first.id;
+    final selectedScenarioId =
+        preserveSelectedScenarioId ?? updatedProject.scenarios.first.id;
 
     state = DashboardState(
       config: config,
@@ -803,9 +859,18 @@ class DashboardController extends Notifier<DashboardState> {
               WorkspaceBinding(
                 projectName: config.mainProject.name,
                 path: config.mainProject.path,
+                type: config.mainProject.type,
+                defaultBranch: config.mainProject.defaultBranch,
+                restoreCommand: config.mainProject.restoreCommand,
               ),
               ...config.dependencies.map(
-                (d) => WorkspaceBinding(projectName: d.name, path: d.path),
+                (d) => WorkspaceBinding(
+                  projectName: d.name,
+                  path: d.path,
+                  type: d.type,
+                  defaultBranch: d.defaultBranch,
+                  restoreCommand: d.restoreCommand,
+                ),
               ),
             ],
           ),
@@ -821,22 +886,19 @@ class DashboardController extends Notifier<DashboardState> {
 
   List<String> _workspaceNames() {
     final store = ref.read(mixbuildYamlStoreProvider);
-    return store
-        .discoverWorkspaceYamlFilesSync()
-        .whereType<File>()
-        .map((file) {
-          try {
-            return MixbuildConfig.fromFileSync(file.path).workspace.name;
-          } catch (_) {
-            return file.uri.pathSegments.last;
-          }
-        })
-        .toList(growable: false);
+    return store.discoverWorkspaceYamlFilesSync().whereType<File>().map((file) {
+      try {
+        return MixbuildConfig.fromFileSync(file.path).workspace.name;
+      } catch (_) {
+        return file.uri.pathSegments.last;
+      }
+    }).toList(growable: false);
   }
 
   void _startWatching(String filePath) {
     _yamlWatchSubscription?.cancel();
-    _yamlWatchSubscription = ref.read(mixbuildYamlStoreProvider).watch(filePath).listen((_) {
+    _yamlWatchSubscription =
+        ref.read(mixbuildYamlStoreProvider).watch(filePath).listen((_) {
       _watchDebounce?.cancel();
       _watchDebounce = Timer(const Duration(milliseconds: 180), () {
         reloadTopology();

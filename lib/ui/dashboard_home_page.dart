@@ -28,8 +28,10 @@ class DashboardHomePage extends ConsumerWidget {
       await controller.saveCurrentYaml(result);
     }
 
-    Future<void> openProjectEditor({required String title, ProjectBuild? targetProject}) async {
-      final project = targetProject ?? ref.read(dashboardControllerProvider).selectedProject;
+    Future<void> openProjectEditor(
+        {required String title, ProjectBuild? targetProject}) async {
+      final project = targetProject ??
+          ref.read(dashboardControllerProvider).selectedProject;
       final projectConfig = controller.configForProject(project);
       final projectGlobalConfig = GlobalConfig(
         workspaceRoot: projectConfig.workspace.rootPath,
@@ -39,9 +41,18 @@ class DashboardHomePage extends ConsumerWidget {
           WorkspaceBinding(
             projectName: projectConfig.mainProject.name,
             path: projectConfig.mainProject.path,
+            type: projectConfig.mainProject.type,
+            defaultBranch: projectConfig.mainProject.defaultBranch,
+            restoreCommand: projectConfig.mainProject.restoreCommand,
           ),
           ...projectConfig.dependencies.map(
-            (d) => WorkspaceBinding(projectName: d.name, path: d.path),
+            (d) => WorkspaceBinding(
+              projectName: d.name,
+              path: d.path,
+              type: d.type,
+              defaultBranch: d.defaultBranch,
+              restoreCommand: d.restoreCommand,
+            ),
           ),
         ],
       );
@@ -121,26 +132,32 @@ class DashboardHomePage extends ConsumerWidget {
                         child: Column(
                           children: [
                             DashboardTopBar(
-                              currentWorkspaceName: dashboardState.config.workspace.name,
-                              availableWorkspaceNames: dashboardState.availableWorkspaceNames,
+                              currentWorkspaceName:
+                                  dashboardState.config.workspace.name,
+                              availableWorkspaceNames:
+                                  dashboardState.availableWorkspaceNames,
                               runningCount: dashboardState.runningCount,
                               onWorkspaceChanged: controller.switchWorkspace,
                               onReloadTopology: controller.reloadTopology,
                               onOpenYaml: openYamlPage,
-                              onOpenConfig: () => openProjectEditor(title: '项目编辑'),
+                              onOpenConfig: () =>
+                                  openProjectEditor(title: '项目编辑'),
                             ),
                             Expanded(
                               child: Padding(
-                                padding: const EdgeInsets.fromLTRB(20, 18, 6, 10),
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 18, 6, 10),
                                 child: ListView.separated(
                                   itemCount: dashboardState.projects.length,
                                   separatorBuilder: (context, index) =>
                                       const SizedBox(height: 20),
                                   itemBuilder: (context, index) {
-                                    final project = dashboardState.projects[index];
+                                    final project =
+                                        dashboardState.projects[index];
                                     return ProjectOverviewCard(
                                       project: project,
-                                      selectedScenarioId: dashboardState.selectedScenarioId,
+                                      selectedScenarioId:
+                                          dashboardState.selectedScenarioId,
                                       onEdit: () => openProjectEditor(
                                         title: '项目编辑',
                                         targetProject: project,
@@ -148,7 +165,8 @@ class DashboardHomePage extends ConsumerWidget {
                                       onOpenScenario: (scenario) =>
                                           openDetail(project, scenario),
                                       onOpenYaml: () async {
-                                        controller.selectScenario(project, project.scenarios.first);
+                                        controller.selectScenario(
+                                            project, project.scenarios.first);
                                         await openYamlPage();
                                       },
                                     );
@@ -223,9 +241,11 @@ class _DashboardNavRail extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          const _NavItem(icon: Icons.dashboard_outlined, label: 'Dashboard', active: true),
+          const _NavItem(
+              icon: Icons.dashboard_outlined, label: 'Dashboard', active: true),
           const _NavItem(icon: Icons.folder_copy_outlined, label: 'Projects'),
-          const _NavItem(icon: Icons.receipt_long_outlined, label: 'Build Logs'),
+          const _NavItem(
+              icon: Icons.receipt_long_outlined, label: 'Build Logs'),
           const _NavItem(icon: Icons.settings_outlined, label: 'Settings'),
           const SizedBox(height: 18),
           FilledButton.icon(
@@ -234,7 +254,8 @@ class _DashboardNavRail extends StatelessWidget {
             label: const Text('New Project'),
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(52),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18)),
               textStyle: theme.textTheme.labelLarge,
             ),
           ),
@@ -251,20 +272,24 @@ class _DashboardNavRail extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   child: Row(
                     children: [
-                      const Icon(Icons.help_outline, size: 16, color: MixBuildPalette.muted),
+                      const Icon(Icons.help_outline,
+                          size: 16, color: MixBuildPalette.muted),
                       const SizedBox(width: 10),
                       Text('Support', style: theme.textTheme.bodySmall),
                     ],
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   child: Row(
                     children: [
-                      const Icon(Icons.description_outlined, size: 16, color: MixBuildPalette.muted),
+                      const Icon(Icons.description_outlined,
+                          size: 16, color: MixBuildPalette.muted),
                       const SizedBox(width: 10),
                       Text('Docs', style: theme.textTheme.bodySmall),
                     ],
@@ -358,7 +383,8 @@ class ProjectOverviewCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.04),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
               border: Border(
                 bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
               ),
@@ -373,7 +399,8 @@ class ProjectOverviewCard extends StatelessWidget {
                     children: [
                       Text(project.name, style: theme.textTheme.titleLarge),
                       const SizedBox(height: 4),
-                      Text(project.description, style: theme.textTheme.bodySmall),
+                      Text(project.description,
+                          style: theme.textTheme.bodySmall),
                     ],
                   ),
                 ),
@@ -430,7 +457,8 @@ class _ScenarioPreviewTile extends StatelessWidget {
     final isActive = scenario.status.isPipelineActive;
     final canStop = scenario.status.canStop;
     final actionLabel = canStop ? '停止' : '查看';
-    final actionColor = canStop ? MixBuildPalette.error : MixBuildPalette.primary;
+    final actionColor =
+        canStop ? MixBuildPalette.error : MixBuildPalette.primary;
 
     return InkWell(
       onTap: onTap,
@@ -534,7 +562,8 @@ class _ScenarioPreviewTile extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.05)),
                 ),
                 child: Column(
                   children: [
@@ -576,7 +605,8 @@ class _ScenarioPreviewTile extends StatelessWidget {
                           LinearProgressIndicator(
                             value: scenario.progress,
                             minHeight: 3,
-                            backgroundColor: Colors.white.withValues(alpha: 0.08),
+                            backgroundColor:
+                                Colors.white.withValues(alpha: 0.08),
                             valueColor: AlwaysStoppedAnimation<Color>(
                               scenario.status.color,
                             ),
@@ -586,7 +616,8 @@ class _ScenarioPreviewTile extends StatelessWidget {
                               decoration: BoxDecoration(
                                 boxShadow: [
                                   BoxShadow(
-                                    color: scenario.status.color.withValues(alpha: 0.4),
+                                    color: scenario.status.color
+                                        .withValues(alpha: 0.4),
                                     blurRadius: 8,
                                     spreadRadius: -1,
                                   ),

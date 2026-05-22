@@ -89,7 +89,8 @@ extension BuildStatusX on BuildStatus {
         BuildStatus.syncing ||
         BuildStatus.restoring ||
         BuildStatus.building ||
-        BuildStatus.postHook => true,
+        BuildStatus.postHook =>
+          true,
         _ => false,
       };
 
@@ -98,14 +99,16 @@ extension BuildStatusX on BuildStatus {
         BuildStatus.syncing ||
         BuildStatus.restoring ||
         BuildStatus.building ||
-        BuildStatus.postHook => true,
+        BuildStatus.postHook =>
+          true,
         _ => false,
       };
 
   bool get canStop => switch (this) {
         BuildStatus.syncing ||
         BuildStatus.restoring ||
-        BuildStatus.building => true,
+        BuildStatus.building =>
+          true,
         _ => false,
       };
 
@@ -279,10 +282,19 @@ class ResourceMetric {
 }
 
 class WorkspaceBinding {
-  const WorkspaceBinding({required this.projectName, required this.path});
+  const WorkspaceBinding({
+    required this.projectName,
+    required this.path,
+    this.type,
+    this.defaultBranch,
+    this.restoreCommand,
+  });
 
   final String projectName;
   final String path;
+  final MixbuildProjectType? type;
+  final String? defaultBranch;
+  final String? restoreCommand;
 }
 
 class ProjectBindingConfig {
@@ -326,7 +338,8 @@ class GlobalConfig {
       workspaceRoot: workspaceRoot ?? this.workspaceRoot,
       activeProjectName: activeProjectName ?? this.activeProjectName,
       bindings: bindings ?? this.bindings,
-      mainProjectDefaultBranch: mainProjectDefaultBranch ?? this.mainProjectDefaultBranch,
+      mainProjectDefaultBranch:
+          mainProjectDefaultBranch ?? this.mainProjectDefaultBranch,
     );
   }
 }

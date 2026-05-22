@@ -73,31 +73,39 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   late final List<_ProjectBindingDraft> _bindingDrafts;
   late final List<_ScenarioDraft> _scenarioDrafts;
   Timer? _workspaceScanDebounce;
-  List<DiscoveredGitProject> _discoveredProjects = const <DiscoveredGitProject>[];
+  List<DiscoveredGitProject> _discoveredProjects =
+      const <DiscoveredGitProject>[];
   final Map<_ProjectBindingDraft, List<String>> _draftBranchOptions =
       <_ProjectBindingDraft, List<String>>{};
-    final Map<_ProjectBindingDraft, String> _draftBranchWarnings =
+  final Map<_ProjectBindingDraft, String> _draftBranchWarnings =
       <_ProjectBindingDraft, String>{};
-  final Set<_ProjectBindingDraft> _loadingBranchDrafts = <_ProjectBindingDraft>{};
+  final Set<_ProjectBindingDraft> _loadingBranchDrafts =
+      <_ProjectBindingDraft>{};
   String? _scanError;
   bool _isScanning = false;
 
   List<DiscoveredGitProject> get _availableDiscoveredProjects {
-    return _discoveredProjects.where((project) => !_isProjectSelected(project)).toList(growable: false);
+    return _discoveredProjects
+        .where((project) => !_isProjectSelected(project))
+        .toList(growable: false);
   }
 
   _ProjectBindingDraft get _mainBindingDraft => _bindingDrafts.first;
-  List<_ProjectBindingDraft> get _dependencyDrafts => _bindingDrafts.skip(1).toList();
+  List<_ProjectBindingDraft> get _dependencyDrafts =>
+      _bindingDrafts.skip(1).toList();
 
   @override
   void initState() {
     super.initState();
     _gitBranchDiscovery = GitBranchDiscovery();
     _gitProjectDiscovery = const GitProjectDiscovery();
-    _workspaceController = TextEditingController(text: widget.config.workspaceRoot);
-    _projectNameController = TextEditingController(text: widget.config.activeProjectName);
+    _workspaceController =
+        TextEditingController(text: widget.config.workspaceRoot);
+    _projectNameController =
+        TextEditingController(text: widget.config.activeProjectName);
     _bindingDrafts = _createBindingDrafts();
-    _scenarioDrafts = widget.scenarios.map(_ScenarioDraft.fromScenario).toList();
+    _scenarioDrafts =
+        widget.scenarios.map(_ScenarioDraft.fromScenario).toList();
     _workspaceController.addListener(_handleWorkspacePathChanged);
     unawaited(_initializeEditorState());
   }
@@ -144,18 +152,25 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
     return widget.config.bindings.asMap().entries.map((entry) {
       final index = entry.key;
       final binding = entry.value;
-      final dependency = widget.baseDependencies.where((item) => item.name == binding.projectName);
+      final dependency = widget.baseDependencies
+          .where((item) => item.name == binding.projectName);
       final isMainProject = index == 0;
-      final inferredType = _inferProjectType(binding.projectName, binding.path);
+      final inferredType =
+          binding.type ?? _inferProjectType(binding.projectName, binding.path);
       return _ProjectBindingDraft(
         projectName: binding.projectName,
         isMainProject: isMainProject,
         path: binding.path,
         type: inferredType,
-        defaultBranch: isMainProject
-            ? defaultBranch
-            : (dependency.isNotEmpty ? dependency.first.branch : defaultBranch),
-        restoreCommand: isMainProject ? null : _defaultRestoreCommand(inferredType),
+        defaultBranch: binding.defaultBranch ??
+            (isMainProject
+                ? defaultBranch
+                : (dependency.isNotEmpty
+                    ? dependency.first.branch
+                    : defaultBranch)),
+        restoreCommand: isMainProject
+            ? binding.restoreCommand
+            : binding.restoreCommand ?? _defaultRestoreCommand(inferredType),
       );
     }).toList();
   }
@@ -166,7 +181,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
       return null;
     }
     for (final project in _discoveredProjects) {
-      if (project.relativePath == normalized || project.absolutePath == normalized) {
+      if (project.relativePath == normalized ||
+          project.absolutePath == normalized) {
         return project;
       }
     }
@@ -181,7 +197,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
       if (identical(draft, excluding)) {
         return false;
       }
-      return _normalizeRepoName(draft.projectName) == _normalizeRepoName(project.name) ||
+      return _normalizeRepoName(draft.projectName) ==
+              _normalizeRepoName(project.name) ||
           draft.pathController.text.trim() == project.relativePath;
     });
   }
@@ -190,7 +207,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   MixbuildProjectType _inferProjectType(String name, String path) {
@@ -305,7 +323,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
     }
   }
 
-  void _syncBindingsWithDiscoveredProjects(List<DiscoveredGitProject> projects) {
+  void _syncBindingsWithDiscoveredProjects(
+      List<DiscoveredGitProject> projects) {
     final projectsByName = <String, DiscoveredGitProject>{
       for (final project in projects) _normalizeRepoName(project.name): project,
     };
@@ -318,20 +337,20 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
       draft.projectName = match.name;
       draft.pathController.text = match.relativePath;
       draft.type = _inferProjectType(draft.projectName, match.relativePath);
-      if (!draft.isMainProject) {
-        draft.restoreCommandController.text = _defaultRestoreCommand(draft.type);
-      }
       unawaited(_refreshBranchOptionsForDraft(draft));
     }
   }
 
   String _normalizeRepoName(String value) {
-    return value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9\u4e00-\u9fa5]+'), '');
+    return value
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9\u4e00-\u9fa5]+'), '');
   }
 
   List<String> _pathOptionsForDraft(_ProjectBindingDraft draft) {
     return <String>{
-      if (draft.pathController.text.trim().isNotEmpty) draft.pathController.text.trim(),
+      if (draft.pathController.text.trim().isNotEmpty)
+        draft.pathController.text.trim(),
       ..._discoveredProjects.map((project) => project.relativePath),
     }.toList()
       ..sort();
@@ -339,7 +358,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
 
   void _applyPathToDraft(_ProjectBindingDraft draft, String path) {
     final matchedProject = _findDiscoveredProjectByPath(path);
-    if (matchedProject != null && _isProjectSelected(matchedProject, excluding: draft)) {
+    if (matchedProject != null &&
+        _isProjectSelected(matchedProject, excluding: draft)) {
       _showSelectionMessage('项目 ${matchedProject.name} 已被选择，无需重复添加。');
       return;
     }
@@ -352,7 +372,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
       }
       draft.type = _inferProjectType(draft.projectName, path);
       if (!draft.isMainProject) {
-        draft.restoreCommandController.text = _defaultRestoreCommand(draft.type);
+        draft.restoreCommandController.text =
+            _defaultRestoreCommand(draft.type);
         _replaceScenarioDependency(
           previousName: previousName,
           nextDependency: _dependencyBranchFromDraft(draft),
@@ -374,12 +395,14 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
         path: project.relativePath,
         type: _inferProjectType(project.name, project.relativePath),
         defaultBranch: 'develop',
-        restoreCommand: _defaultRestoreCommand(_inferProjectType(project.name, project.relativePath)),
+        restoreCommand: _defaultRestoreCommand(
+            _inferProjectType(project.name, project.relativePath)),
       );
       _bindingDrafts.add(draft);
       final dependency = _dependencyBranchFromDraft(draft);
       for (final scenarioDraft in _scenarioDrafts) {
-        scenarioDraft.replaceDependency(previousName: null, nextDependency: dependency);
+        scenarioDraft.replaceDependency(
+            previousName: null, nextDependency: dependency);
       }
       unawaited(_refreshBranchOptionsForDraft(draft));
     });
@@ -476,12 +499,14 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
     setState(() {
       _draftBranchOptions[draft] = result.branches;
       _loadingBranchDrafts.remove(draft);
-      if (result.warningMessage == null || result.warningMessage!.trim().isEmpty) {
+      if (result.warningMessage == null ||
+          result.warningMessage!.trim().isEmpty) {
         _draftBranchWarnings.remove(draft);
       } else {
         _draftBranchWarnings[draft] = result.warningMessage!;
       }
-      if (draft.defaultBranchController.text.trim().isEmpty && result.branches.isNotEmpty) {
+      if (draft.defaultBranchController.text.trim().isEmpty &&
+          result.branches.isNotEmpty) {
         draft.defaultBranchController.text = result.branches.first;
       }
     });
@@ -544,7 +569,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
               : (_mainBindingDraft.defaultBranchController.text.trim().isEmpty
                   ? 'develop'
                   : _mainBindingDraft.defaultBranchController.text.trim()),
-          icon: _dependencyIconForDraft(_mainBindingDraft.type, _mainBindingDraft.projectName),
+          icon: _dependencyIconForDraft(
+              _mainBindingDraft.type, _mainBindingDraft.projectName),
           options: _branchOptionsForDraft(_mainBindingDraft),
           highlight: MixBuildPalette.tertiary,
         ),
@@ -592,7 +618,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   }
 
   ProjectEditorResult _buildResult() {
-    final bindings = _bindingDrafts.map((draft) => draft.toConfig()).toList(growable: false);
+    final bindings =
+        _bindingDrafts.map((draft) => draft.toConfig()).toList(growable: false);
     final config = widget.config.copyWith(
       workspaceRoot: _workspaceController.text.trim(),
       activeProjectName: _projectNameController.text.trim(),
@@ -601,12 +628,18 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
             (binding) => WorkspaceBinding(
               projectName: binding.projectName,
               path: binding.path,
+              type: binding.type,
+              defaultBranch: binding.defaultBranch,
+              restoreCommand: binding.restoreCommand,
             ),
           )
           .toList(growable: false),
     );
-    final scenarios = _scenarioDrafts.map((draft) => draft.toScenario()).toList(growable: false);
-    return ProjectEditorResult(config: config, bindings: bindings, scenarios: scenarios);
+    final scenarios = _scenarioDrafts
+        .map((draft) => draft.toScenario())
+        .toList(growable: false);
+    return ProjectEditorResult(
+        config: config, bindings: bindings, scenarios: scenarios);
   }
 
   @override
@@ -621,7 +654,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1280, maxHeight: 920),
+                  constraints:
+                      const BoxConstraints(maxWidth: 1280, maxHeight: 920),
                   child: Container(
                     decoration: MixBuildTheme.glassPanel(radius: 28),
                     child: Column(
@@ -630,9 +664,11 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                           padding: const EdgeInsets.fromLTRB(28, 22, 28, 18),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.03),
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                            borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(28)),
                             border: Border(
-                              bottom: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
+                              bottom: BorderSide(
+                                  color: Colors.white.withValues(alpha: 0.06)),
                             ),
                           ),
                           child: Row(
@@ -646,7 +682,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(widget.title, style: theme.textTheme.headlineMedium),
+                                    Text(widget.title,
+                                        style: theme.textTheme.headlineMedium),
                                     const SizedBox(height: 4),
                                     Text(
                                       '可视化编辑工作区、主工程绑定、依赖拓扑和构建场景矩阵',
@@ -659,7 +696,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                                 width: 260,
                                 child: TextField(
                                   controller: _projectNameController,
-                                  decoration: const InputDecoration(labelText: '工程名称'),
+                                  decoration:
+                                      const InputDecoration(labelText: '工程名称'),
                                 ),
                               ),
                             ],
@@ -682,10 +720,13 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                         Container(
                           padding: const EdgeInsets.fromLTRB(24, 18, 24, 18),
                           decoration: BoxDecoration(
-                            color: MixBuildPalette.surfaceLow.withValues(alpha: 0.52),
-                            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+                            color: MixBuildPalette.surfaceLow
+                                .withValues(alpha: 0.52),
+                            borderRadius: const BorderRadius.vertical(
+                                bottom: Radius.circular(28)),
                             border: Border(
-                              top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                              top: BorderSide(
+                                  color: Colors.white.withValues(alpha: 0.08)),
                             ),
                           ),
                           child: Row(
@@ -714,7 +755,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                               ),
                               const SizedBox(width: 12),
                               FilledButton.icon(
-                                onPressed: () => Navigator.of(context).pop(_buildResult()),
+                                onPressed: () =>
+                                    Navigator.of(context).pop(_buildResult()),
                                 icon: const Icon(Icons.save_outlined),
                                 label: Text(widget.primaryActionLabel),
                               ),
@@ -782,7 +824,9 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                     ? '输入或选择工作区后，将自动扫描根目录及子目录中的 Git 仓库；遇到无权限目录会自动跳过。'
                     : '已发现 ${_discoveredProjects.length} 个 Git 项目，可用于主工程和依赖拓扑的路径选择。'),
             style: theme.textTheme.bodySmall?.copyWith(
-              color: _scanError == null ? MixBuildPalette.muted : MixBuildPalette.warning,
+              color: _scanError == null
+                  ? MixBuildPalette.muted
+                  : MixBuildPalette.warning,
             ),
           ),
           if (_discoveredProjects.isNotEmpty) ...[
@@ -796,7 +840,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                   width: 208,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: selected ? 0.02 : 0.04),
+                    color:
+                        Colors.white.withValues(alpha: selected ? 0.02 : 0.04),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: selected
@@ -819,9 +864,13 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                           ),
                           const SizedBox(width: 8),
                           Icon(
-                            selected ? Icons.check_circle_outline : Icons.open_with,
+                            selected
+                                ? Icons.check_circle_outline
+                                : Icons.open_with,
                             size: 16,
-                            color: selected ? MixBuildPalette.primary : MixBuildPalette.muted,
+                            color: selected
+                                ? MixBuildPalette.primary
+                                : MixBuildPalette.muted,
                           ),
                         ],
                       ),
@@ -839,7 +888,9 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                       Text(
                         selected ? '已在当前配置中' : '可在下方选择添加为主工程或依赖项',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: selected ? MixBuildPalette.primary : MixBuildPalette.muted,
+                          color: selected
+                              ? MixBuildPalette.primary
+                              : MixBuildPalette.muted,
                         ),
                       ),
                     ],
@@ -891,7 +942,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                 isLoading: _loadingBranchDrafts.contains(draft),
                 warningMessage: _draftBranchWarnings[draft],
                 onSelected: (value) => _setDraftDefaultBranch(draft, value),
-                onRefresh: () => unawaited(_refreshBranchOptionsForDraft(draft)),
+                onRefresh: () =>
+                    unawaited(_refreshBranchOptionsForDraft(draft)),
               ),
             ),
           ),
@@ -930,7 +982,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
         child: FilledButton.icon(
           onPressed: null,
           icon: const Icon(Icons.add_link_outlined),
-          label: Text(_availableDiscoveredProjects.isEmpty ? '无可选依赖' : '选择添加依赖'),
+          label:
+              Text(_availableDiscoveredProjects.isEmpty ? '无可选依赖' : '选择添加依赖'),
         ),
       ),
       child: Column(
@@ -946,7 +999,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.add_link_outlined, color: MixBuildPalette.muted),
+                const Icon(Icons.add_link_outlined,
+                    color: MixBuildPalette.muted),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -964,7 +1018,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(999),
@@ -988,19 +1043,22 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
               ),
               child: Text(
                 '当前没有依赖项。通过“选择添加依赖”即可生成可编辑依赖行。',
-                style: theme.textTheme.bodyMedium?.copyWith(color: MixBuildPalette.muted),
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: MixBuildPalette.muted),
               ),
             ),
           ..._dependencyDrafts.map((draft) {
             return Padding(
-              key: ValueKey('dependency-${draft.projectName}-${draft.pathController.text}'),
+              key: ValueKey(
+                  'dependency-${draft.projectName}-${draft.pathController.text}'),
               padding: const EdgeInsets.only(bottom: 12),
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.04),
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.06)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1015,7 +1073,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
-                            _dependencyIconForDraft(draft.type, draft.projectName),
+                            _dependencyIconForDraft(
+                                draft.type, draft.projectName),
                             color: MixBuildPalette.muted,
                             size: 18,
                           ),
@@ -1046,8 +1105,10 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                             options: _branchOptionsForDraft(draft),
                             isLoading: _loadingBranchDrafts.contains(draft),
                             warningMessage: _draftBranchWarnings[draft],
-                            onSelected: (value) => _setDraftDefaultBranch(draft, value),
-                            onRefresh: () => unawaited(_refreshBranchOptionsForDraft(draft)),
+                            onSelected: (value) =>
+                                _setDraftDefaultBranch(draft, value),
+                            onRefresh: () =>
+                                unawaited(_refreshBranchOptionsForDraft(draft)),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -1107,120 +1168,124 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.08)),
                   ),
                   child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: MixBuildPalette.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          _scenarioBadge(draft.nameController.text),
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              draft.nameController.text.trim().isEmpty
-                                  ? '未命名场景'
-                                  : draft.nameController.text.trim(),
-                              style: theme.textTheme.titleMedium,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: MixBuildPalette.primary
+                                  .withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              draft.subtitle,
-                              style: theme.textTheme.bodySmall,
+                            alignment: Alignment.center,
+                            child: Text(
+                              _scenarioBadge(draft.nameController.text),
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w700),
                             ),
-                          ],
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  draft.nameController.text.trim().isEmpty
+                                      ? '未命名场景'
+                                      : draft.nameController.text.trim(),
+                                  style: theme.textTheme.titleMedium,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  draft.subtitle,
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: '编辑场景',
+                            onPressed: () => _openEditScenarioDialog(draft),
+                            icon: const Icon(Icons.edit_outlined),
+                          ),
+                          IconButton(
+                            tooltip: '删除场景',
+                            onPressed: () => _removeScenarioDraft(draft),
+                            icon: const Icon(Icons.delete_outline),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        draft.commandController.text.trim().isEmpty
+                            ? '未配置执行指令'
+                            : draft.commandController.text.trim(),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: MixBuildTheme.monoTextStyle(
+                          fontSize: 12,
+                          color: MixBuildPalette.primary,
                         ),
                       ),
-                      IconButton(
-                        tooltip: '编辑场景',
-                        onPressed: () => _openEditScenarioDialog(draft),
-                        icon: const Icon(Icons.edit_outlined),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _ScenarioMetaItem(
+                              label: '主分支',
+                              value: draft.mainBranch,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _ScenarioMetaItem(
+                              label: '输出目录',
+                              value: draft.outputController.text.trim().isEmpty
+                                  ? '未配置'
+                                  : draft.outputController.text.trim(),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _ScenarioMetaItem(
+                              label: '自动标签',
+                              value: draft.autoTag
+                                  ? (draft.tagController.text.trim().isEmpty
+                                      ? '已开启'
+                                      : draft.tagController.text.trim())
+                                  : '关闭',
+                            ),
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        tooltip: '删除场景',
-                        onPressed: () => _removeScenarioDraft(draft),
-                        icon: const Icon(Icons.delete_outline),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          TinyBadge(
+                            label: '主项目: ${draft.mainBranch}',
+                            color: MixBuildPalette.tertiary,
+                          ),
+                          ...draft.dependencies.map((dependency) {
+                            return TinyBadge(
+                              label: '${dependency.name}: ${dependency.branch}',
+                              color: dependency.highlight ??
+                                  MixBuildPalette.primary,
+                            );
+                          }),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    draft.commandController.text.trim().isEmpty
-                        ? '未配置执行指令'
-                        : draft.commandController.text.trim(),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: MixBuildTheme.monoTextStyle(
-                      fontSize: 12,
-                      color: MixBuildPalette.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ScenarioMetaItem(
-                          label: '主分支',
-                          value: draft.mainBranch,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _ScenarioMetaItem(
-                          label: '输出目录',
-                          value: draft.outputController.text.trim().isEmpty
-                              ? '未配置'
-                              : draft.outputController.text.trim(),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _ScenarioMetaItem(
-                          label: '自动标签',
-                          value: draft.autoTag
-                              ? (draft.tagController.text.trim().isEmpty
-                                  ? '已开启'
-                                  : draft.tagController.text.trim())
-                              : '关闭',
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      TinyBadge(
-                        label: '主项目: ${draft.mainBranch}',
-                        color: MixBuildPalette.tertiary,
-                      ),
-                      ...draft.dependencies.map((dependency) {
-                        return TinyBadge(
-                          label: '${dependency.name}: ${dependency.branch}',
-                          color: dependency.highlight ?? MixBuildPalette.primary,
-                        );
-                      }),
-                    ],
-                  ),
-                ],
-              ),
                 ),
               ),
             ),
@@ -1252,7 +1317,8 @@ class _ProjectBindingDraft {
     required String? restoreCommand,
   })  : pathController = TextEditingController(text: path),
         defaultBranchController = TextEditingController(text: defaultBranch),
-        restoreCommandController = TextEditingController(text: restoreCommand ?? '');
+        restoreCommandController =
+            TextEditingController(text: restoreCommand ?? '');
 
   String projectName;
   final bool isMainProject;
@@ -1327,7 +1393,8 @@ class _ScenarioDraft {
     var replaced = false;
     dependencies = dependencies.map((dependency) {
       final normalizedCurrent = dependency.name.toLowerCase();
-      final matchedPrevious = previousName != null && normalizedCurrent == previousName.toLowerCase();
+      final matchedPrevious = previousName != null &&
+          normalizedCurrent == previousName.toLowerCase();
       final matchedNext = normalizedCurrent == normalizedNext;
       if (matchedPrevious || matchedNext) {
         replaced = true;
@@ -1346,14 +1413,18 @@ class _ScenarioDraft {
 
   void removeDependency(String projectName) {
     dependencies = dependencies
-        .where((dependency) => dependency.name.toLowerCase() != projectName.toLowerCase())
+        .where((dependency) =>
+            dependency.name.toLowerCase() != projectName.toLowerCase())
         .toList(growable: false);
   }
 
   BuildScenario toScenario() {
     return original.copyWith(
-      name: nameController.text.trim().isEmpty ? original.name : nameController.text.trim(),
-      mainBranch: mainBranch.trim().isEmpty ? original.mainBranch : mainBranch.trim(),
+      name: nameController.text.trim().isEmpty
+          ? original.name
+          : nameController.text.trim(),
+      mainBranch:
+          mainBranch.trim().isEmpty ? original.mainBranch : mainBranch.trim(),
       command: commandController.text.trim(),
       dependencies: dependencies,
       outputPath: outputController.text.trim(),
@@ -1526,7 +1597,8 @@ class _PathSelectorField extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
               ),
-              child: const Icon(Icons.expand_more, color: MixBuildPalette.muted),
+              child:
+                  const Icon(Icons.expand_more, color: MixBuildPalette.muted),
             ),
           ),
         ],
@@ -1567,9 +1639,12 @@ class _BranchSelectorField extends StatelessWidget {
           children: [
             Expanded(
               child: DropdownButtonFormField<String>(
-                initialValue: normalizedOptions.contains(normalizedValue) && normalizedValue.isNotEmpty
+                initialValue: normalizedOptions.contains(normalizedValue) &&
+                        normalizedValue.isNotEmpty
                     ? normalizedValue
-                    : (normalizedOptions.isEmpty ? null : normalizedOptions.first),
+                    : (normalizedOptions.isEmpty
+                        ? null
+                        : normalizedOptions.first),
                 decoration: const InputDecoration(isDense: true),
                 items: normalizedOptions.map((item) {
                   return DropdownMenuItem<String>(
@@ -1695,14 +1770,16 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.initialScenario?.name ?? 'Production_v1');
+    _nameController = TextEditingController(
+        text: widget.initialScenario?.name ?? 'Production_v1');
     _commandController = TextEditingController(
       text: widget.initialScenario?.command ?? './gradlew assembleRelease',
     );
     _outputController = TextEditingController(
       text: widget.initialScenario?.outputPath ?? 'output_dir/',
     );
-    _tagController = TextEditingController(text: widget.initialScenario?.tagPrefix ?? 'release_');
+    _tagController = TextEditingController(
+        text: widget.initialScenario?.tagPrefix ?? 'release_');
     _autoTag = widget.initialScenario?.autoTag ?? true;
     _branches = {
       widget.mainProject.projectName:
@@ -1710,7 +1787,8 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
               ? widget.initialScenario!.mainBranch
               : widget.mainProject.initialBranch,
       for (final item in widget.dependencyDrafts)
-        item.projectName: _scenarioDependencyBranch(item.projectName) ?? item.initialBranch,
+        item.projectName:
+            _scenarioDependencyBranch(item.projectName) ?? item.initialBranch,
     };
   }
 
@@ -1749,7 +1827,8 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
                 child: Row(
                   children: [
                     const Icon(
@@ -1758,7 +1837,8 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(widget.title, style: theme.textTheme.headlineMedium),
+                      child: Text(widget.title,
+                          style: theme.textTheme.headlineMedium),
                     ),
                     IconButton(
                       onPressed: () => Navigator.of(context).pop(),
@@ -1779,12 +1859,14 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                         children: [
                           TextField(
                             controller: _nameController,
-                            decoration: const InputDecoration(labelText: '场景名称'),
+                            decoration:
+                                const InputDecoration(labelText: '场景名称'),
                           ),
                           const SizedBox(height: 12),
                           TextField(
                             controller: _commandController,
-                            decoration: const InputDecoration(labelText: '构建命令'),
+                            decoration:
+                                const InputDecoration(labelText: '构建命令'),
                             minLines: 3,
                             maxLines: 3,
                             style: MixBuildTheme.monoTextStyle(
@@ -1812,7 +1894,8 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                           children: [
                             Icon(
                               widget.mainProject.icon,
-                              color: widget.mainProject.highlight ?? MixBuildPalette.tertiary,
+                              color: widget.mainProject.highlight ??
+                                  MixBuildPalette.tertiary,
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -1823,7 +1906,8 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                             ),
                             DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
-                                value: _branches[widget.mainProject.projectName],
+                                value:
+                                    _branches[widget.mainProject.projectName],
                                 dropdownColor: MixBuildPalette.surfaceHighest,
                                 items: widget.mainProject.options.map((item) {
                                   return DropdownMenuItem<String>(
@@ -1836,7 +1920,8 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                     return;
                                   }
                                   setState(() {
-                                    _branches[widget.mainProject.projectName] = value;
+                                    _branches[widget.mainProject.projectName] =
+                                        value;
                                   });
                                 },
                               ),
@@ -1848,7 +1933,8 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                     const SizedBox(height: 24),
                     _ConfigSectionCard(
                       title: '依赖分支覆盖',
-                      subtitle: '${widget.dependencyDrafts.length} Dependencies Detected',
+                      subtitle:
+                          '${widget.dependencyDrafts.length} Dependencies Detected',
                       child: Column(
                         children: [
                           for (final dependency in widget.dependencyDrafts)
@@ -1867,7 +1953,8 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                   children: [
                                     Icon(
                                       dependency.icon,
-                                      color: dependency.highlight ?? MixBuildPalette.muted,
+                                      color: dependency.highlight ??
+                                          MixBuildPalette.muted,
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
@@ -1878,8 +1965,10 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                     ),
                                     DropdownButtonHideUnderline(
                                       child: DropdownButton<String>(
-                                        value: _branches[dependency.projectName],
-                                        dropdownColor: MixBuildPalette.surfaceHighest,
+                                        value:
+                                            _branches[dependency.projectName],
+                                        dropdownColor:
+                                            MixBuildPalette.surfaceHighest,
                                         items: dependency.options.map((item) {
                                           return DropdownMenuItem<String>(
                                             value: item,
@@ -1891,7 +1980,8 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                             return;
                                           }
                                           setState(() {
-                                            _branches[dependency.projectName] = value;
+                                            _branches[dependency.projectName] =
+                                                value;
                                           });
                                         },
                                       ),
@@ -1911,16 +2001,19 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                         children: [
                           TextField(
                             controller: _outputController,
-                            decoration: const InputDecoration(labelText: '输出路径'),
+                            decoration:
+                                const InputDecoration(labelText: '输出路径'),
                           ),
                           const SizedBox(height: 16),
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: MixBuildPalette.primary.withValues(alpha: 0.08),
+                              color: MixBuildPalette.primary
+                                  .withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(18),
                               border: Border.all(
-                                color: MixBuildPalette.primary.withValues(alpha: 0.14),
+                                color: MixBuildPalette.primary
+                                    .withValues(alpha: 0.14),
                               ),
                             ),
                             child: Column(
@@ -1929,9 +2022,12 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                   children: [
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          Text('自动打标签', style: theme.textTheme.titleMedium),
+                                          Text('自动打标签',
+                                              style:
+                                                  theme.textTheme.titleMedium),
                                           const SizedBox(height: 4),
                                           Text(
                                             '构建成功后自动应用 Git Tag',
@@ -1942,7 +2038,8 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                     ),
                                     Switch(
                                       value: _autoTag,
-                                      onChanged: (value) => setState(() => _autoTag = value),
+                                      onChanged: (value) =>
+                                          setState(() => _autoTag = value),
                                     ),
                                   ],
                                 ),
@@ -1950,7 +2047,8 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                 TextField(
                                   controller: _tagController,
                                   enabled: _autoTag,
-                                  decoration: const InputDecoration(labelText: '标签前缀'),
+                                  decoration:
+                                      const InputDecoration(labelText: '标签前缀'),
                                 ),
                               ],
                             ),
@@ -1981,29 +2079,36 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                             name: _nameController.text.trim().isEmpty
                                 ? (widget.initialScenario?.name ?? '新场景')
                                 : _nameController.text.trim(),
-                            subtitle: widget.initialScenario?.subtitle ?? '手动新增场景',
-                            environment: widget.initialScenario?.environment ?? 'custom',
-                            mainBranch: _branches[widget.mainProject.projectName] ??
-                                widget.mainProject.initialBranch,
+                            subtitle:
+                                widget.initialScenario?.subtitle ?? '手动新增场景',
+                            environment:
+                                widget.initialScenario?.environment ?? 'custom',
+                            mainBranch:
+                                _branches[widget.mainProject.projectName] ??
+                                    widget.mainProject.initialBranch,
                             command: _commandController.text.trim(),
-                            status: widget.initialScenario?.status ?? BuildStatus.idle,
+                            status: widget.initialScenario?.status ??
+                                BuildStatus.idle,
                             progress: widget.initialScenario?.progress ?? 0,
-                            logs: widget.initialScenario?.logs ?? const [
-                              LogEntry(
-                                time: '19:22:10',
-                                level: 'INIT',
-                                message: 'Scenario created and waiting for execution',
-                                accent: MixBuildPalette.primary,
-                              ),
-                            ],
+                            logs: widget.initialScenario?.logs ??
+                                const [
+                                  LogEntry(
+                                    time: '19:22:10',
+                                    level: 'INIT',
+                                    message:
+                                        'Scenario created and waiting for execution',
+                                    accent: MixBuildPalette.primary,
+                                  ),
+                                ],
                             dependencies: widget.dependencyDrafts.map((item) {
                               return DependencyBranch(
                                 name: item.projectName,
-                                branch: _branches[item.projectName] ?? item.initialBranch,
+                                branch: _branches[item.projectName] ??
+                                    item.initialBranch,
                                 icon: item.icon,
-                                isOverride:
-                                    (_branches[item.projectName] ?? item.initialBranch) !=
-                                        item.initialBranch,
+                                isOverride: (_branches[item.projectName] ??
+                                        item.initialBranch) !=
+                                    item.initialBranch,
                                 highlight: item.highlight,
                               );
                             }).toList(),
