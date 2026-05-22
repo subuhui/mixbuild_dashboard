@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'dart:ui';
 
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
@@ -54,6 +56,42 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
     );
     if (result == null) return;
     await _controller.saveCurrentYaml(result);
+  }
+
+  Future<void> _saveScenarioLogs(
+      ProjectBuild project, BuildScenario scenario) async {
+    final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
+    final fileName =
+        '${_sanitizeFileName(project.name)}-${_sanitizeFileName(scenario.name)}-$timestamp.log';
+    final location = await getSaveLocation(suggestedName: fileName);
+    if (location == null) {
+      return;
+    }
+    final lines = scenario.logs.reversed.map((log) {
+      return '[${log.time}] [${log.level}] ${log.message}';
+    }).join('\n');
+    await File(location.path).writeAsString('$lines\n');
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('完整日志已保存: ${location.path}')),
+    );
+  }
+
+  String _sanitizeFileName(String value) {
+    final buffer = StringBuffer();
+    for (final codeUnit in value.trim().codeUnits) {
+      final isDigit = codeUnit >= 48 && codeUnit <= 57;
+      final isUpperAlpha = codeUnit >= 65 && codeUnit <= 90;
+      final isLowerAlpha = codeUnit >= 97 && codeUnit <= 122;
+      final isSafeSymbol = codeUnit == 45 || codeUnit == 46 || codeUnit == 95;
+      buffer.write(isDigit || isUpperAlpha || isLowerAlpha || isSafeSymbol
+          ? String.fromCharCode(codeUnit)
+          : '_');
+    }
+    final sanitized = buffer.toString();
+    return sanitized.isEmpty ? 'mixbuild' : sanitized;
   }
 
   Future<void> _openProjectEditor(DashboardState dashboardState) async {
@@ -118,12 +156,17 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
                                 project: selectedProject,
                                 scenario: selectedScenario,
                                 onOpenYaml: _openYamlPage,
+                                onSaveLogs: () => _saveScenarioLogs(
+                                  selectedProject,
+                                  selectedScenario,
+                                ),
                               ),
                             ),
                             Positioned(
                               bottom: 36,
                               right: 36,
-                              child: _HudOverlay(metrics: dashboardState.metrics),
+                              child:
+                                  _HudOverlay(metrics: dashboardState.metrics),
                             ),
                           ],
                         ),
@@ -166,8 +209,10 @@ class _SidebarPanel extends StatelessWidget {
   final List<String> branchOptions;
   final ValueChanged<String> onBranchChanged;
   final ValueChanged<String> onScenarioChanged;
-  final void Function(String dependencyName, String branch) onDependencyBranchChanged;
-  final List<String> Function(DependencyBranch dependency) dependencyBranchOptions;
+  final void Function(String dependencyName, String branch)
+      onDependencyBranchChanged;
+  final List<String> Function(DependencyBranch dependency)
+      dependencyBranchOptions;
   final bool cleanBeforeBuild;
   final ValueChanged<bool> onCleanChanged;
   final VoidCallback onTrigger;
@@ -213,11 +258,13 @@ class _SidebarPanel extends StatelessWidget {
                       const SizedBox(height: 8),
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.24),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                          border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.06)),
                         ),
                         child: Text(
                           scenario.mainBranch,
@@ -293,7 +340,7 @@ class _SidebarHeader extends StatelessWidget {
                 color: MixBuildPalette.primary.withValues(alpha: 0.3),
               ),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.terminal,
               color: MixBuildPalette.primary,
               size: 18,
@@ -320,7 +367,7 @@ class _SidebarHeader extends StatelessWidget {
           ),
           IconButton(
             onPressed: onOpenSettings,
-            icon: const Icon(
+            icon: Icon(
               Icons.settings_outlined,
               size: 20,
               color: MixBuildPalette.muted,
@@ -358,8 +405,8 @@ class _SidebarSectionLabel extends StatelessWidget {
           const Spacer(),
           Text(
             trailing!,
-            style:
-                MixBuildTheme.monoTextStyle(fontSize: 10, color: MixBuildPalette.muted),
+            style: MixBuildTheme.monoTextStyle(
+                fontSize: 10, color: MixBuildPalette.muted),
           ),
         ],
       ],
@@ -384,7 +431,7 @@ class _WorkspaceChip extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.account_tree_outlined,
             color: MixBuildPalette.primary,
             size: 20,
@@ -402,7 +449,7 @@ class _WorkspaceChip extends StatelessWidget {
           Container(
             width: 6,
             height: 6,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: MixBuildPalette.success,
               shape: BoxShape.circle,
             ),
@@ -445,7 +492,7 @@ class _ScenarioCard extends StatelessWidget {
                   color: MixBuildPalette.warning.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.rocket_launch_outlined,
                   color: MixBuildPalette.warning,
                   size: 20,
@@ -510,8 +557,10 @@ class _DependencyTree extends StatelessWidget {
 
   final ProjectBuild project;
   final BuildScenario scenario;
-  final void Function(String dependencyName, String branch) onDependencyBranchChanged;
-  final List<String> Function(DependencyBranch dependency) dependencyBranchOptions;
+  final void Function(String dependencyName, String branch)
+      onDependencyBranchChanged;
+  final List<String> Function(DependencyBranch dependency)
+      dependencyBranchOptions;
 
   @override
   Widget build(BuildContext context) {
@@ -529,7 +578,7 @@ class _DependencyTree extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.hub_outlined,
                   color: MixBuildPalette.primary,
                   size: 16,
@@ -653,11 +702,13 @@ class _DependencyTreeNode extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: _nodeColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: _nodeColor.withValues(alpha: 0.2)),
+                      border:
+                          Border.all(color: _nodeColor.withValues(alpha: 0.2)),
                     ),
                     child: Text(
                       dependency.isOverride ? '覆写' : '默认',
@@ -672,11 +723,13 @@ class _DependencyTreeNode extends StatelessWidget {
               const SizedBox(height: 6),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.24),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.06)),
                 ),
                 child: Text(
                   dependency.branch,
@@ -871,8 +924,7 @@ class _PipelineHeader extends StatelessWidget {
           OutlinedButton(
             onPressed: () {},
             style: OutlinedButton.styleFrom(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
               visualDensity: VisualDensity.compact,
               minimumSize: const Size(0, 36),
             ),
@@ -895,8 +947,9 @@ class _PipelineHeader extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color:
-                active ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
+            color: active
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -905,7 +958,8 @@ class _PipelineHeader extends StatelessWidget {
               fontSize: 11,
               color: active
                   ? Colors.white
-                  : MixBuildPalette.muted.withValues(alpha: dimmed ? 0.45 : 1.0),
+                  : MixBuildPalette.muted
+                      .withValues(alpha: dimmed ? 0.45 : 1.0),
             ).copyWith(fontWeight: FontWeight.w700),
           ),
         ),
@@ -933,11 +987,13 @@ class _TerminalPanel extends StatelessWidget {
     required this.project,
     required this.scenario,
     required this.onOpenYaml,
+    required this.onSaveLogs,
   });
 
   final ProjectBuild project;
   final BuildScenario scenario;
   final VoidCallback onOpenYaml;
+  final VoidCallback onSaveLogs;
 
   @override
   Widget build(BuildContext context) {
@@ -959,19 +1015,18 @@ class _TerminalPanel extends StatelessWidget {
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(20)),
               border: Border(
-                bottom:
-                    BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
               ),
             ),
             child: Row(
               children: [
-                const MacDot(color: MixBuildPalette.error),
+                MacDot(color: MixBuildPalette.error),
                 const SizedBox(width: 6),
-                const MacDot(color: MixBuildPalette.warning),
+                MacDot(color: MixBuildPalette.warning),
                 const SizedBox(width: 6),
-                const MacDot(color: MixBuildPalette.primary),
+                MacDot(color: MixBuildPalette.primary),
                 const SizedBox(width: 16),
-                const Icon(Icons.terminal, size: 14, color: MixBuildPalette.muted),
+                Icon(Icons.terminal, size: 14, color: MixBuildPalette.muted),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
@@ -983,21 +1038,27 @@ class _TerminalPanel extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Icon(Icons.search, size: 18, color: MixBuildPalette.muted),
+                Icon(Icons.search, size: 18, color: MixBuildPalette.muted),
                 const SizedBox(width: 10),
                 IconButton(
                   onPressed: onOpenYaml,
                   icon: const Icon(Icons.data_object_outlined, size: 18),
                   color: MixBuildPalette.muted,
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                  constraints:
+                      const BoxConstraints(minWidth: 28, minHeight: 28),
                   tooltip: '编辑 YAML',
                 ),
                 const SizedBox(width: 8),
-                const Icon(
-                  Icons.download_outlined,
-                  size: 18,
+                IconButton(
+                  onPressed: scenario.logs.isEmpty ? null : onSaveLogs,
+                  icon: const Icon(Icons.download_outlined, size: 18),
                   color: MixBuildPalette.muted,
+                  disabledColor: MixBuildPalette.muted.withValues(alpha: 0.28),
+                  padding: EdgeInsets.zero,
+                  constraints:
+                      const BoxConstraints(minWidth: 28, minHeight: 28),
+                  tooltip: '保存完整日志',
                 ),
               ],
             ),
@@ -1157,7 +1218,7 @@ class _HudOverlay extends StatelessWidget {
                 ),
                 const SizedBox(width: 16),
               ],
-              const Icon(
+              Icon(
                 Icons.cloud_done_outlined,
                 size: 18,
                 color: MixBuildPalette.primary,
@@ -1235,4 +1296,3 @@ class _HudMetric extends StatelessWidget {
     );
   }
 }
-

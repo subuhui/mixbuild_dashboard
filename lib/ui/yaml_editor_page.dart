@@ -60,7 +60,8 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 760, maxHeight: 760),
+                  constraints:
+                      const BoxConstraints(maxWidth: 760, maxHeight: 760),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(24),
                     child: Container(
@@ -68,24 +69,29 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                       child: Column(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 16),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.03),
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                              borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(24)),
                               border: Border(
-                                bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                                bottom: BorderSide(
+                                    color:
+                                        Colors.white.withValues(alpha: 0.08)),
                               ),
                             ),
                             child: Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.data_object_outlined,
                                   color: MixBuildPalette.muted,
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         widget.title,
@@ -114,12 +120,15 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                                 children: [
                                   Container(
                                     width: 52,
-                                    padding: const EdgeInsets.only(top: 16, right: 10),
+                                    padding: const EdgeInsets.only(
+                                        top: 16, right: 10),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.12),
+                                      color:
+                                          Colors.black.withValues(alpha: 0.12),
                                       border: Border(
                                         right: BorderSide(
-                                          color: Colors.white.withValues(alpha: 0.04),
+                                          color: Colors.white
+                                              .withValues(alpha: 0.04),
                                         ),
                                       ),
                                     ),
@@ -127,13 +136,15 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                                       itemCount: lineCount,
                                       itemBuilder: (context, index) {
                                         return Padding(
-                                          padding: const EdgeInsets.only(bottom: 6),
+                                          padding:
+                                              const EdgeInsets.only(bottom: 6),
                                           child: Text(
                                             '${index + 1}',
                                             textAlign: TextAlign.right,
                                             style: MixBuildTheme.monoTextStyle(
                                               fontSize: 12,
-                                              color: Colors.white.withValues(alpha: 0.28),
+                                              color: Colors.white
+                                                  .withValues(alpha: 0.28),
                                             ),
                                           ),
                                         );
@@ -142,16 +153,20 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                                   ),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Container(
                                           width: double.infinity,
-                                          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                                          padding: const EdgeInsets.fromLTRB(
+                                              16, 10, 16, 10),
                                           decoration: BoxDecoration(
-                                            color: Colors.white.withValues(alpha: 0.03),
+                                            color: Colors.white
+                                                .withValues(alpha: 0.03),
                                             border: Border(
                                               bottom: BorderSide(
-                                                color: Colors.white.withValues(alpha: 0.05),
+                                                color: Colors.white
+                                                    .withValues(alpha: 0.05),
                                               ),
                                             ),
                                           ),
@@ -159,7 +174,8 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                                             children: [
                                               Text(
                                                 'mixbuild.config.yaml',
-                                                style: MixBuildTheme.monoTextStyle(
+                                                style:
+                                                    MixBuildTheme.monoTextStyle(
                                                   fontSize: 11,
                                                   color: MixBuildPalette.muted,
                                                 ),
@@ -168,7 +184,8 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                                               Icon(
                                                 Icons.content_copy_outlined,
                                                 size: 16,
-                                                color: MixBuildPalette.muted.withValues(alpha: 0.8),
+                                                color: MixBuildPalette.muted
+                                                    .withValues(alpha: 0.8),
                                               ),
                                             ],
                                           ),
@@ -179,7 +196,8 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                                             expands: true,
                                             maxLines: null,
                                             minLines: null,
-                                            keyboardType: TextInputType.multiline,
+                                            keyboardType:
+                                                TextInputType.multiline,
                                             style: MixBuildTheme.monoTextStyle(
                                               fontSize: 13,
                                               color: Colors.white,
@@ -187,7 +205,8 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                                             ),
                                             decoration: const InputDecoration(
                                               border: InputBorder.none,
-                                              contentPadding: EdgeInsets.all(16),
+                                              contentPadding:
+                                                  EdgeInsets.all(16),
                                             ),
                                           ),
                                         ),
@@ -199,11 +218,14 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 16),
                             decoration: BoxDecoration(
                               color: Colors.black.withValues(alpha: 0.12),
                               border: Border(
-                                top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                                top: BorderSide(
+                                    color:
+                                        Colors.white.withValues(alpha: 0.08)),
                               ),
                             ),
                             child: Row(
@@ -220,7 +242,8 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                                 ),
                                 const SizedBox(width: 12),
                                 FilledButton(
-                                  onPressed: () => Navigator.of(context).pop(_controller.text),
+                                  onPressed: () => Navigator.of(context)
+                                      .pop(_controller.text),
                                   child: const Text('Save Configuration'),
                                 ),
                               ],

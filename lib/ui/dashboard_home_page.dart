@@ -174,7 +174,10 @@ class DashboardHomePage extends ConsumerWidget {
                                 ),
                               ),
                             ),
-                            DashboardFooterBar(metrics: dashboardState.metrics),
+                            DashboardFooterBar(
+                              metrics: dashboardState.metrics,
+                              projects: dashboardState.projects,
+                            ),
                           ],
                         ),
                       ),
@@ -276,7 +279,7 @@ class _DashboardNavRail extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   child: Row(
                     children: [
-                      const Icon(Icons.help_outline,
+                      Icon(Icons.help_outline,
                           size: 16, color: MixBuildPalette.muted),
                       const SizedBox(width: 10),
                       Text('Support', style: theme.textTheme.bodySmall),
@@ -288,7 +291,7 @@ class _DashboardNavRail extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   child: Row(
                     children: [
-                      const Icon(Icons.description_outlined,
+                      Icon(Icons.description_outlined,
                           size: 16, color: MixBuildPalette.muted),
                       const SizedBox(width: 10),
                       Text('Docs', style: theme.textTheme.bodySmall),
@@ -413,6 +416,16 @@ class ProjectOverviewCard extends StatelessWidget {
                   onPressed: onEdit,
                   icon: const Icon(Icons.edit_outlined, size: 18),
                   label: const Text('编辑'),
+                  style: FilledButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor:
+                        MixBuildPalette.primary.withValues(alpha: 0.14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -472,25 +485,13 @@ class _ScenarioPreviewTile extends StatelessWidget {
                   ? scenario.status.color.withValues(alpha: 0.1)
                   : Colors.white.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(18),
-          border: Border(
-            left: isActive
-                ? BorderSide(color: scenario.status.color, width: 2)
-                : BorderSide.none,
-            top: BorderSide(
-              color: selected && !isActive
-                  ? scenario.status.color.withValues(alpha: 0.24)
-                  : Colors.white.withValues(alpha: 0.06),
-            ),
-            right: BorderSide(
-              color: selected && !isActive
-                  ? scenario.status.color.withValues(alpha: 0.24)
-                  : Colors.white.withValues(alpha: 0.06),
-            ),
-            bottom: BorderSide(
-              color: selected && !isActive
-                  ? scenario.status.color.withValues(alpha: 0.24)
-                  : Colors.white.withValues(alpha: 0.06),
-            ),
+          border: Border.all(
+            color: isActive
+                ? scenario.status.color.withValues(alpha: 0.32)
+                : selected
+                    ? scenario.status.color.withValues(alpha: 0.24)
+                    : Colors.white.withValues(alpha: 0.06),
+            width: isActive ? 1.5 : 1,
           ),
         ),
         child: Column(

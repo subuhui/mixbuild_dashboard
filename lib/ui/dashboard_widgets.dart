@@ -107,12 +107,15 @@ class DashboardTopBar extends StatelessWidget {
                           const SizedBox(width: 14),
                           Flexible(
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
-                                color: MixBuildPalette.primary.withValues(alpha: 0.08),
+                                color: MixBuildPalette.primary
+                                    .withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(999),
                                 border: Border.all(
-                                  color: MixBuildPalette.primary.withValues(alpha: 0.15),
+                                  color: MixBuildPalette.primary
+                                      .withValues(alpha: 0.15),
                                 ),
                               ),
                               child: Row(
@@ -121,7 +124,7 @@ class DashboardTopBar extends StatelessWidget {
                                   Container(
                                     width: 8,
                                     height: 8,
-                                    decoration: const BoxDecoration(
+                                    decoration: BoxDecoration(
                                       color: MixBuildPalette.primary,
                                       shape: BoxShape.circle,
                                     ),
@@ -131,7 +134,8 @@ class DashboardTopBar extends StatelessWidget {
                                     child: Text(
                                       'Parallel Running: $runningCount',
                                       overflow: TextOverflow.ellipsis,
-                                      style: theme.textTheme.bodySmall?.copyWith(
+                                      style:
+                                          theme.textTheme.bodySmall?.copyWith(
                                         color: MixBuildPalette.foreground,
                                       ),
                                     ),
@@ -207,7 +211,8 @@ class DashboardTopBar extends StatelessWidget {
                       icon: const Icon(Icons.settings_outlined, size: 18),
                       label: const Text('Global Config'),
                       style: FilledButton.styleFrom(
-                        backgroundColor: MixBuildPalette.primary.withValues(alpha: 0.12),
+                        backgroundColor:
+                            MixBuildPalette.primary.withValues(alpha: 0.12),
                         foregroundColor: MixBuildPalette.primary,
                       ),
                     ),
@@ -243,8 +248,10 @@ class DashboardSideBar extends StatelessWidget {
   final List<String> branchOptions;
   final ValueChanged<String> onBranchChanged;
   final ValueChanged<String> onScenarioChanged;
-  final void Function(String dependencyName, String branch) onDependencyBranchChanged;
-  final List<String> Function(DependencyBranch dependency) dependencyBranchOptions;
+  final void Function(String dependencyName, String branch)
+      onDependencyBranchChanged;
+  final List<String> Function(DependencyBranch dependency)
+      dependencyBranchOptions;
   final ValueChanged<bool> onCleanChanged;
   final VoidCallback onTrigger;
   final VoidCallback onStop;
@@ -292,7 +299,8 @@ class DashboardSideBar extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(project.name, style: theme.textTheme.titleMedium),
+                            Text(project.name,
+                                style: theme.textTheme.titleMedium),
                             const SizedBox(height: 4),
                             Text(
                               project.description,
@@ -363,7 +371,8 @@ class DashboardSideBar extends StatelessWidget {
                           Icon(
                             dependency.icon,
                             size: 16,
-                            color: dependency.highlight ?? MixBuildPalette.muted,
+                            color:
+                                dependency.highlight ?? MixBuildPalette.muted,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -379,14 +388,16 @@ class DashboardSideBar extends StatelessWidget {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: (dependency.highlight ?? MixBuildPalette.primary)
+                                color: (dependency.highlight ??
+                                        MixBuildPalette.primary)
                                     .withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(999),
                               ),
                               child: Text(
                                 'Override',
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: dependency.highlight ?? MixBuildPalette.primary,
+                                  color: dependency.highlight ??
+                                      MixBuildPalette.primary,
                                 ),
                               ),
                             ),
@@ -401,7 +412,8 @@ class DashboardSideBar extends StatelessWidget {
                             ? null
                             : (value) {
                                 if (value != null) {
-                                  onDependencyBranchChanged(dependency.name, value);
+                                  onDependencyBranchChanged(
+                                      dependency.name, value);
                                 }
                               },
                         items: dependencyBranchOptions(dependency)
@@ -557,7 +569,8 @@ class ScenarioInspectorPanel extends StatelessWidget {
               children: BuildStatus.values.map((status) {
                 final active = status == scenario.status;
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: active
                         ? Colors.white.withValues(alpha: 0.1)
@@ -623,12 +636,12 @@ class ScenarioInspectorPanel extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          const Row(
+                          Row(
                             children: [
                               MacDot(color: MixBuildPalette.error),
-                              SizedBox(width: 6),
+                              const SizedBox(width: 6),
                               MacDot(color: MixBuildPalette.warning),
-                              SizedBox(width: 6),
+                              const SizedBox(width: 6),
                               MacDot(color: MixBuildPalette.primary),
                             ],
                           ),
@@ -643,13 +656,13 @@ class ScenarioInspectorPanel extends StatelessWidget {
                               ),
                             ),
                           ),
-                          const Icon(
+                          Icon(
                             Icons.search,
                             size: 18,
                             color: MixBuildPalette.muted,
                           ),
                           const SizedBox(width: 10),
-                          const Icon(
+                          Icon(
                             Icons.download_outlined,
                             size: 18,
                             color: MixBuildPalette.muted,
@@ -726,7 +739,8 @@ class ScenarioInspectorPanel extends StatelessWidget {
                                 : scenario.progress,
                             minHeight: 6,
                             borderRadius: BorderRadius.circular(999),
-                            backgroundColor: Colors.white.withValues(alpha: 0.05),
+                            backgroundColor:
+                                Colors.white.withValues(alpha: 0.05),
                             valueColor: AlwaysStoppedAnimation<Color>(
                               scenario.status.color,
                             ),
@@ -772,7 +786,8 @@ class ScenarioInspectorPanel extends StatelessWidget {
                             Icon(
                               dependency.icon,
                               size: 18,
-                              color: dependency.highlight ?? MixBuildPalette.muted,
+                              color:
+                                  dependency.highlight ?? MixBuildPalette.muted,
                             ),
                             const SizedBox(width: 10),
                             Expanded(
@@ -792,7 +807,8 @@ class ScenarioInspectorPanel extends StatelessWidget {
                                     .withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(999),
                                 border: Border.all(
-                                  color: (dependency.highlight ?? MixBuildPalette.muted)
+                                  color: (dependency.highlight ??
+                                          MixBuildPalette.muted)
                                       .withValues(alpha: 0.18),
                                 ),
                               ),
@@ -819,13 +835,44 @@ class ScenarioInspectorPanel extends StatelessWidget {
 }
 
 class DashboardFooterBar extends StatelessWidget {
-  const DashboardFooterBar({super.key, required this.metrics});
+  const DashboardFooterBar({
+    super.key,
+    required this.metrics,
+    required this.projects,
+  });
 
   final List<ResourceMetric> metrics;
+  final List<ProjectBuild> projects;
+
+  _SystemRuntimeStatus get _systemStatus {
+    final scenarios = projects.expand((project) => project.scenarios).toList();
+    final running =
+        scenarios.where((scenario) => scenario.status.isPipelineActive).length;
+    final failed = scenarios
+        .where((scenario) => scenario.status == BuildStatus.failed)
+        .length;
+    if (running > 0) {
+      return _SystemRuntimeStatus(
+        label: running == 1 ? 'Running' : 'Running $running',
+        color: MixBuildPalette.warning,
+      );
+    }
+    if (failed > 0) {
+      return _SystemRuntimeStatus(
+        label: failed == 1 ? 'Failed' : 'Failed $failed',
+        color: MixBuildPalette.error,
+      );
+    }
+    return _SystemRuntimeStatus(
+      label: 'Ready',
+      color: MixBuildPalette.primary,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final systemStatus = _systemStatus;
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
       child: BackdropFilter(
@@ -851,16 +898,16 @@ class DashboardFooterBar extends StatelessWidget {
                   Container(
                     width: 8,
                     height: 8,
-                    decoration: const BoxDecoration(
-                      color: MixBuildPalette.primary,
+                    decoration: BoxDecoration(
+                      color: systemStatus.color,
                       shape: BoxShape.circle,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Connected',
+                    systemStatus.label,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: MixBuildPalette.primary,
+                      color: systemStatus.color,
                     ),
                   ),
                 ],
@@ -871,6 +918,16 @@ class DashboardFooterBar extends StatelessWidget {
       ),
     );
   }
+}
+
+class _SystemRuntimeStatus {
+  const _SystemRuntimeStatus({
+    required this.label,
+    required this.color,
+  });
+
+  final String label;
+  final Color color;
 }
 
 class DashboardMetricBar extends StatelessWidget {
@@ -930,7 +987,8 @@ class TinyBadge extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
+            style:
+                Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
           ),
         ],
       ),

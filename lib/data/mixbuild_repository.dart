@@ -24,12 +24,19 @@ class MixBuildRepository {
             outputPath: 'build/app/outputs/flutter-apk/',
             autoTag: false,
             tagPrefix: 'debug_',
-            yamlOverride: 'dependencies:\n  analytics_sdk:\n    branch: develop\n',
-            dependencies: const [
-              DependencyBranch(name: 'common_ui', branch: 'develop', icon: Icons.layers_outlined),
-              DependencyBranch(name: 'net_bridge', branch: 'master', icon: Icons.hub_outlined),
+            yamlOverride:
+                'dependencies:\n  analytics_sdk:\n    branch: develop\n',
+            dependencies: [
+              DependencyBranch(
+                  name: 'common_ui',
+                  branch: 'develop',
+                  icon: Icons.layers_outlined),
+              DependencyBranch(
+                  name: 'net_bridge',
+                  branch: 'master',
+                  icon: Icons.hub_outlined),
             ],
-            logs: const [
+            logs: [
               LogEntry(
                 time: '14:30:05',
                 level: 'INIT',
@@ -56,9 +63,13 @@ class MixBuildRepository {
             outputPath: 'output/releases/ios/',
             autoTag: true,
             tagPrefix: 'release_',
-            yamlOverride: 'dependencies:\n  react:\n    env:\n      NODE_ENV: production\n',
-            dependencies: const [
-              DependencyBranch(name: 'common_ui', branch: 'release/3.1', icon: Icons.layers_outlined),
+            yamlOverride:
+                'dependencies:\n  react:\n    env:\n      NODE_ENV: production\n',
+            dependencies: [
+              DependencyBranch(
+                  name: 'common_ui',
+                  branch: 'release/3.1',
+                  icon: Icons.layers_outlined),
               DependencyBranch(
                 name: 'analytics_sdk',
                 branch: 'feature/perf',
@@ -66,9 +77,12 @@ class MixBuildRepository {
                 isOverride: true,
                 highlight: MixBuildPalette.warning,
               ),
-              DependencyBranch(name: 'net_bridge', branch: 'master', icon: Icons.hub_outlined),
+              DependencyBranch(
+                  name: 'net_bridge',
+                  branch: 'master',
+                  icon: Icons.hub_outlined),
             ],
-            logs: const [
+            logs: [
               LogEntry(
                 time: '17:50:56',
                 level: 'INFO',
@@ -78,19 +92,22 @@ class MixBuildRepository {
               LogEntry(
                 time: '17:51:05',
                 level: 'INFO',
-                message: 'common_ui restored successfully. Waiting for analytics_sdk',
+                message:
+                    'common_ui restored successfully. Waiting for analytics_sdk',
                 accent: MixBuildPalette.warning,
               ),
               LogEntry(
                 time: '17:51:11',
                 level: 'WARN',
-                message: 'analytics_sdk missing same-name branch, fallback to default_branch',
+                message:
+                    'analytics_sdk missing same-name branch, fallback to default_branch',
                 accent: MixBuildPalette.warning,
               ),
               LogEntry(
                 time: '17:51:38',
                 level: 'INFO',
-                message: 'Restore queue remains serial to avoid cache lock conflicts.',
+                message:
+                    'Restore queue remains serial to avoid cache lock conflicts.',
                 accent: MixBuildPalette.warning,
               ),
             ],
@@ -116,7 +133,7 @@ class MixBuildRepository {
             outputPath: 'output/qa/',
             autoTag: false,
             tagPrefix: 'qa_',
-            dependencies: const [
+            dependencies: [
               DependencyBranch(
                 name: 'react',
                 branch: 'feature/v18-support',
@@ -130,9 +147,12 @@ class MixBuildRepository {
                 isOverride: true,
                 highlight: MixBuildPalette.error,
               ),
-              DependencyBranch(name: 'terser-webpack', branch: '跟随', icon: Icons.compress_outlined),
+              DependencyBranch(
+                  name: 'terser-webpack',
+                  branch: '跟随',
+                  icon: Icons.compress_outlined),
             ],
-            logs: const [
+            logs: [
               LogEntry(
                 time: '17:51:02',
                 level: 'INFO',
@@ -142,13 +162,15 @@ class MixBuildRepository {
               LogEntry(
                 time: '17:51:08',
                 level: 'INFO',
-                message: 'Dependency graph diff completed, 2 overrides detected',
+                message:
+                    'Dependency graph diff completed, 2 overrides detected',
                 accent: MixBuildPalette.tertiary,
               ),
               LogEntry(
                 time: '17:51:20',
                 level: 'WARN',
-                message: 'webpack branch missing remotely, fallback to default_branch=main',
+                message:
+                    'webpack branch missing remotely, fallback to default_branch=main',
                 accent: MixBuildPalette.warning,
               ),
             ],
@@ -165,7 +187,7 @@ class MixBuildRepository {
             outputPath: 'output/hotfix/',
             autoTag: true,
             tagPrefix: 'hotfix_',
-            dependencies: const [
+            dependencies: [
               DependencyBranch(
                 name: 'common_ui',
                 branch: 'hotfix/button-alignment',
@@ -174,11 +196,12 @@ class MixBuildRepository {
                 highlight: MixBuildPalette.primary,
               ),
             ],
-            logs: const [
+            logs: [
               LogEntry(
                 time: '13:18:20',
                 level: 'ERROR',
-                message: 'Pre-flight failed: required tool `fvm` was not found in PATH',
+                message:
+                    'Pre-flight failed: required tool `fvm` was not found in PATH',
                 accent: MixBuildPalette.error,
               ),
             ],
@@ -189,10 +212,22 @@ class MixBuildRepository {
   }
 
   static List<ResourceMetric> metrics() {
-    return const [
-      ResourceMetric(label: 'CPU', value: '12%', progress: 0.12, color: MixBuildPalette.tertiary),
-      ResourceMetric(label: 'MEM', value: '4.2GB', progress: 0.35, color: MixBuildPalette.warning),
-      ResourceMetric(label: 'Queue', value: '3 Jobs', progress: 0.58, color: MixBuildPalette.primary),
+    return [
+      ResourceMetric(
+          label: 'CPU',
+          value: '12%',
+          progress: 0.12,
+          color: MixBuildPalette.tertiary),
+      ResourceMetric(
+          label: 'MEM',
+          value: '4.2GB',
+          progress: 0.35,
+          color: MixBuildPalette.warning),
+      ResourceMetric(
+          label: 'Queue',
+          value: '3 Jobs',
+          progress: 0.58,
+          color: MixBuildPalette.primary),
     ];
   }
 
@@ -203,8 +238,10 @@ class MixBuildRepository {
       bindings: [
         WorkspaceBinding(projectName: 'MainRunner', path: './core/app'),
         WorkspaceBinding(projectName: 'GatewayShell', path: './modules/shared'),
-        WorkspaceBinding(projectName: 'BuildScripts', path: './tooling/build_scripts'),
-        WorkspaceBinding(projectName: 'ArtifactStore', path: './infra/artifacts'),
+        WorkspaceBinding(
+            projectName: 'BuildScripts', path: './tooling/build_scripts'),
+        WorkspaceBinding(
+            projectName: 'ArtifactStore', path: './infra/artifacts'),
       ],
     );
   }

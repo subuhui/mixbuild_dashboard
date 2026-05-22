@@ -509,7 +509,7 @@ class DashboardController extends Notifier<DashboardState> {
               accent: MixBuildPalette.tertiary,
             ),
           ...current.logs,
-        ].take(8).toList(growable: false),
+        ].toList(growable: false),
       ),
     );
 
@@ -536,8 +536,7 @@ class DashboardController extends Notifier<DashboardState> {
                 projectId: project.id,
                 scenarioId: scenario.id,
                 transform: (current) => current.copyWith(
-                  logs:
-                      [entry, ...current.logs].take(12).toList(growable: false),
+                  logs: [entry, ...current.logs].toList(growable: false),
                 ),
               );
             },
@@ -560,7 +559,7 @@ class DashboardController extends Notifier<DashboardState> {
               accent: MixBuildPalette.error,
             ),
             ...current.logs,
-          ].take(12).toList(growable: false),
+          ].toList(growable: false),
         ),
       );
       state = state.copyWith(lastError: '$error');
@@ -586,7 +585,7 @@ class DashboardController extends Notifier<DashboardState> {
             accent: MixBuildPalette.error,
           ),
           ...current.logs,
-        ].take(12).toList(growable: false),
+        ].toList(growable: false),
       ),
     );
   }

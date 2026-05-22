@@ -25,19 +25,22 @@ abstract class MixbuildCommandRunner {
     String command, {
     required String workingDirectory,
     Map<String, String>? environment,
+    void Function(String line)? onStdout,
+    void Function(String line)? onStderr,
   });
   Future<CommandRunResult> runProcess(
     String executable,
     List<String> arguments, {
     required String workingDirectory,
     Map<String, String>? environment,
+    void Function(String line)? onStdout,
+    void Function(String line)? onStderr,
   });
   Future<void> openPath(String path);
   bool killActive([ProcessSignal signal = ProcessSignal.sigkill]);
 }
 
 class ProcessRunCommandRunner implements MixbuildCommandRunner {
-  Shell? _activeShell;
   Process? _activeProcess;
 
   @override
@@ -47,7 +50,10 @@ class ProcessRunCommandRunner implements MixbuildCommandRunner {
       return resolved;
     }
     if (Platform.isMacOS && command == 'git') {
-      for (final candidate in const <String>['/opt/homebrew/bin/git', '/usr/bin/git']) {
+      for (final candidate in const <String>[
+        '/opt/homebrew/bin/git',
+        '/usr/bin/git'
+      ]) {
         if (File(candidate).existsSync()) {
           return candidate;
         }
@@ -61,31 +67,55 @@ class ProcessRunCommandRunner implements MixbuildCommandRunner {
     String command, {
     required String workingDirectory,
     Map<String, String>? environment,
+    void Function(String line)? onStdout,
+    void Function(String line)? onStderr,
   }) async {
-    final shell = Shell(
-      workingDirectory: workingDirectory,
-      environment: environment,
-      throwOnError: false,
-      verbose: false,
-      commandVerbose: false,
-      commentVerbose: false,
-      stdoutEncoding: utf8,
-      stderrEncoding: utf8,
-    );
-    _activeShell = shell;
+    final shellExecutable = Platform.isWindows ? 'cmd' : '/bin/zsh';
+    final shellArguments =
+        Platform.isWindows ? <String>['/c', command] : <String>['-lc', command];
+    Process? process;
     try {
-      final results = await shell.run(command);
-      final lastResult = results.last;
+      process = await Process.start(
+        shellExecutable,
+        shellArguments,
+        workingDirectory: workingDirectory,
+        environment: environment,
+        includeParentEnvironment: true,
+        runInShell: false,
+      );
+      _activeProcess = process;
+      final stdoutBuffer = StringBuffer();
+      final stderrBuffer = StringBuffer();
+      final stdoutFuture = _collectStream(
+        process.stdout,
+        stdoutBuffer,
+        onLine: onStdout,
+      );
+      final stderrFuture = _collectStream(
+        process.stderr,
+        stderrBuffer,
+        onLine: onStderr,
+      );
+      final exitCode = await process.exitCode;
+      await Future.wait(<Future<void>>[stdoutFuture, stderrFuture]);
       return CommandRunResult(
         command: command,
         workingDirectory: workingDirectory,
-        exitCode: lastResult.exitCode,
-        stdout: '${lastResult.stdout ?? ''}',
-        stderr: '${lastResult.stderr ?? ''}',
+        exitCode: exitCode,
+        stdout: stdoutBuffer.toString(),
+        stderr: stderrBuffer.toString(),
+      );
+    } on ProcessException catch (error) {
+      return CommandRunResult(
+        command: command,
+        workingDirectory: workingDirectory,
+        exitCode: -1,
+        stdout: '',
+        stderr: error.toString(),
       );
     } finally {
-      if (identical(_activeShell, shell)) {
-        _activeShell = null;
+      if (identical(_activeProcess, process)) {
+        _activeProcess = null;
       }
     }
   }
@@ -96,6 +126,8 @@ class ProcessRunCommandRunner implements MixbuildCommandRunner {
     List<String> arguments, {
     required String workingDirectory,
     Map<String, String>? environment,
+    void Function(String line)? onStdout,
+    void Function(String line)? onStderr,
   }) async {
     Process? process;
     try {
@@ -108,17 +140,26 @@ class ProcessRunCommandRunner implements MixbuildCommandRunner {
         runInShell: false,
       );
       _activeProcess = process;
-      final stdoutFuture = process.stdout.transform(utf8.decoder).join();
-      final stderrFuture = process.stderr.transform(utf8.decoder).join();
+      final stdoutBuffer = StringBuffer();
+      final stderrBuffer = StringBuffer();
+      final stdoutFuture = _collectStream(
+        process.stdout,
+        stdoutBuffer,
+        onLine: onStdout,
+      );
+      final stderrFuture = _collectStream(
+        process.stderr,
+        stderrBuffer,
+        onLine: onStderr,
+      );
       final exitCode = await process.exitCode;
-      final stdout = await stdoutFuture;
-      final stderr = await stderrFuture;
+      await Future.wait(<Future<void>>[stdoutFuture, stderrFuture]);
       return CommandRunResult(
         command: _formatCommand(executable, arguments),
         workingDirectory: workingDirectory,
         exitCode: exitCode,
-        stdout: stdout,
-        stderr: stderr,
+        stdout: stdoutBuffer.toString(),
+        stderr: stderrBuffer.toString(),
       );
     } on ProcessException catch (error) {
       return CommandRunResult(
@@ -154,12 +195,6 @@ class ProcessRunCommandRunner implements MixbuildCommandRunner {
 
   @override
   bool killActive([ProcessSignal signal = ProcessSignal.sigkill]) {
-    final shell = _activeShell;
-    if (shell != null) {
-      final killed = shell.kill(signal);
-      _activeShell = null;
-      return killed;
-    }
     final process = _activeProcess;
     if (process == null) {
       return false;
@@ -167,6 +202,18 @@ class ProcessRunCommandRunner implements MixbuildCommandRunner {
     final killed = process.kill(signal);
     _activeProcess = null;
     return killed;
+  }
+
+  Future<void> _collectStream(
+    Stream<List<int>> stream,
+    StringBuffer buffer, {
+    void Function(String line)? onLine,
+  }) async {
+    await for (final line
+        in stream.transform(utf8.decoder).transform(const LineSplitter())) {
+      buffer.writeln(line);
+      onLine?.call(line);
+    }
   }
 
   String _formatCommand(String executable, List<String> arguments) {

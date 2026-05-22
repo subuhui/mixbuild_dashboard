@@ -5,8 +5,10 @@ import 'package:mixbuild_dashboard/services/git_branch_discovery.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_command_runner.dart';
 
 void main() {
-  test('returns fallback branches and warning when runner throws exception', () async {
-    final repoRoot = await Directory.systemTemp.createTemp('mixbuild_git_branch_test_');
+  test('returns fallback branches and warning when runner throws exception',
+      () async {
+    final repoRoot =
+        await Directory.systemTemp.createTemp('mixbuild_git_branch_test_');
     addTearDown(() async {
       if (await repoRoot.exists()) {
         await repoRoot.delete(recursive: true);
@@ -23,13 +25,16 @@ void main() {
       preferredBranch: 'release/custom',
     );
 
-    expect(result.branches, <String>['release/custom', 'develop', 'main', 'master']);
+    expect(result.branches,
+        <String>['release/custom', 'develop', 'main', 'master']);
     expect(result.warningMessage, isNotNull);
     expect(result.warningMessage, contains('没有访问仓库目录的权限'));
   });
 
-  test('runs git commands via git -C instead of repo working directory', () async {
-    final repoRoot = await Directory.systemTemp.createTemp('mixbuild_git_branch_cmd_test_');
+  test('runs git commands via git -C instead of repo working directory',
+      () async {
+    final repoRoot =
+        await Directory.systemTemp.createTemp('mixbuild_git_branch_cmd_test_');
     addTearDown(() async {
       if (await repoRoot.exists()) {
         await repoRoot.delete(recursive: true);
@@ -62,6 +67,8 @@ class _ThrowingCommandRunner implements MixbuildCommandRunner {
     String command, {
     required String workingDirectory,
     Map<String, String>? environment,
+    void Function(String line)? onStdout,
+    void Function(String line)? onStderr,
   }) {
     throw const ProcessException(
       '/opt/homebrew/bin/git',
@@ -76,6 +83,8 @@ class _ThrowingCommandRunner implements MixbuildCommandRunner {
     List<String> arguments, {
     required String workingDirectory,
     Map<String, String>? environment,
+    void Function(String line)? onStdout,
+    void Function(String line)? onStderr,
   }) {
     throw const ProcessException(
       '/opt/homebrew/bin/git',
@@ -102,6 +111,8 @@ class _RecordingCommandRunner implements MixbuildCommandRunner {
     String command, {
     required String workingDirectory,
     Map<String, String>? environment,
+    void Function(String line)? onStdout,
+    void Function(String line)? onStderr,
   }) async {
     final result = switch (commands.length) {
       0 => CommandRunResult(
@@ -136,6 +147,8 @@ class _RecordingCommandRunner implements MixbuildCommandRunner {
     List<String> arguments, {
     required String workingDirectory,
     Map<String, String>? environment,
+    void Function(String line)? onStdout,
+    void Function(String line)? onStderr,
   }) async {
     final command = [executable, ...arguments].join(' ');
     final result = switch (commands.length) {

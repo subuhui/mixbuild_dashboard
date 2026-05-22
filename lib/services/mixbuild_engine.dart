@@ -58,7 +58,9 @@ class MixbuildEngine {
     );
     await _runSync(
       config: config,
-      projectBranch: scenario.mainBranch.trim().isEmpty ? project.branch : scenario.mainBranch,
+      projectBranch: scenario.mainBranch.trim().isEmpty
+          ? project.branch
+          : scenario.mainBranch,
       dependencyOverrides: dependencyOverrides,
       onLog: onLog,
     );
@@ -119,7 +121,8 @@ class MixbuildEngine {
         'Workspace root does not exist: ${config.workspace.rootPath}',
       );
     }
-    final mainProjectPath = config.mainProject.absolutePath(config.workspace.rootPath);
+    final mainProjectPath =
+        config.mainProject.absolutePath(config.workspace.rootPath);
     _ensureDirectory(mainProjectPath, 'main_project.path');
     _ensureGitRepo(mainProjectPath, 'main_project.path');
 
@@ -144,7 +147,8 @@ class MixbuildEngine {
     ));
 
     for (final toolName in toolNames) {
-      if (toolName.contains(Platform.pathSeparator) || toolName.startsWith('.')) {
+      if (toolName.contains(Platform.pathSeparator) ||
+          toolName.startsWith('.')) {
         final absoluteToolPath = p.isAbsolute(toolName)
             ? toolName
             : p.normalize(
@@ -154,12 +158,14 @@ class MixbuildEngine {
                 ),
               );
         if (!File(absoluteToolPath).existsSync()) {
-          throw MixbuildEngineException('Required executable not found: $absoluteToolPath');
+          throw MixbuildEngineException(
+              'Required executable not found: $absoluteToolPath');
         }
         continue;
       }
       if (_runner.which(toolName) == null) {
-        throw MixbuildEngineException('Required tool `$toolName` was not found in PATH');
+        throw MixbuildEngineException(
+            'Required tool `$toolName` was not found in PATH');
       }
       onLog(
         _entry(
@@ -177,7 +183,8 @@ class MixbuildEngine {
     required Map<String, String> dependencyOverrides,
     required void Function(LogEntry entry) onLog,
   }) async {
-    final mainProjectPath = config.mainProject.absolutePath(config.workspace.rootPath);
+    final mainProjectPath =
+        config.mainProject.absolutePath(config.workspace.rootPath);
     await _runGitSync(
       name: config.mainProject.name,
       repoPath: mainProjectPath,
@@ -187,7 +194,8 @@ class MixbuildEngine {
     );
 
     for (final dependency in config.dependencies) {
-      final targetBranch = dependencyOverrides[dependency.name] ?? projectBranch;
+      final targetBranch =
+          dependencyOverrides[dependency.name] ?? projectBranch;
       await _runGitSync(
         name: dependency.name,
         repoPath: dependency.absolutePath(config.workspace.rootPath),
@@ -211,15 +219,27 @@ class MixbuildEngine {
       onLog(
         _entry(
           level: 'INFO',
-          message: 'Running restore command for ${dependency.name}: $restoreCommand',
+          message:
+              'Running restore command for ${dependency.name}: $restoreCommand',
           accent: MixBuildPalette.warning,
         ),
       );
       final result = await _runner.run(
         restoreCommand,
         workingDirectory: dependencyPath,
+        onStdout: (line) => _appendLiveProcessLog(
+          line: line,
+          level: 'OUT',
+          accent: MixBuildPalette.muted,
+          onLog: onLog,
+        ),
+        onStderr: (line) => _appendLiveProcessLog(
+          line: line,
+          level: 'ERR',
+          accent: MixBuildPalette.warning,
+          onLog: onLog,
+        ),
       );
-      _appendProcessLog(result: result, onLog: onLog);
       if (result.exitCode != 0) {
         throw MixbuildEngineException(
           'restore_command failed for ${dependency.name} with exit code ${result.exitCode}',
@@ -234,12 +254,35 @@ class MixbuildEngine {
     required bool cleanBeforeBuild,
     required void Function(LogEntry entry) onLog,
   }) async {
-    final workingDirectory = config.mainProject.absolutePath(config.workspace.rootPath);
-    final buildCommand = cleanBeforeBuild && !scenario.command.contains('--clean')
-        ? '${scenario.command} --clean'
-        : scenario.command;
-    final result = await _runner.run(buildCommand, workingDirectory: workingDirectory);
-    _appendProcessLog(result: result, onLog: onLog);
+    final workingDirectory =
+        config.mainProject.absolutePath(config.workspace.rootPath);
+    final buildCommand =
+        cleanBeforeBuild && !scenario.command.contains('--clean')
+            ? '${scenario.command} --clean'
+            : scenario.command;
+    onLog(
+      _entry(
+        level: 'INFO',
+        message: 'Running build command: $buildCommand',
+        accent: MixBuildPalette.primary,
+      ),
+    );
+    final result = await _runner.run(
+      buildCommand,
+      workingDirectory: workingDirectory,
+      onStdout: (line) => _appendLiveProcessLog(
+        line: line,
+        level: 'OUT',
+        accent: MixBuildPalette.muted,
+        onLog: onLog,
+      ),
+      onStderr: (line) => _appendLiveProcessLog(
+        line: line,
+        level: 'ERR',
+        accent: MixBuildPalette.warning,
+        onLog: onLog,
+      ),
+    );
     if (result.exitCode != 0) {
       throw MixbuildEngineException(
         'Build command failed with exit code ${result.exitCode}',
@@ -252,7 +295,8 @@ class MixbuildEngine {
     required BuildScenario scenario,
     required void Function(LogEntry entry) onLog,
   }) async {
-    final workingDirectory = config.mainProject.absolutePath(config.workspace.rootPath);
+    final workingDirectory =
+        config.mainProject.absolutePath(config.workspace.rootPath);
     if (scenario.autoTag) {
       final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
       final tagName = '${scenario.tagPrefix}$timestamp';
@@ -273,7 +317,8 @@ class MixbuildEngine {
         onLog(
           _entry(
             level: 'WARN',
-            message: 'Auto tag failed but will not block success: ${result.stderr.trim()}',
+            message:
+                'Auto tag failed but will not block success: ${result.stderr.trim()}',
             accent: MixBuildPalette.warning,
           ),
         );
@@ -346,13 +391,15 @@ class MixbuildEngine {
     );
     _appendProcessLog(result: checkout, onLog: onLog);
     if (checkout.exitCode != 0) {
-      throw MixbuildEngineException('Git checkout failed for $name: ${checkout.stderr.trim()}');
+      throw MixbuildEngineException(
+          'Git checkout failed for $name: ${checkout.stderr.trim()}');
     }
     if (branchToUse != targetBranch) {
       onLog(
         _entry(
           level: 'WARN',
-          message: '$name missing branch $targetBranch, fallback to default_branch=$fallbackBranch',
+          message:
+              '$name missing branch $targetBranch, fallback to default_branch=$fallbackBranch',
           accent: MixBuildPalette.warning,
         ),
       );
@@ -374,7 +421,14 @@ class MixbuildEngine {
   }) async {
     final branchCheck = await _runner.runProcess(
       _resolveGitExecutable(),
-      <String>['-C', repoPath, 'show-ref', '--verify', '--quiet', 'refs/heads/$requestedBranch'],
+      <String>[
+        '-C',
+        repoPath,
+        'show-ref',
+        '--verify',
+        '--quiet',
+        'refs/heads/$requestedBranch'
+      ],
       workingDirectory: Directory.current.path,
     );
     if (branchCheck.exitCode == 0) {
@@ -422,7 +476,8 @@ class MixbuildEngine {
         .where((line) => line.isNotEmpty)
         .take(6);
     for (final line in stdoutLines) {
-      onLog(_entry(level: 'INFO', message: line, accent: MixBuildPalette.muted));
+      onLog(
+          _entry(level: 'INFO', message: line, accent: MixBuildPalette.muted));
     }
     final stderrLines = result.stderr
         .split('\n')
@@ -430,8 +485,22 @@ class MixbuildEngine {
         .where((line) => line.isNotEmpty)
         .take(6);
     for (final line in stderrLines) {
-      onLog(_entry(level: 'WARN', message: line, accent: MixBuildPalette.warning));
+      onLog(_entry(
+          level: 'WARN', message: line, accent: MixBuildPalette.warning));
     }
+  }
+
+  void _appendLiveProcessLog({
+    required String line,
+    required String level,
+    required Color accent,
+    required void Function(LogEntry entry) onLog,
+  }) {
+    final trimmed = line.trim();
+    if (trimmed.isEmpty) {
+      return;
+    }
+    onLog(_entry(level: level, message: trimmed, accent: accent));
   }
 
   void _ensureDirectory(String path, String label) {
@@ -442,7 +511,8 @@ class MixbuildEngine {
 
   void _ensureGitRepo(String path, String label) {
     if (!Directory(p.join(path, '.git')).existsSync()) {
-      throw MixbuildEngineException('$label is not a valid git repository: $path');
+      throw MixbuildEngineException(
+          '$label is not a valid git repository: $path');
     }
   }
 
@@ -473,7 +543,8 @@ class MixbuildEngine {
     if (result.exitCode == 0) {
       return;
     }
-    final rawMessage = result.stderr.trim().isEmpty ? result.command : result.stderr.trim();
+    final rawMessage =
+        result.stderr.trim().isEmpty ? result.command : result.stderr.trim();
     final message = _isPermissionDeniedMessage(rawMessage)
         ? '当前应用没有访问仓库目录的权限。请通过“浏览...”重新选择工作区目录后重试。'
         : rawMessage;
@@ -485,7 +556,10 @@ class MixbuildEngine {
     if (resolved != null && resolved.trim().isNotEmpty) {
       return resolved;
     }
-    for (final candidate in const <String>['/opt/homebrew/bin/git', '/usr/bin/git']) {
+    for (final candidate in const <String>[
+      '/opt/homebrew/bin/git',
+      '/usr/bin/git'
+    ]) {
       if (File(candidate).existsSync()) {
         return candidate;
       }
@@ -498,5 +572,4 @@ class MixbuildEngine {
     return normalized.contains('operation not permitted') ||
         normalized.contains('permission denied');
   }
-
 }

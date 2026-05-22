@@ -734,7 +734,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                               Expanded(
                                 child: Row(
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.info_outline,
                                       size: 18,
                                       color: MixBuildPalette.muted,
@@ -999,8 +999,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.add_link_outlined,
-                    color: MixBuildPalette.muted),
+                Icon(Icons.add_link_outlined, color: MixBuildPalette.muted),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -1597,8 +1596,7 @@ class _PathSelectorField extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
               ),
-              child:
-                  const Icon(Icons.expand_more, color: MixBuildPalette.muted),
+              child: Icon(Icons.expand_more, color: MixBuildPalette.muted),
             ),
           ),
         ],
@@ -1831,7 +1829,7 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.add_box_outlined,
                       color: MixBuildPalette.primary,
                     ),
@@ -2091,7 +2089,7 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                 BuildStatus.idle,
                             progress: widget.initialScenario?.progress ?? 0,
                             logs: widget.initialScenario?.logs ??
-                                const [
+                                [
                                   LogEntry(
                                     time: '19:22:10',
                                     level: 'INIT',
