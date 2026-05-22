@@ -1,6 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+/// 应用调色板，根据系统亮/暗模式动态返回对应颜色值。
+///
+/// 所有 getter 均读取 [WidgetsBinding.platformDispatcher.platformBrightness]，
+/// 因此颜色会随系统主题实时切换，无需手动 notify。
 class MixBuildPalette {
   static bool get _isLight =>
       WidgetsBinding.instance.platformDispatcher.platformBrightness ==
@@ -33,6 +37,7 @@ class MixBuildPalette {
       _isLight ? const Color(0xFFD53B3B) : const Color(0xFFFF6B6B);
 }
 
+/// Material 3 主题构建器，提供亮/暗两套 [ThemeData] 以及玻璃拟态装饰。
 class MixBuildTheme {
   static ThemeData get lightTheme => _buildTheme(Brightness.light);
 
@@ -144,6 +149,7 @@ class MixBuildTheme {
     );
   }
 
+/// 玻璃拟态面板装饰：半透明背景 + 圆角 + 微边框 + 阴影。
   static BoxDecoration glassPanel({double radius = 24, Color? color}) {
     final isLight = MixBuildPalette._isLight;
     return BoxDecoration(
@@ -164,6 +170,7 @@ class MixBuildTheme {
     );
   }
 
+/// 平台等宽字体样式：macOS 用 Menlo，Windows 用 Consolas，Linux 用 DejaVu Sans Mono。
   static TextStyle monoTextStyle({
     double? fontSize,
     FontWeight? fontWeight,

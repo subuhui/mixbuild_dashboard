@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 
+/// 构建流水线生命周期状态。
+///
+/// 有序流转：idle → validating → syncing → restoring → building → postHook → success。
+/// 终态包括 [success]、[failed]、[interrupted]。
 enum BuildStatus {
   idle,
   validating,
@@ -14,6 +18,7 @@ enum BuildStatus {
   interrupted,
 }
 
+/// [BuildStatus] 的 UI 扩展：标签、描述、颜色、流转控制属性。
 extension BuildStatusX on BuildStatus {
   String get label {
     switch (this) {
@@ -117,6 +122,7 @@ extension BuildStatusX on BuildStatus {
   String get triggerLabel => controlsLocked ? 'Loading…' : '开始构建任务';
 }
 
+/// 构建日志条目，包含时间戳、级别、消息文本和主题色。
 class LogEntry {
   const LogEntry({
     required this.time,
@@ -131,6 +137,10 @@ class LogEntry {
   final Color accent;
 }
 
+/// 依赖仓库的分支信息，用于 UI 展示和分支切换。
+///
+/// [isOverride] 标记该分支是否为场景级覆盖（非默认分支），
+/// [highlight] 用于在 UI 中高亮显示被覆盖的依赖。
 class DependencyBranch {
   const DependencyBranch({
     required this.name,
@@ -163,6 +173,10 @@ class DependencyBranch {
   }
 }
 
+/// 构建场景的运行时状态，包含当前进度、日志和依赖分支快照。
+///
+/// 与 [MixbuildScenarioConfig]（YAML 配置层）不同，本类持有运行时动态数据
+/// （status、progress、logs），是 UI 层直接消费的对象。
 class BuildScenario {
   const BuildScenario({
     required this.id,
@@ -231,6 +245,9 @@ class BuildScenario {
   }
 }
 
+/// 单个项目的构建实例，持有该项目下所有 [BuildScenario] 列表。
+///
+/// [id] 对应 YAML 配置文件的绝对路径，用于跨配置文件的项目唯一标识。
 class ProjectBuild {
   const ProjectBuild({
     required this.id,
@@ -267,6 +284,7 @@ class ProjectBuild {
   }
 }
 
+/// 底栏系统资源指标（CPU / MEM / Queue），用于仪表盘 HUD 展示。
 class ResourceMetric {
   const ResourceMetric({
     required this.label,
@@ -281,6 +299,9 @@ class ResourceMetric {
   final Color color;
 }
 
+/// 工作区绑定关系：将项目名映射到其在工作区根目录下的相对路径。
+///
+/// 用于全局配置面板展示和编辑，与 YAML 中的 main_project / dependencies 对应。
 class WorkspaceBinding {
   const WorkspaceBinding({
     required this.projectName,
@@ -297,6 +318,9 @@ class WorkspaceBinding {
   final String? restoreCommand;
 }
 
+/// 项目编辑器中的绑定配置，比 [WorkspaceBinding] 多了 [isMainProject] 标记。
+///
+/// 用于 [ProjectEditorPage] 的表单提交，区分主项目和依赖项。
 class ProjectBindingConfig {
   const ProjectBindingConfig({
     required this.projectName,
@@ -315,6 +339,9 @@ class ProjectBindingConfig {
   final bool isMainProject;
 }
 
+/// 全局工作区配置，聚合了工作区根路径、活跃项目名和所有绑定关系。
+///
+/// 由 [DashboardController] 从 [MixbuildConfig] 派生，供 UI 全局配置面板消费。
 class GlobalConfig {
   const GlobalConfig({
     required this.workspaceRoot,

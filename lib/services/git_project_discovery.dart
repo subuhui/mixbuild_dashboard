@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
+/// 发现的 Git 仓库信息，包含绝对路径和相对于工作区根目录的路径。
 class DiscoveredGitProject {
   const DiscoveredGitProject({
     required this.name,
@@ -14,6 +15,9 @@ class DiscoveredGitProject {
   final String relativePath;
 }
 
+/// 递归扫描工作区目录，发现所有包含 `.git` 的子仓库。
+///
+/// 最大扫描深度默认 3 层，忽略 `.git`、`build`、`node_modules` 等目录。
 class GitProjectDiscovery {
   const GitProjectDiscovery({this.maxDepth = 3});
 

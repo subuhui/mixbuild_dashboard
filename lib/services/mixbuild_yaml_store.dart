@@ -4,6 +4,12 @@ import 'dart:io';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:path/path.dart' as p;
 
+/// YAML 配置文件的持久化与发现服务。
+///
+/// 配置目录优先级：XDG_CONFIG_HOME → ~/.config。
+/// 工作区 YAML 存储在 `<config_dir>/workspaces/<slug>.yaml`，
+/// 上次打开的工作区路径记录在 `last_opened_workspace.txt`。
+/// 支持从本地 `config/` 目录自动迁移。
 class MixbuildYamlStore {
   const MixbuildYamlStore({String? configHomePath}) : _configHomePathOverride = configHomePath;
 

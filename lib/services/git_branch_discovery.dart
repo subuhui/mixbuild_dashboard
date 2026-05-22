@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:mixbuild_dashboard/services/mixbuild_command_runner.dart';
 
+/// 分支发现结果，包含分支列表和可选的警告信息。
 class GitBranchDiscoveryResult {
   const GitBranchDiscoveryResult({
     required this.branches,
@@ -12,6 +13,10 @@ class GitBranchDiscoveryResult {
   final String? warningMessage;
 }
 
+/// Git 分支枚举服务，通过 `git for-each-ref` 发现本地和远程分支。
+///
+/// 执行前会先 `git fetch --all --prune` 同步远程引用。
+/// 失败时回退到 ['develop', 'main', 'master'] 兜底列表。
 class GitBranchDiscovery {
   GitBranchDiscovery({MixbuildCommandRunner? runner})
       : _runner = runner ?? ProcessRunCommandRunner();

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 
+/// 静态示例数据仓库，提供开发/演示用的项目、指标和全局配置。
+///
+/// 生产环境由 [DashboardController] 从 YAML 文件动态加载数据。
 class MixBuildRepository {
   static List<ProjectBuild> projects() {
     return [

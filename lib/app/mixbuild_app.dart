@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/ui/dashboard_home_page.dart';
 
+/// 应用根 Widget，提供 Riverpod 作用域和 Material 主题配置。
 class MixBuildApp extends StatelessWidget {
   const MixBuildApp({super.key});
 

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:process_run/process_run.dart';
 
+/// 命令执行结果，包含完整 stdout/stderr 文本和退出码。
 class CommandRunResult {
   const CommandRunResult({
     required this.command,
@@ -19,6 +20,9 @@ class CommandRunResult {
   final String stderr;
 }
 
+/// 进程执行抽象层，定义 shell 命令和直接进程调用的统一接口。
+///
+/// 实现类需支持 [which] 工具查找、[killActive] 终止活跃进程。
 abstract class MixbuildCommandRunner {
   String? which(String command);
   Future<CommandRunResult> run(
@@ -40,6 +44,10 @@ abstract class MixbuildCommandRunner {
   bool killActive([ProcessSignal signal = ProcessSignal.sigkill]);
 }
 
+/// 基于 `dart:io` Process 的真实进程执行器。
+///
+/// macOS/Linux 使用 `/bin/zsh -lc` 执行 shell 命令，Windows 使用 `cmd /c`。
+/// 支持实时 stdout/stderr 回调和 SIGKILL 终止。
 class ProcessRunCommandRunner implements MixbuildCommandRunner {
   Process? _activeProcess;
 

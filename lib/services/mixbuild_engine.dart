@@ -8,6 +8,7 @@ import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_command_runner.dart';
 
+/// 构建流水线异常，携带日志级别信息（ERROR / WARN）。
 class MixbuildEngineException implements Exception {
   const MixbuildEngineException(this.message, {this.level = 'ERROR'});
 
@@ -18,6 +19,10 @@ class MixbuildEngineException implements Exception {
   String toString() => message;
 }
 
+/// 构建流水线编排器，按顺序执行 5 个阶段：
+/// VALIDATING → SYNCING → RESTORING → BUILDING → POST_HOOK。
+///
+/// 通过 [MixbuildCommandRunner] 抽象进程执行，便于测试时注入 mock。
 class MixbuildEngine {
   MixbuildEngine(this._runner);
 
@@ -25,6 +30,10 @@ class MixbuildEngine {
 
   bool killActive() => _runner.killActive();
 
+/// 执行完整构建流水线，按顺序经过 5 个阶段。
+  ///
+  /// [onProgress] 在每个阶段转换时回调，[onLog] 实时输出日志条目。
+  /// 任何阶段失败会抛出 [MixbuildEngineException]。
   Future<void> runPipeline({
     required MixbuildConfig config,
     required ProjectBuild project,

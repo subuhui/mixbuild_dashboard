@@ -12,22 +12,33 @@ import 'package:mixbuild_dashboard/services/mixbuild_engine.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_yaml_store.dart';
 import 'package:mixbuild_dashboard/state/dashboard_state.dart';
 
+/// 进程执行器 provider，注入 [ProcessRunCommandRunner] 实例。
 final mixbuildCommandRunnerProvider = Provider<MixbuildCommandRunner>((ref) {
   return ProcessRunCommandRunner();
 });
 
+/// 构建引擎 provider，依赖 [mixbuildCommandRunnerProvider]。
 final mixbuildEngineProvider = Provider<MixbuildEngine>((ref) {
   return MixbuildEngine(ref.watch(mixbuildCommandRunnerProvider));
 });
 
+/// YAML 持久化服务 provider。
 final mixbuildYamlStoreProvider = Provider<MixbuildYamlStore>((ref) {
   return const MixbuildYamlStore();
 });
 
+/// 主状态控制器 provider，驱动整个仪表盘的业务逻辑。
 final dashboardControllerProvider =
     NotifierProvider<DashboardController, DashboardState>(
         DashboardController.new);
 
+/// 仪表盘核心业务控制器，职责包括：
+///
+/// - 启动时发现并加载所有工作区 YAML 配置
+/// - 监听 YAML 文件变更并防抖重载
+/// - 管理项目/场景选择状态
+/// - 触发/终止构建流水线（委托给 [MixbuildEngine]）
+/// - 持久化配置变更（委托给 [MixbuildYamlStore]）
 class DashboardController extends Notifier<DashboardState> {
   bool _stopRequested = false;
   StreamSubscription<FileSystemEvent>? _yamlWatchSubscription;
@@ -104,6 +115,7 @@ class DashboardController extends Notifier<DashboardState> {
     }).toList(growable: false);
   }
 
+/// 从磁盘重新加载当前工作区 YAML 配置并刷新 UI 状态。
   Future<void> reloadTopology() async {
     try {
       final config = ref
@@ -127,6 +139,7 @@ class DashboardController extends Notifier<DashboardState> {
         .readYamlSync(state.config.filePath);
   }
 
+/// 保存原始 YAML 文本内容，重新解析并更新工作区配置。
   Future<void> saveCurrentYaml(String content) async {
     final savedConfig = ref.read(mixbuildYamlStoreProvider).saveRawYamlSync(
           content,
@@ -351,6 +364,7 @@ class DashboardController extends Notifier<DashboardState> {
         previousFilePath: baseConfig.filePath);
   }
 
+/// 创建新工作区项目，将配置写入 YAML 文件并切换到新项目。
   Future<void> createProject({
     required GlobalConfig config,
     required List<ProjectBindingConfig> bindings,
@@ -427,6 +441,7 @@ class DashboardController extends Notifier<DashboardState> {
         overrideGlobalConfig: config, preserveError: false);
   }
 
+/// 切换到指定名称的工作区，重新加载对应的 YAML 配置文件。
   Future<void> switchWorkspace(String workspaceName) async {
     final store = ref.read(mixbuildYamlStoreProvider);
     File matchedFile = File(state.config.filePath);
@@ -478,6 +493,9 @@ class DashboardController extends Notifier<DashboardState> {
     );
   }
 
+/// 触发当前选中场景的构建流水线。
+  ///
+  /// 若场景已在运行则转为停止操作；构建过程中实时更新状态和日志。
   Future<void> triggerSelectedScenario() async {
     final project = state.selectedProject;
     final scenario = state.selectedScenario;
@@ -566,6 +584,7 @@ class DashboardController extends Notifier<DashboardState> {
     }
   }
 
+/// 终止当前正在运行的构建流水线，发送 SIGKILL 到所有子进程。
   void stopSelectedScenario() {
     _stopRequested = true;
     ref.read(mixbuildEngineProvider).killActive();

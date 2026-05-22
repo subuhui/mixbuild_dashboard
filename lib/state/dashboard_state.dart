@@ -1,6 +1,9 @@
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 
+/// 仪表盘不可变状态，聚合了当前配置、项目列表、全局配置和 UI 选择状态。
+///
+/// 通过 [copyWith] 产生新实例，由 [DashboardController] 管理。
 class DashboardState {
   const DashboardState({
     required this.config,
