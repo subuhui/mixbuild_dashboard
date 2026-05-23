@@ -29,6 +29,8 @@ class ProjectDetailPage extends ConsumerStatefulWidget {
 class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
   DashboardController get _controller =>
       ref.read(dashboardControllerProvider.notifier);
+  final TextEditingController _logSearchController = TextEditingController();
+  String _logSearchQuery = '';
 
   @override
   void initState() {
@@ -45,6 +47,12 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
       );
       _controller.selectScenario(project, scenario);
     });
+  }
+
+  @override
+  void dispose() {
+    _logSearchController.dispose();
+    super.dispose();
   }
 
   Future<void> _openYamlPage() async {
@@ -116,6 +124,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
     final dashboardState = ref.watch(dashboardControllerProvider);
     final selectedProject = dashboardState.selectedProject;
     final selectedScenario = dashboardState.selectedScenario;
+    final filteredLogs = _filterLogs(selectedScenario.logs, _logSearchQuery);
 
     return Scaffold(
       body: Stack(
@@ -155,6 +164,14 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
                               child: _TerminalPanel(
                                 project: selectedProject,
                                 scenario: selectedScenario,
+                                visibleLogs: filteredLogs,
+                                searchController: _logSearchController,
+                                searchQuery: _logSearchQuery,
+                                onSearchChanged: (value) {
+                                  setState(() {
+                                    _logSearchQuery = value;
+                                  });
+                                },
                                 onOpenYaml: _openYamlPage,
                                 onSaveLogs: () => _saveScenarioLogs(
                                   selectedProject,
@@ -180,6 +197,17 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
         ],
       ),
     );
+  }
+
+  List<LogEntry> _filterLogs(List<LogEntry> logs, String query) {
+    final normalizedQuery = query.trim().toLowerCase();
+    if (normalizedQuery.isEmpty) {
+      return logs;
+    }
+    return logs.where((log) {
+      final haystack = '${log.time} ${log.level} ${log.message}'.toLowerCase();
+      return haystack.contains(normalizedQuery);
+    }).toList(growable: false);
   }
 }
 
@@ -986,12 +1014,20 @@ class _TerminalPanel extends StatelessWidget {
   const _TerminalPanel({
     required this.project,
     required this.scenario,
+    required this.visibleLogs,
+    required this.searchController,
+    required this.searchQuery,
+    required this.onSearchChanged,
     required this.onOpenYaml,
     required this.onSaveLogs,
   });
 
   final ProjectBuild project;
   final BuildScenario scenario;
+  final List<LogEntry> visibleLogs;
+  final TextEditingController searchController;
+  final String searchQuery;
+  final ValueChanged<String> onSearchChanged;
   final VoidCallback onOpenYaml;
   final VoidCallback onSaveLogs;
 
@@ -1038,8 +1074,6 @@ class _TerminalPanel extends StatelessWidget {
                     ),
                   ),
                 ),
-                Icon(Icons.search, size: 18, color: MixBuildPalette.muted),
-                const SizedBox(width: 10),
                 IconButton(
                   onPressed: onOpenYaml,
                   icon: const Icon(Icons.data_object_outlined, size: 18),
@@ -1061,6 +1095,38 @@ class _TerminalPanel extends StatelessWidget {
                   tooltip: '保存完整日志',
                 ),
               ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+            child: TextField(
+              controller: searchController,
+              onChanged: onSearchChanged,
+              style: MixBuildTheme.monoTextStyle(
+                fontSize: 12,
+                color: Colors.white.withValues(alpha: 0.82),
+              ),
+              decoration: InputDecoration(
+                isDense: true,
+                prefixIcon: const Icon(Icons.search, size: 18),
+                suffixIcon: searchQuery.isEmpty
+                    ? null
+                    : IconButton(
+                        onPressed: () {
+                          searchController.clear();
+                          onSearchChanged('');
+                        },
+                        icon: const Icon(Icons.close, size: 16),
+                        splashRadius: 14,
+                        tooltip: '清空搜索',
+                      ),
+                hintText: '搜索日志时间 / 级别 / 内容',
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
           ),
           // Log output
@@ -1086,48 +1152,65 @@ class _TerminalPanel extends StatelessWidget {
                       ],
                     ),
                   )
-                : ListView.separated(
-                    padding: const EdgeInsets.all(20),
-                    itemCount: scenario.logs.length,
-                    separatorBuilder: (_, r) => const SizedBox(height: 6),
-                    itemBuilder: (context, index) {
-                      final log = scenario.logs[index];
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: 72,
-                            child: Text(
-                              '[${log.time}]',
-                              style: MixBuildTheme.monoTextStyle(
-                                fontSize: 12,
-                                color: Colors.white.withValues(alpha: 0.3),
-                              ),
-                            ),
+                : visibleLogs.isEmpty
+                    ? Center(
+                        child: Text(
+                          '没有匹配 "$searchQuery" 的日志',
+                          style: MixBuildTheme.monoTextStyle(
+                            fontSize: 12,
+                            color:
+                                MixBuildPalette.muted.withValues(alpha: 0.55),
                           ),
-                          SizedBox(
-                            width: 52,
-                            child: Text(
-                              '[${log.level}]',
-                              style: MixBuildTheme.monoTextStyle(
-                                fontSize: 12,
-                                color: log.accent,
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.all(20),
+                        itemCount: visibleLogs.length,
+                        separatorBuilder: (_, r) => const SizedBox(height: 6),
+                        itemBuilder: (context, index) {
+                          final log = visibleLogs[index];
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 84,
+                                child: Text(
+                                  '[${log.time}]',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  overflow: TextOverflow.clip,
+                                  style: MixBuildTheme.monoTextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white.withValues(alpha: 0.3),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              log.message,
-                              style: MixBuildTheme.monoTextStyle(
-                                fontSize: 12,
-                                color: Colors.white.withValues(alpha: 0.82),
+                              SizedBox(
+                                width: 52,
+                                child: Text(
+                                  '[${log.level}]',
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  overflow: TextOverflow.clip,
+                                  style: MixBuildTheme.monoTextStyle(
+                                    fontSize: 12,
+                                    color: log.accent,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+                              Expanded(
+                                child: Text(
+                                  log.message,
+                                  style: MixBuildTheme.monoTextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white.withValues(alpha: 0.82),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
           ),
           // Progress footer
           Padding(

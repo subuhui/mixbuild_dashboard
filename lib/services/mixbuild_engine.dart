@@ -399,6 +399,16 @@ class MixbuildEngine {
       throw MixbuildEngineException(
           'Git checkout failed for $name: ${checkout.stderr.trim()}');
     }
+    final pull = await _runner.runProcess(
+      _resolveGitExecutable(),
+      <String>['-C', repoPath, 'pull', '--ff-only'],
+      workingDirectory: Directory.current.path,
+    );
+    _appendProcessLog(result: pull, onLog: onLog);
+    if (pull.exitCode != 0) {
+      throw MixbuildEngineException(
+          'Git pull failed for $name: ${pull.stderr.trim()}');
+    }
     if (checkoutPlan.branchName != targetBranch) {
       onLog(
         _entry(

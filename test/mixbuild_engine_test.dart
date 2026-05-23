@@ -170,6 +170,10 @@ void main() {
       <String>['checkout', '--track', 'origin/$targetBranch'],
     );
     expect(
+      runner.pullArguments,
+      <String>['pull', '--ff-only'],
+    );
+    expect(
       logs.any(
           (entry) => entry.message == 'app aligned to branch $targetBranch'),
       isTrue,
@@ -244,6 +248,7 @@ class _RemoteOnlyBranchRunner implements MixbuildCommandRunner {
 
   final String targetBranch;
   List<String>? checkoutArguments;
+  List<String>? pullArguments;
 
   @override
   bool killActive([ProcessSignal signal = ProcessSignal.sigkill]) => false;
@@ -311,6 +316,18 @@ class _RemoteOnlyBranchRunner implements MixbuildCommandRunner {
         exitCode: 0,
         stdout:
             "branch '$targetBranch' set up to track 'origin/$targetBranch'.",
+        stderr: '',
+      );
+    }
+    if (arguments.length >= 4 &&
+        arguments[2] == 'pull' &&
+        arguments[3] == '--ff-only') {
+      pullArguments = arguments.sublist(2);
+      return CommandRunResult(
+        command: [executable, ...arguments].join(' '),
+        workingDirectory: workingDirectory,
+        exitCode: 0,
+        stdout: 'Already up to date.',
         stderr: '',
       );
     }
