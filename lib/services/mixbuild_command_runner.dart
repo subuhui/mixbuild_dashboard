@@ -1,6 +1,8 @@
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
 import 'package:process_run/process_run.dart';
 
 /// 命令执行结果，包含完整 stdout/stderr 文本和退出码。
@@ -49,6 +51,15 @@ abstract class MixbuildCommandRunner {
 /// macOS/Linux 使用 `/bin/zsh -lc` 执行 shell 命令，Windows 使用 `cmd /c`。
 /// 支持实时 stdout/stderr 回调和 SIGKILL 终止。
 class ProcessRunCommandRunner implements MixbuildCommandRunner {
+  static const List<String> _macOsFallbackBins = <String>[
+    '/opt/homebrew/bin',
+    '/usr/local/bin',
+    '/usr/bin',
+    '/bin',
+    '/usr/sbin',
+    '/sbin',
+  ];
+
   Process? _activeProcess;
 
   @override
@@ -57,17 +68,7 @@ class ProcessRunCommandRunner implements MixbuildCommandRunner {
     if (resolved != null && resolved.trim().isNotEmpty) {
       return resolved;
     }
-    if (Platform.isMacOS && command == 'git') {
-      for (final candidate in const <String>[
-        '/opt/homebrew/bin/git',
-        '/usr/bin/git'
-      ]) {
-        if (File(candidate).existsSync()) {
-          return candidate;
-        }
-      }
-    }
-    return null;
+    return _findExecutableInKnownPaths(command);
   }
 
   @override
@@ -87,7 +88,7 @@ class ProcessRunCommandRunner implements MixbuildCommandRunner {
         shellExecutable,
         shellArguments,
         workingDirectory: workingDirectory,
-        environment: environment,
+        environment: _mergeEnvironment(environment),
         includeParentEnvironment: true,
         runInShell: false,
       );
@@ -143,7 +144,7 @@ class ProcessRunCommandRunner implements MixbuildCommandRunner {
         executable,
         arguments,
         workingDirectory: workingDirectory,
-        environment: environment,
+        environment: _mergeEnvironment(environment),
         includeParentEnvironment: true,
         runInShell: false,
       );
@@ -226,5 +227,46 @@ class ProcessRunCommandRunner implements MixbuildCommandRunner {
 
   String _formatCommand(String executable, List<String> arguments) {
     return [executable, ...arguments].join(' ');
+  }
+
+  String? _findExecutableInKnownPaths(String command) {
+    for (final directory in _knownPathEntries()) {
+      final candidate = p.join(directory, command);
+      if (File(candidate).existsSync()) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  Map<String, String> _mergeEnvironment(Map<String, String>? environment) {
+    final merged = <String, String>{...?environment};
+    final separator = Platform.isWindows ? ';' : ':';
+    final existingPath = merged['PATH'] ?? Platform.environment['PATH'] ?? '';
+    final pathEntries = LinkedHashSet<String>.from(
+      <String>[
+        ...existingPath.split(separator),
+        ..._knownPathEntries(),
+      ].where((entry) => entry.trim().isNotEmpty),
+    );
+    merged['PATH'] = pathEntries.join(separator);
+    return merged;
+  }
+
+  List<String> _knownPathEntries() {
+    final separator = Platform.isWindows ? ';' : ':';
+    final pathEntries = LinkedHashSet<String>.from(
+      (Platform.environment['PATH'] ?? '')
+          .split(separator)
+          .where((entry) => entry.trim().isNotEmpty),
+    );
+    final homeDirectory = Platform.environment['HOME'];
+    if (homeDirectory != null && homeDirectory.trim().isNotEmpty) {
+      pathEntries.add(p.join(homeDirectory, '.pub-cache', 'bin'));
+    }
+    if (Platform.isMacOS) {
+      pathEntries.addAll(_macOsFallbackBins);
+    }
+    return pathEntries.toList(growable: false);
   }
 }

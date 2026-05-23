@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
+import 'package:mixbuild_dashboard/services/system_resource_monitor.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_yaml_store.dart';
 import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
 
@@ -14,14 +15,24 @@ void main() {
     late Directory tempDir;
     late MixbuildYamlStore store;
     late ProviderContainer container;
+    late _FakeSystemResourceMonitor resourceMonitor;
 
     setUp(() {
-      tempDir = Directory.systemTemp.createTempSync('mixbuild-dashboard-controller-test');
+      tempDir = Directory.systemTemp
+          .createTempSync('mixbuild-dashboard-controller-test');
       store = MixbuildYamlStore(configHomePath: tempDir.path);
       store.saveConfigSync(_seedConfig());
+      resourceMonitor = _FakeSystemResourceMonitor(
+        const SystemResourceSnapshot(
+          cpuUsagePercent: 64,
+          memoryUsedBytes: 24 * 1024 * 1024 * 1024,
+          totalMemoryBytes: 64 * 1024 * 1024 * 1024,
+        ),
+      );
       container = ProviderContainer(
         overrides: [
           mixbuildYamlStoreProvider.overrideWithValue(store),
+          systemResourceMonitorProvider.overrideWithValue(resourceMonitor),
         ],
       );
       addTearDown(() {
@@ -32,16 +43,17 @@ void main() {
       });
     });
 
-    test('editorBaseDependencies keeps config default branch after scenario override', () {
+    test('editorBaseDependencies reflects scenario override branch', () {
       final controller = container.read(dashboardControllerProvider.notifier);
 
-      controller.changeDependencyBranch('common_ui', 'feature/runtime-override');
+      controller.changeDependencyBranch(
+          'common_ui', 'feature/runtime-override');
 
       final dependency = controller.editorBaseDependencies().singleWhere(
-        (item) => item.name == 'common_ui',
-      );
+            (item) => item.name == 'common_ui',
+          );
 
-      expect(dependency.branch, 'main');
+      expect(dependency.branch, 'feature/runtime-override');
       expect(dependency.highlight, MixBuildPalette.primary);
     });
 
@@ -100,7 +112,22 @@ void main() {
 
       expect(savedConfig.mainProject.defaultBranch, 'develop');
       expect(savedConfig.buildScenarios, hasLength(1));
-      expect(savedConfig.buildScenarios.single.mainBranch, 'release/main-project');
+      expect(
+          savedConfig.buildScenarios.single.mainBranch, 'release/main-project');
+    });
+
+    test('metrics use dynamic hardware snapshot for CPU and MEM', () async {
+      container.read(dashboardControllerProvider.notifier);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      final metrics = container.read(dashboardControllerProvider).metrics;
+      final cpu = metrics.firstWhere((item) => item.label == 'CPU');
+      final memory = metrics.firstWhere((item) => item.label == 'MEM');
+
+      expect(cpu.value, '64%');
+      expect(cpu.progress, 0.64);
+      expect(memory.value, '24.0/64GB');
+      expect(memory.progress, 0.375);
     });
   });
 }
@@ -138,4 +165,13 @@ MixbuildConfig _seedConfig() {
       ),
     ],
   );
+}
+
+class _FakeSystemResourceMonitor implements SystemResourceMonitor {
+  const _FakeSystemResourceMonitor(this.snapshot);
+
+  final SystemResourceSnapshot snapshot;
+
+  @override
+  Future<SystemResourceSnapshot> sample() async => snapshot;
 }

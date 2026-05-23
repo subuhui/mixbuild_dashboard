@@ -525,6 +525,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "3.4.0+1"
+  system_resources_2:
+    dependency: "direct main"
+    description:
+      name: system_resources_2
+      sha256: "3f1d7da26ece139d03e8679ca5d99faceadfdbb4edc108244aa4cc362b9181ef"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.2.2"
   term_glyph:
     dependency: transitive
     description:

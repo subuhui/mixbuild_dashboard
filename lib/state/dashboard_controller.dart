@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,17 +8,21 @@ import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_command_runner.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_engine.dart';
+import 'package:mixbuild_dashboard/services/system_resource_monitor.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_yaml_store.dart';
 import 'package:mixbuild_dashboard/state/dashboard_state.dart';
 
-/// 进程执行器 provider，注入 [ProcessRunCommandRunner] 实例。
 final mixbuildCommandRunnerProvider = Provider<MixbuildCommandRunner>((ref) {
   return ProcessRunCommandRunner();
 });
 
-/// 构建引擎 provider，依赖 [mixbuildCommandRunnerProvider]。
+/// 构建引擎 provider。
 final mixbuildEngineProvider = Provider<MixbuildEngine>((ref) {
   return MixbuildEngine(ref.watch(mixbuildCommandRunnerProvider));
+});
+
+final systemResourceMonitorProvider = Provider<SystemResourceMonitor>((ref) {
+  return ProcessSystemResourceMonitor(ref.watch(mixbuildCommandRunnerProvider));
 });
 
 /// YAML 持久化服务 provider。
@@ -41,14 +44,20 @@ final dashboardControllerProvider =
 /// - 持久化配置变更（委托给 [MixbuildYamlStore]）
 class DashboardController extends Notifier<DashboardState> {
   bool _stopRequested = false;
+  bool _isDisposed = false;
   StreamSubscription<FileSystemEvent>? _yamlWatchSubscription;
   Timer? _watchDebounce;
+  Timer? _resourceRefreshTimer;
+  SystemResourceSnapshot? _latestResourceSnapshot;
 
   @override
   DashboardState build() {
+    _isDisposed = false;
     ref.onDispose(() {
+      _isDisposed = true;
       _watchDebounce?.cancel();
       _yamlWatchSubscription?.cancel();
+      _resourceRefreshTimer?.cancel();
     });
     final store = ref.read(mixbuildYamlStoreProvider);
     final yamlFiles = store.discoverWorkspaceYamlFilesSync();
@@ -64,7 +73,9 @@ class DashboardController extends Notifier<DashboardState> {
     }
     final activeConfig = configs.first;
     _startWatching(activeConfig.filePath);
-    return _stateFromConfigs(configs, activeConfig);
+    final stateSnapshot = _stateFromConfigs(configs, activeConfig);
+    _startResourceMonitoring();
+    return stateSnapshot;
   }
 
   List<String> branchOptions(ProjectBuild project) {
@@ -115,7 +126,7 @@ class DashboardController extends Notifier<DashboardState> {
     }).toList(growable: false);
   }
 
-/// 从磁盘重新加载当前工作区 YAML 配置并刷新 UI 状态。
+  /// 从磁盘重新加载当前工作区 YAML 配置并刷新 UI 状态。
   Future<void> reloadTopology() async {
     try {
       final config = ref
@@ -139,7 +150,7 @@ class DashboardController extends Notifier<DashboardState> {
         .readYamlSync(state.config.filePath);
   }
 
-/// 保存原始 YAML 文本内容，重新解析并更新工作区配置。
+  /// 保存原始 YAML 文本内容，重新解析并更新工作区配置。
   Future<void> saveCurrentYaml(String content) async {
     final savedConfig = ref.read(mixbuildYamlStoreProvider).saveRawYamlSync(
           content,
@@ -364,7 +375,7 @@ class DashboardController extends Notifier<DashboardState> {
         previousFilePath: baseConfig.filePath);
   }
 
-/// 创建新工作区项目，将配置写入 YAML 文件并切换到新项目。
+  /// 创建新工作区项目，将配置写入 YAML 文件并切换到新项目。
   Future<void> createProject({
     required GlobalConfig config,
     required List<ProjectBindingConfig> bindings,
@@ -441,7 +452,7 @@ class DashboardController extends Notifier<DashboardState> {
         overrideGlobalConfig: config, preserveError: false);
   }
 
-/// 切换到指定名称的工作区，重新加载对应的 YAML 配置文件。
+  /// 切换到指定名称的工作区，重新加载对应的 YAML 配置文件。
   Future<void> switchWorkspace(String workspaceName) async {
     final store = ref.read(mixbuildYamlStoreProvider);
     File matchedFile = File(state.config.filePath);
@@ -493,7 +504,7 @@ class DashboardController extends Notifier<DashboardState> {
     );
   }
 
-/// 触发当前选中场景的构建流水线。
+  /// 触发当前选中场景的构建流水线。
   ///
   /// 若场景已在运行则转为停止操作；构建过程中实时更新状态和日志。
   Future<void> triggerSelectedScenario() async {
@@ -584,7 +595,7 @@ class DashboardController extends Notifier<DashboardState> {
     }
   }
 
-/// 终止当前正在运行的构建流水线，发送 SIGKILL 到所有子进程。
+  /// 终止当前正在运行的构建流水线，发送 SIGKILL 到所有子进程。
   void stopSelectedScenario() {
     _stopRequested = true;
     ref.read(mixbuildEngineProvider).killActive();
@@ -743,17 +754,19 @@ class DashboardController extends Notifier<DashboardState> {
     final failed =
         scenarios.where((item) => item.status == BuildStatus.failed).length;
     final coverage = scenarios.isEmpty ? 0.0 : running / scenarios.length;
+    final hardwareSnapshot =
+        _latestResourceSnapshot ?? SystemResourceSnapshot.fallback();
     return [
       ResourceMetric(
         label: 'CPU',
-        value: '${12 + running * 8}%',
-        progress: min(1, 0.12 + running * 0.1),
+        value: hardwareSnapshot.cpuLabel,
+        progress: hardwareSnapshot.cpuProgress,
         color: MixBuildPalette.tertiary,
       ),
       ResourceMetric(
         label: 'MEM',
-        value: '${(3.6 + running * 0.7).toStringAsFixed(1)}GB',
-        progress: min(1, 0.28 + running * 0.12),
+        value: hardwareSnapshot.memoryLabel,
+        progress: hardwareSnapshot.memoryProgress,
         color: MixBuildPalette.warning,
       ),
       ResourceMetric(
@@ -922,5 +935,32 @@ class DashboardController extends Notifier<DashboardState> {
         reloadTopology();
       });
     });
+  }
+
+  void _startResourceMonitoring() {
+    _resourceRefreshTimer?.cancel();
+    Timer.run(_refreshResourceMetrics);
+    _resourceRefreshTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => _refreshResourceMetrics(),
+    );
+  }
+
+  Future<void> _refreshResourceMetrics() async {
+    if (_isDisposed) {
+      return;
+    }
+    final snapshot = await ref.read(systemResourceMonitorProvider).sample();
+    if (_isDisposed) {
+      return;
+    }
+    _latestResourceSnapshot = snapshot;
+    state = state.copyWith(
+      metrics: _buildMetrics(
+        state.projects
+            .expand((project) => project.scenarios)
+            .toList(growable: false),
+      ),
+    );
   }
 }

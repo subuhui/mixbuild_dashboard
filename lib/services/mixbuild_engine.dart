@@ -30,7 +30,7 @@ class MixbuildEngine {
 
   bool killActive() => _runner.killActive();
 
-/// 执行完整构建流水线，按顺序经过 5 个阶段。
+  /// 执行完整构建流水线，按顺序经过 5 个阶段。
   ///
   /// [onProgress] 在每个阶段转换时回调，[onLog] 实时输出日志条目。
   /// 任何阶段失败会抛出 [MixbuildEngineException]。
@@ -238,14 +238,12 @@ class MixbuildEngine {
         workingDirectory: dependencyPath,
         onStdout: (line) => _appendLiveProcessLog(
           line: line,
-          level: 'OUT',
-          accent: MixBuildPalette.muted,
+          isStdErr: false,
           onLog: onLog,
         ),
         onStderr: (line) => _appendLiveProcessLog(
           line: line,
-          level: 'ERR',
-          accent: MixBuildPalette.warning,
+          isStdErr: true,
           onLog: onLog,
         ),
       );
@@ -281,14 +279,12 @@ class MixbuildEngine {
       workingDirectory: workingDirectory,
       onStdout: (line) => _appendLiveProcessLog(
         line: line,
-        level: 'OUT',
-        accent: MixBuildPalette.muted,
+        isStdErr: false,
         onLog: onLog,
       ),
       onStderr: (line) => _appendLiveProcessLog(
         line: line,
-        level: 'ERR',
-        accent: MixBuildPalette.warning,
+        isStdErr: true,
         onLog: onLog,
       ),
     );
@@ -388,14 +384,14 @@ class MixbuildEngine {
       errorPrefix: 'Git clean failed for $name',
     );
 
-    final branchToUse = await _resolveBranch(
+    final checkoutPlan = await _resolveBranch(
       repoPath: repoPath,
       requestedBranch: targetBranch,
       fallbackBranch: fallbackBranch,
     );
     final checkout = await _runner.runProcess(
       _resolveGitExecutable(),
-      <String>['-C', repoPath, 'checkout', branchToUse],
+      <String>['-C', repoPath, ...checkoutPlan.checkoutArguments],
       workingDirectory: Directory.current.path,
     );
     _appendProcessLog(result: checkout, onLog: onLog);
@@ -403,7 +399,7 @@ class MixbuildEngine {
       throw MixbuildEngineException(
           'Git checkout failed for $name: ${checkout.stderr.trim()}');
     }
-    if (branchToUse != targetBranch) {
+    if (checkoutPlan.branchName != targetBranch) {
       onLog(
         _entry(
           level: 'WARN',
@@ -417,33 +413,35 @@ class MixbuildEngine {
     onLog(
       _entry(
         level: 'INFO',
-        message: '$name aligned to branch $branchToUse',
+        message: '$name aligned to branch ${checkoutPlan.branchName}',
         accent: MixBuildPalette.tertiary,
       ),
     );
   }
 
-  Future<String> _resolveBranch({
+  Future<_BranchCheckoutPlan> _resolveBranch({
     required String repoPath,
     required String requestedBranch,
     required String fallbackBranch,
   }) async {
-    final branchCheck = await _runner.runProcess(
-      _resolveGitExecutable(),
-      <String>[
-        '-C',
-        repoPath,
-        'show-ref',
-        '--verify',
-        '--quiet',
-        'refs/heads/$requestedBranch'
-      ],
-      workingDirectory: Directory.current.path,
+    final requestedPlan = await _resolveCheckoutPlanForBranch(
+      repoPath: repoPath,
+      branchName: requestedBranch,
     );
-    if (branchCheck.exitCode == 0) {
-      return requestedBranch;
+    if (requestedPlan != null) {
+      return requestedPlan;
     }
-    return fallbackBranch;
+    final fallbackPlan = await _resolveCheckoutPlanForBranch(
+      repoPath: repoPath,
+      branchName: fallbackBranch,
+    );
+    if (fallbackPlan != null) {
+      return fallbackPlan;
+    }
+    return _BranchCheckoutPlan(
+      branchName: fallbackBranch,
+      checkoutArguments: <String>['checkout', fallbackBranch],
+    );
   }
 
   Future<void> _transition({
@@ -485,8 +483,12 @@ class MixbuildEngine {
         .where((line) => line.isNotEmpty)
         .take(6);
     for (final line in stdoutLines) {
-      onLog(
-          _entry(level: 'INFO', message: line, accent: MixBuildPalette.muted));
+      final style = _resolveProcessLogStyle(line, isStdErr: false);
+      onLog(_entry(
+        level: style.level,
+        message: line,
+        accent: style.accent,
+      ));
     }
     final stderrLines = result.stderr
         .split('\n')
@@ -494,22 +496,126 @@ class MixbuildEngine {
         .where((line) => line.isNotEmpty)
         .take(6);
     for (final line in stderrLines) {
+      final style = _resolveProcessLogStyle(line, isStdErr: true);
       onLog(_entry(
-          level: 'WARN', message: line, accent: MixBuildPalette.warning));
+        level: style.level,
+        message: line,
+        accent: style.accent,
+      ));
     }
   }
 
   void _appendLiveProcessLog({
     required String line,
-    required String level,
-    required Color accent,
+    required bool isStdErr,
     required void Function(LogEntry entry) onLog,
   }) {
     final trimmed = line.trim();
     if (trimmed.isEmpty) {
       return;
     }
-    onLog(_entry(level: level, message: trimmed, accent: accent));
+    final style = _resolveProcessLogStyle(trimmed, isStdErr: isStdErr);
+    onLog(_entry(level: style.level, message: trimmed, accent: style.accent));
+  }
+
+  ({String level, Color accent}) _resolveProcessLogStyle(
+    String line, {
+    required bool isStdErr,
+  }) {
+    final normalized = line.trimLeft().toUpperCase();
+    if (_matchesProcessPrefix(normalized, const <String>['[ERR]', '[ERROR]'])) {
+      return (level: 'ERR', accent: MixBuildPalette.error);
+    }
+    if (_matchesProcessPrefix(
+        normalized, const <String>['[WARN]', '[WARNING]'])) {
+      return (level: 'WARN', accent: MixBuildPalette.warning);
+    }
+    if (_matchesProcessPrefix(normalized, const <String>['[INFO]'])) {
+      return (level: 'INFO', accent: MixBuildPalette.muted);
+    }
+    return isStdErr
+        ? (level: 'WARN', accent: MixBuildPalette.warning)
+        : (level: 'OUT', accent: MixBuildPalette.muted);
+  }
+
+  bool _matchesProcessPrefix(String line, List<String> prefixes) {
+    for (final prefix in prefixes) {
+      if (line.startsWith(prefix)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  Future<_BranchCheckoutPlan?> _resolveCheckoutPlanForBranch({
+    required String repoPath,
+    required String branchName,
+  }) async {
+    if (await _hasLocalBranch(repoPath: repoPath, branchName: branchName)) {
+      return _BranchCheckoutPlan(
+        branchName: branchName,
+        checkoutArguments: <String>['checkout', branchName],
+      );
+    }
+    final remoteBranchRef = await _findRemoteBranchRef(
+      repoPath: repoPath,
+      branchName: branchName,
+    );
+    if (remoteBranchRef == null) {
+      return null;
+    }
+    return _BranchCheckoutPlan(
+      branchName: branchName,
+      checkoutArguments: <String>['checkout', '--track', remoteBranchRef],
+    );
+  }
+
+  Future<bool> _hasLocalBranch({
+    required String repoPath,
+    required String branchName,
+  }) async {
+    final branchCheck = await _runner.runProcess(
+      _resolveGitExecutable(),
+      <String>[
+        '-C',
+        repoPath,
+        'show-ref',
+        '--verify',
+        '--quiet',
+        'refs/heads/$branchName',
+      ],
+      workingDirectory: Directory.current.path,
+    );
+    return branchCheck.exitCode == 0;
+  }
+
+  Future<String?> _findRemoteBranchRef({
+    required String repoPath,
+    required String branchName,
+  }) async {
+    final remoteBranches = await _runner.runProcess(
+      _resolveGitExecutable(),
+      <String>[
+        '-C',
+        repoPath,
+        'branch',
+        '-r',
+        '--list',
+        '*/$branchName',
+      ],
+      workingDirectory: Directory.current.path,
+    );
+    if (remoteBranches.exitCode != 0) {
+      return null;
+    }
+    for (final line in remoteBranches.stdout.split('\n')) {
+      final remoteRef = line.trim();
+      if (remoteRef.isEmpty || remoteRef.endsWith('/HEAD')) {
+        continue;
+      }
+      return remoteRef;
+    }
+    return null;
   }
 
   void _ensureDirectory(String path, String label) {
@@ -581,4 +687,14 @@ class MixbuildEngine {
     return normalized.contains('operation not permitted') ||
         normalized.contains('permission denied');
   }
+}
+
+class _BranchCheckoutPlan {
+  const _BranchCheckoutPlan({
+    required this.branchName,
+    required this.checkoutArguments,
+  });
+
+  final String branchName;
+  final List<String> checkoutArguments;
 }
