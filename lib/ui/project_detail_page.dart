@@ -8,6 +8,7 @@ import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
 import 'package:mixbuild_dashboard/state/dashboard_state.dart';
+import 'package:mixbuild_dashboard/ui/build_logs_page.dart';
 import 'package:mixbuild_dashboard/ui/dashboard_widgets.dart';
 import 'package:mixbuild_dashboard/ui/project_editor_page.dart';
 import 'package:mixbuild_dashboard/ui/yaml_editor_page.dart';
@@ -119,6 +120,27 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
     );
   }
 
+  Future<void> _openBuildLogsPage(
+    DashboardState dashboardState,
+    ProjectBuild project,
+    BuildScenario scenario,
+  ) async {
+    String? latestRecordId;
+    for (final record in dashboardState.executionHistory) {
+      if (record.projectId == project.id && record.scenarioId == scenario.id) {
+        latestRecordId = record.id;
+        break;
+      }
+    }
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => BuildLogsPage(
+          initialExecutionId: latestRecordId,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardControllerProvider);
@@ -173,6 +195,11 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
                                   });
                                 },
                                 onOpenYaml: _openYamlPage,
+                                onOpenHistory: () => _openBuildLogsPage(
+                                  dashboardState,
+                                  selectedProject,
+                                  selectedScenario,
+                                ),
                                 onSaveLogs: () => _saveScenarioLogs(
                                   selectedProject,
                                   selectedScenario,
@@ -1019,6 +1046,7 @@ class _TerminalPanel extends StatelessWidget {
     required this.searchQuery,
     required this.onSearchChanged,
     required this.onOpenYaml,
+    required this.onOpenHistory,
     required this.onSaveLogs,
   });
 
@@ -1029,6 +1057,7 @@ class _TerminalPanel extends StatelessWidget {
   final String searchQuery;
   final ValueChanged<String> onSearchChanged;
   final VoidCallback onOpenYaml;
+  final VoidCallback onOpenHistory;
   final VoidCallback onSaveLogs;
 
   @override
@@ -1074,6 +1103,16 @@ class _TerminalPanel extends StatelessWidget {
                     ),
                   ),
                 ),
+                IconButton(
+                  onPressed: onOpenHistory,
+                  icon: const Icon(Icons.receipt_long_outlined, size: 18),
+                  color: MixBuildPalette.muted,
+                  padding: EdgeInsets.zero,
+                  constraints:
+                      const BoxConstraints(minWidth: 28, minHeight: 28),
+                  tooltip: '任务历史',
+                ),
+                const SizedBox(width: 8),
                 IconButton(
                   onPressed: onOpenYaml,
                   icon: const Icon(Icons.data_object_outlined, size: 18),

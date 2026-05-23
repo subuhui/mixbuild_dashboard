@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
+import 'package:mixbuild_dashboard/ui/build_logs_page.dart';
 import 'package:mixbuild_dashboard/ui/dashboard_widgets.dart';
 import 'package:mixbuild_dashboard/ui/project_detail_page.dart';
 import 'package:mixbuild_dashboard/ui/project_editor_page.dart';
@@ -100,6 +101,16 @@ class DashboardHomePage extends ConsumerWidget {
       );
     }
 
+    Future<void> openBuildLogsPage({String? initialExecutionId}) async {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => BuildLogsPage(
+            initialExecutionId: initialExecutionId,
+          ),
+        ),
+      );
+    }
+
     void openDetail(ProjectBuild project, BuildScenario scenario) {
       controller.selectScenario(project, scenario);
       Navigator.of(context).push(
@@ -121,6 +132,7 @@ class DashboardHomePage extends ConsumerWidget {
               children: [
                 _DashboardNavRail(
                   onCreateProject: createNewProject,
+                  onOpenBuildLogs: openBuildLogsPage,
                 ),
                 Expanded(
                   child: Padding(
@@ -139,9 +151,6 @@ class DashboardHomePage extends ConsumerWidget {
                               runningCount: dashboardState.runningCount,
                               onWorkspaceChanged: controller.switchWorkspace,
                               onReloadTopology: controller.reloadTopology,
-                              onOpenYaml: openYamlPage,
-                              onOpenConfig: () =>
-                                  openProjectEditor(title: '项目编辑'),
                             ),
                             Expanded(
                               child: Padding(
@@ -194,9 +203,13 @@ class DashboardHomePage extends ConsumerWidget {
 }
 
 class _DashboardNavRail extends StatelessWidget {
-  const _DashboardNavRail({required this.onCreateProject});
+  const _DashboardNavRail({
+    required this.onCreateProject,
+    required this.onOpenBuildLogs,
+  });
 
   final VoidCallback onCreateProject;
+  final Future<void> Function({String? initialExecutionId}) onOpenBuildLogs;
 
   @override
   Widget build(BuildContext context) {
@@ -245,10 +258,15 @@ class _DashboardNavRail extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           const _NavItem(
-              icon: Icons.dashboard_outlined, label: 'Dashboard', active: true),
-          const _NavItem(icon: Icons.folder_copy_outlined, label: 'Projects'),
-          const _NavItem(
-              icon: Icons.receipt_long_outlined, label: 'Build Logs'),
+            icon: Icons.dashboard_outlined,
+            label: 'Dashboard',
+            active: true,
+          ),
+          _NavItem(
+            icon: Icons.receipt_long_outlined,
+            label: 'Build Logs',
+            onTap: () => onOpenBuildLogs(),
+          ),
           const _NavItem(icon: Icons.settings_outlined, label: 'Settings'),
           const SizedBox(height: 18),
           FilledButton.icon(
@@ -317,42 +335,49 @@ class _NavItem extends StatelessWidget {
     required this.icon,
     required this.label,
     this.active = false,
+    this.onTap,
   });
 
   final IconData icon;
   final String label;
   final bool active;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: active
-            ? MixBuildPalette.primary.withValues(alpha: 0.14)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        border: active
-            ? Border.all(color: MixBuildPalette.primary.withValues(alpha: 0.2))
-            : null,
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 18,
-            color: active ? MixBuildPalette.primary : MixBuildPalette.muted,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: active ? Colors.white : MixBuildPalette.muted,
-                  fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                ),
-          ),
-        ],
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: active
+              ? MixBuildPalette.primary.withValues(alpha: 0.14)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          border: active
+              ? Border.all(
+                  color: MixBuildPalette.primary.withValues(alpha: 0.2))
+              : null,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: active ? MixBuildPalette.primary : MixBuildPalette.muted,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: active ? Colors.white : MixBuildPalette.muted,
+                    fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }

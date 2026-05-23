@@ -135,6 +135,139 @@ class LogEntry {
   final String level;
   final String message;
   final Color accent;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'time': time,
+      'level': level,
+      'message': message,
+      'accent': accent.toARGB32(),
+    };
+  }
+
+  factory LogEntry.fromJson(Map<String, dynamic> json) {
+    return LogEntry(
+      time: json['time'] as String? ?? '',
+      level: json['level'] as String? ?? 'INFO',
+      message: json['message'] as String? ?? '',
+      accent:
+          Color((json['accent'] as num?)?.toInt() ?? Colors.white.toARGB32()),
+    );
+  }
+}
+
+/// 单次构建执行记录，用于任务历史与 Build Logs 页面展示。
+class BuildExecutionRecord {
+  const BuildExecutionRecord({
+    required this.id,
+    required this.projectId,
+    required this.projectName,
+    required this.scenarioId,
+    required this.scenarioName,
+    required this.command,
+    required this.branch,
+    required this.status,
+    required this.startedAt,
+    this.finishedAt,
+    this.logs = const <LogEntry>[],
+  });
+
+  final String id;
+  final String projectId;
+  final String projectName;
+  final String scenarioId;
+  final String scenarioName;
+  final String command;
+  final String branch;
+  final BuildStatus status;
+  final DateTime startedAt;
+  final DateTime? finishedAt;
+  final List<LogEntry> logs;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'id': id,
+      'projectId': projectId,
+      'projectName': projectName,
+      'scenarioId': scenarioId,
+      'scenarioName': scenarioName,
+      'command': command,
+      'branch': branch,
+      'status': status.name,
+      'startedAt': startedAt.toIso8601String(),
+      'finishedAt': finishedAt?.toIso8601String(),
+      'logs': logs.map((entry) => entry.toJson()).toList(growable: false),
+    };
+  }
+
+  factory BuildExecutionRecord.fromJson(Map<String, dynamic> json) {
+    final rawLogs = json['logs'];
+    return BuildExecutionRecord(
+      id: json['id'] as String? ?? '',
+      projectId: json['projectId'] as String? ?? '',
+      projectName: json['projectName'] as String? ?? '',
+      scenarioId: json['scenarioId'] as String? ?? '',
+      scenarioName: json['scenarioName'] as String? ?? '',
+      command: json['command'] as String? ?? '',
+      branch: json['branch'] as String? ?? '',
+      status: _buildStatusFromName(json['status'] as String?),
+      startedAt: DateTime.tryParse(json['startedAt'] as String? ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+      finishedAt: DateTime.tryParse(json['finishedAt'] as String? ?? ''),
+      logs: rawLogs is List
+          ? rawLogs
+              .whereType<Map>()
+              .map(
+                (entry) => LogEntry.fromJson(
+                  Map<String, dynamic>.from(entry),
+                ),
+              )
+              .toList(growable: false)
+          : const <LogEntry>[],
+    );
+  }
+
+  BuildExecutionRecord copyWith({
+    String? id,
+    String? projectId,
+    String? projectName,
+    String? scenarioId,
+    String? scenarioName,
+    String? command,
+    String? branch,
+    BuildStatus? status,
+    DateTime? startedAt,
+    Object? finishedAt = _buildExecutionSentinel,
+    List<LogEntry>? logs,
+  }) {
+    return BuildExecutionRecord(
+      id: id ?? this.id,
+      projectId: projectId ?? this.projectId,
+      projectName: projectName ?? this.projectName,
+      scenarioId: scenarioId ?? this.scenarioId,
+      scenarioName: scenarioName ?? this.scenarioName,
+      command: command ?? this.command,
+      branch: branch ?? this.branch,
+      status: status ?? this.status,
+      startedAt: startedAt ?? this.startedAt,
+      finishedAt: finishedAt == _buildExecutionSentinel
+          ? this.finishedAt
+          : finishedAt as DateTime?,
+      logs: logs ?? this.logs,
+    );
+  }
+}
+
+BuildStatus _buildStatusFromName(String? name) {
+  if (name == null || name.trim().isEmpty) {
+    return BuildStatus.idle;
+  }
+  for (final status in BuildStatus.values) {
+    if (status.name == name) {
+      return status;
+    }
+  }
+  return BuildStatus.idle;
 }
 
 /// 依赖仓库的分支信息，用于 UI 展示和分支切换。
@@ -338,6 +471,8 @@ class ProjectBindingConfig {
   final String? restoreCommand;
   final bool isMainProject;
 }
+
+const Object _buildExecutionSentinel = Object();
 
 /// 全局工作区配置，聚合了工作区根路径、活跃项目名和所有绑定关系。
 ///

@@ -10,6 +10,7 @@ class DashboardState {
     required this.projects,
     required this.globalConfig,
     required this.metrics,
+    required this.executionHistory,
     required this.availableWorkspaceNames,
     required this.selectedProjectId,
     required this.selectedScenarioId,
@@ -21,6 +22,7 @@ class DashboardState {
   final List<ProjectBuild> projects;
   final GlobalConfig globalConfig;
   final List<ResourceMetric> metrics;
+  final List<BuildExecutionRecord> executionHistory;
   final List<String> availableWorkspaceNames;
   final String selectedProjectId;
   final String selectedScenarioId;
@@ -43,6 +45,7 @@ class DashboardState {
     List<ProjectBuild>? projects,
     GlobalConfig? globalConfig,
     List<ResourceMetric>? metrics,
+    List<BuildExecutionRecord>? executionHistory,
     List<String>? availableWorkspaceNames,
     String? selectedProjectId,
     String? selectedScenarioId,
@@ -54,7 +57,8 @@ class DashboardState {
       projects: projects ?? this.projects,
       globalConfig: globalConfig ?? this.globalConfig,
       metrics: metrics ?? this.metrics,
-        availableWorkspaceNames:
+      executionHistory: executionHistory ?? this.executionHistory,
+      availableWorkspaceNames:
           availableWorkspaceNames ?? this.availableWorkspaceNames,
       selectedProjectId: selectedProjectId ?? this.selectedProjectId,
       selectedScenarioId: selectedScenarioId ?? this.selectedScenarioId,

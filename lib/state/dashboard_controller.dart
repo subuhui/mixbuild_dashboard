@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
+import 'package:mixbuild_dashboard/services/build_execution_history_store.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_command_runner.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_engine.dart';
 import 'package:mixbuild_dashboard/services/system_resource_monitor.dart';
@@ -30,6 +31,11 @@ final mixbuildYamlStoreProvider = Provider<MixbuildYamlStore>((ref) {
   return const MixbuildYamlStore();
 });
 
+final buildExecutionHistoryStoreProvider =
+    Provider<BuildExecutionHistoryStore>((ref) {
+  return const BuildExecutionHistoryStore();
+});
+
 /// 主状态控制器 provider，驱动整个仪表盘的业务逻辑。
 final dashboardControllerProvider =
     NotifierProvider<DashboardController, DashboardState>(
@@ -49,6 +55,8 @@ class DashboardController extends Notifier<DashboardState> {
   Timer? _watchDebounce;
   Timer? _resourceRefreshTimer;
   SystemResourceSnapshot? _latestResourceSnapshot;
+  final Map<String, _ActiveExecutionContext> _activeExecutions =
+      <String, _ActiveExecutionContext>{};
 
   @override
   DashboardState build() {
@@ -73,7 +81,12 @@ class DashboardController extends Notifier<DashboardState> {
     }
     final activeConfig = configs.first;
     _startWatching(activeConfig.filePath);
-    final stateSnapshot = _stateFromConfigs(configs, activeConfig);
+    final stateSnapshot = _stateFromConfigs(
+      configs,
+      activeConfig,
+      executionHistory:
+          ref.read(buildExecutionHistoryStoreProvider).loadHistorySync(),
+    );
     _startResourceMonitoring();
     return stateSnapshot;
   }
@@ -519,6 +532,7 @@ class DashboardController extends Notifier<DashboardState> {
     }
 
     _stopRequested = false;
+    _startExecution(project, scenario);
     _updateScenario(
       projectId: project.id,
       scenarioId: scenario.id,
@@ -591,8 +605,19 @@ class DashboardController extends Notifier<DashboardState> {
           ].toList(growable: false),
         ),
       );
+      _finalizeExecution(
+        projectId: project.id,
+        scenarioId: scenario.id,
+        status: BuildStatus.failed,
+      );
       state = state.copyWith(lastError: '$error');
+      return;
     }
+    _finalizeExecution(
+      projectId: project.id,
+      scenarioId: scenario.id,
+      status: BuildStatus.success,
+    );
   }
 
   /// 终止当前正在运行的构建流水线，发送 SIGKILL 到所有子进程。
@@ -618,12 +643,17 @@ class DashboardController extends Notifier<DashboardState> {
         ].toList(growable: false),
       ),
     );
+    _finalizeExecution(
+      projectId: project.id,
+      scenarioId: scenario.id,
+      status: BuildStatus.interrupted,
+    );
   }
 
   DashboardState _stateFromConfigs(
-    List<MixbuildConfig> configs,
-    MixbuildConfig activeConfig,
-  ) {
+      List<MixbuildConfig> configs, MixbuildConfig activeConfig,
+      {List<BuildExecutionRecord> executionHistory =
+          const <BuildExecutionRecord>[]}) {
     final projects = configs.map(_projectFromConfig).toList(growable: false);
     final allScenarios =
         projects.expand((p) => p.scenarios).toList(growable: false);
@@ -661,6 +691,7 @@ class DashboardController extends Notifier<DashboardState> {
         ],
       ),
       metrics: _buildMetrics(allScenarios),
+      executionHistory: executionHistory,
       availableWorkspaceNames: _workspaceNames(),
       selectedProjectId: activeProject.id,
       selectedScenarioId: activeProject.scenarios.first.id,
@@ -783,6 +814,7 @@ class DashboardController extends Notifier<DashboardState> {
     required String scenarioId,
     required BuildScenario Function(BuildScenario scenario) transform,
   }) {
+    BuildScenario? updatedScenario;
     final updatedProjects = state.projects.map((project) {
       if (project.id != projectId) {
         return project;
@@ -792,10 +824,20 @@ class DashboardController extends Notifier<DashboardState> {
           if (scenario.id != scenarioId) {
             return scenario;
           }
-          return transform(scenario);
+          final transformed = transform(scenario);
+          updatedScenario = transformed;
+          return transformed;
         }).toList(growable: false),
       );
     }).toList(growable: false);
+    final updatedExecutionHistory = updatedScenario == null
+        ? state.executionHistory
+        : _syncExecutionHistory(
+            history: state.executionHistory,
+            projectId: projectId,
+            scenarioId: scenarioId,
+            scenario: updatedScenario!,
+          );
     state = state.copyWith(
       projects: updatedProjects,
       metrics: _buildMetrics(
@@ -803,7 +845,9 @@ class DashboardController extends Notifier<DashboardState> {
             .expand((project) => project.scenarios)
             .toList(growable: false),
       ),
+      executionHistory: updatedExecutionHistory,
     );
+    _persistExecutionHistory();
   }
 
   LogEntry _log({
@@ -906,6 +950,7 @@ class DashboardController extends Notifier<DashboardState> {
             ],
           ),
       metrics: _buildMetrics(allScenarios),
+      executionHistory: state.executionHistory,
       availableWorkspaceNames: _workspaceNames(),
       selectedProjectId: selectedProjectId,
       selectedScenarioId: selectedScenarioId,
@@ -937,6 +982,120 @@ class DashboardController extends Notifier<DashboardState> {
     });
   }
 
+  void _startExecution(ProjectBuild project, BuildScenario scenario) {
+    final taskId =
+        '${DateTime.now().microsecondsSinceEpoch}-${project.id.hashCode}-${scenario.id}';
+    final executionKey = _executionKey(project.id, scenario.id);
+    _activeExecutions[executionKey] = _ActiveExecutionContext(
+      executionId: taskId,
+      baselineLogCount: scenario.logs.length,
+    );
+    state = state.copyWith(
+      executionHistory: <BuildExecutionRecord>[
+        BuildExecutionRecord(
+          id: taskId,
+          projectId: project.id,
+          projectName: project.name,
+          scenarioId: scenario.id,
+          scenarioName: scenario.name,
+          command: scenario.command,
+          branch: scenario.mainBranch.trim().isEmpty
+              ? project.branch
+              : scenario.mainBranch,
+          status: BuildStatus.validating,
+          startedAt: DateTime.now(),
+        ),
+        ...state.executionHistory,
+      ],
+    );
+    _persistExecutionHistory();
+  }
+
+  void _finalizeExecution({
+    required String projectId,
+    required String scenarioId,
+    required BuildStatus status,
+  }) {
+    final executionKey = _executionKey(projectId, scenarioId);
+    final context = _activeExecutions[executionKey];
+    if (context == null) {
+      return;
+    }
+    final scenario =
+        _findScenario(projectId: projectId, scenarioId: scenarioId);
+    if (scenario == null) {
+      _activeExecutions.remove(executionKey);
+      return;
+    }
+    final syncedHistory = _syncExecutionHistory(
+      history: state.executionHistory,
+      projectId: projectId,
+      scenarioId: scenarioId,
+      scenario: scenario,
+    ).map((record) {
+      if (record.id != context.executionId) {
+        return record;
+      }
+      return record.copyWith(status: status, finishedAt: DateTime.now());
+    }).toList(growable: false);
+    _activeExecutions.remove(executionKey);
+    state = state.copyWith(executionHistory: syncedHistory);
+    _persistExecutionHistory();
+  }
+
+  void _persistExecutionHistory() {
+    ref
+        .read(buildExecutionHistoryStoreProvider)
+        .saveHistorySync(state.executionHistory);
+  }
+
+  String _executionKey(String projectId, String scenarioId) {
+    return '$projectId::$scenarioId';
+  }
+
+  BuildScenario? _findScenario({
+    required String projectId,
+    required String scenarioId,
+  }) {
+    for (final project in state.projects) {
+      if (project.id != projectId) {
+        continue;
+      }
+      for (final scenario in project.scenarios) {
+        if (scenario.id == scenarioId) {
+          return scenario;
+        }
+      }
+    }
+    return null;
+  }
+
+  List<BuildExecutionRecord> _syncExecutionHistory({
+    required List<BuildExecutionRecord> history,
+    required String projectId,
+    required String scenarioId,
+    required BuildScenario scenario,
+  }) {
+    final context = _activeExecutions[_executionKey(projectId, scenarioId)];
+    if (context == null) {
+      return history;
+    }
+    final executionLogCount = (scenario.logs.length - context.baselineLogCount)
+        .clamp(0, scenario.logs.length);
+    final executionLogs =
+        scenario.logs.take(executionLogCount).toList(growable: false);
+    return history.map((record) {
+      if (record.id != context.executionId) {
+        return record;
+      }
+      return record.copyWith(
+        status: scenario.status,
+        branch: scenario.mainBranch,
+        logs: executionLogs,
+      );
+    }).toList(growable: false);
+  }
+
   void _startResourceMonitoring() {
     _resourceRefreshTimer?.cancel();
     Timer.run(_refreshResourceMetrics);
@@ -963,4 +1122,14 @@ class DashboardController extends Notifier<DashboardState> {
       ),
     );
   }
+}
+
+class _ActiveExecutionContext {
+  const _ActiveExecutionContext({
+    required this.executionId,
+    required this.baselineLogCount,
+  });
+
+  final String executionId;
+  final int baselineLogCount;
 }

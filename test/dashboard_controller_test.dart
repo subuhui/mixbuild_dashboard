@@ -6,6 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
+import 'package:mixbuild_dashboard/services/build_execution_history_store.dart';
+import 'package:mixbuild_dashboard/services/mixbuild_command_runner.dart';
+import 'package:mixbuild_dashboard/services/mixbuild_engine.dart';
 import 'package:mixbuild_dashboard/services/system_resource_monitor.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_yaml_store.dart';
 import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
@@ -14,6 +17,7 @@ void main() {
   group('DashboardController', () {
     late Directory tempDir;
     late MixbuildYamlStore store;
+    late BuildExecutionHistoryStore historyStore;
     late ProviderContainer container;
     late _FakeSystemResourceMonitor resourceMonitor;
 
@@ -21,6 +25,7 @@ void main() {
       tempDir = Directory.systemTemp
           .createTempSync('mixbuild-dashboard-controller-test');
       store = MixbuildYamlStore(configHomePath: tempDir.path);
+      historyStore = BuildExecutionHistoryStore(configHomePath: tempDir.path);
       store.saveConfigSync(_seedConfig());
       resourceMonitor = _FakeSystemResourceMonitor(
         const SystemResourceSnapshot(
@@ -32,6 +37,7 @@ void main() {
       container = ProviderContainer(
         overrides: [
           mixbuildYamlStoreProvider.overrideWithValue(store),
+          buildExecutionHistoryStoreProvider.overrideWithValue(historyStore),
           systemResourceMonitorProvider.overrideWithValue(resourceMonitor),
         ],
       );
@@ -129,6 +135,116 @@ void main() {
       expect(memory.value, '24.0/64GB');
       expect(memory.progress, 0.375);
     });
+
+    test('triggerSelectedScenario stores execution history with task logs',
+        () async {
+      final fakeEngine = _FakeMixbuildEngine(
+        onRunPipelineImpl: ({
+          required config,
+          required project,
+          required scenario,
+          required cleanBeforeBuild,
+          required dependencyOverrides,
+          required onProgress,
+          required onLog,
+        }) async {
+          onProgress(BuildStatus.building, 0.6);
+          onLog(
+            LogEntry(
+              time: '11:20:00',
+              level: 'INFO',
+              message: 'Build started',
+              accent: MixBuildPalette.primary,
+            ),
+          );
+          onProgress(BuildStatus.success, 1.0);
+          onLog(
+            LogEntry(
+              time: '11:20:10',
+              level: 'INFO',
+              message: 'Build completed',
+              accent: MixBuildPalette.success,
+            ),
+          );
+        },
+      );
+      final localContainer = ProviderContainer(
+        overrides: [
+          mixbuildYamlStoreProvider.overrideWithValue(store),
+          buildExecutionHistoryStoreProvider.overrideWithValue(historyStore),
+          systemResourceMonitorProvider.overrideWithValue(resourceMonitor),
+          mixbuildEngineProvider.overrideWithValue(fakeEngine),
+        ],
+      );
+      addTearDown(localContainer.dispose);
+
+      final controller =
+          localContainer.read(dashboardControllerProvider.notifier);
+      await controller.triggerSelectedScenario();
+
+      final history =
+          localContainer.read(dashboardControllerProvider).executionHistory;
+      expect(history, hasLength(1));
+      expect(history.first.projectName, 'workspace-demo');
+      expect(history.first.scenarioName, 'Release Build');
+      expect(history.first.status, BuildStatus.success);
+      expect(history.first.finishedAt, isNotNull);
+      expect(
+        history.first.logs.any((entry) => entry.message == 'Build completed'),
+        isTrue,
+      );
+      expect(
+        history.first.logs.any(
+          (entry) => entry.message.contains('Queued pipeline for'),
+        ),
+        isTrue,
+      );
+      final persistedHistory = historyStore.loadHistorySync();
+      expect(persistedHistory, hasLength(1));
+      expect(persistedHistory.first.status, BuildStatus.success);
+    });
+
+    test('execution history is restored from local storage on startup', () {
+      historyStore.saveHistorySync(
+        <BuildExecutionRecord>[
+          BuildExecutionRecord(
+            id: 'persisted-task',
+            projectId: 'seed.yaml',
+            projectName: 'workspace-demo',
+            scenarioId: 'release-build',
+            scenarioName: 'Release Build',
+            command: 'fvm flutter build macos --release',
+            branch: 'develop',
+            status: BuildStatus.failed,
+            startedAt: DateTime(2026, 5, 23, 11, 30),
+            finishedAt: DateTime(2026, 5, 23, 11, 31),
+            logs: const <LogEntry>[
+              LogEntry(
+                time: '11:30:00',
+                level: 'ERROR',
+                message: 'Persisted failure',
+                accent: MixBuildPalette.error,
+              ),
+            ],
+          ),
+        ],
+      );
+
+      final restoredContainer = ProviderContainer(
+        overrides: [
+          mixbuildYamlStoreProvider.overrideWithValue(store),
+          buildExecutionHistoryStoreProvider.overrideWithValue(historyStore),
+          systemResourceMonitorProvider.overrideWithValue(resourceMonitor),
+        ],
+      );
+      addTearDown(restoredContainer.dispose);
+
+      final restoredState = restoredContainer.read(dashboardControllerProvider);
+      expect(restoredState.executionHistory, hasLength(1));
+      expect(restoredState.executionHistory.first.id, 'persisted-task');
+      expect(restoredState.executionHistory.first.logs.single.message,
+          'Persisted failure');
+    });
   });
 }
 
@@ -174,4 +290,86 @@ class _FakeSystemResourceMonitor implements SystemResourceMonitor {
 
   @override
   Future<SystemResourceSnapshot> sample() async => snapshot;
+}
+
+class _FakeMixbuildEngine extends MixbuildEngine {
+  _FakeMixbuildEngine({required this.onRunPipelineImpl})
+      : super(_NoopCommandRunner());
+
+  final Future<void> Function({
+    required MixbuildConfig config,
+    required ProjectBuild project,
+    required BuildScenario scenario,
+    required bool cleanBeforeBuild,
+    required Map<String, String> dependencyOverrides,
+    required void Function(BuildStatus status, double progress) onProgress,
+    required void Function(LogEntry entry) onLog,
+  }) onRunPipelineImpl;
+
+  @override
+  Future<void> runPipeline({
+    required MixbuildConfig config,
+    required ProjectBuild project,
+    required BuildScenario scenario,
+    required bool cleanBeforeBuild,
+    required Map<String, String> dependencyOverrides,
+    required void Function(BuildStatus status, double progress) onProgress,
+    required void Function(LogEntry entry) onLog,
+  }) {
+    return onRunPipelineImpl(
+      config: config,
+      project: project,
+      scenario: scenario,
+      cleanBeforeBuild: cleanBeforeBuild,
+      dependencyOverrides: dependencyOverrides,
+      onProgress: onProgress,
+      onLog: onLog,
+    );
+  }
+}
+
+class _NoopCommandRunner implements MixbuildCommandRunner {
+  @override
+  bool killActive([ProcessSignal signal = ProcessSignal.sigkill]) => false;
+
+  @override
+  Future<void> openPath(String path) async {}
+
+  @override
+  Future<CommandRunResult> run(
+    String command, {
+    required String workingDirectory,
+    Map<String, String>? environment,
+    void Function(String line)? onStdout,
+    void Function(String line)? onStderr,
+  }) async {
+    return CommandRunResult(
+      command: command,
+      workingDirectory: workingDirectory,
+      exitCode: 0,
+      stdout: '',
+      stderr: '',
+    );
+  }
+
+  @override
+  Future<CommandRunResult> runProcess(
+    String executable,
+    List<String> arguments, {
+    required String workingDirectory,
+    Map<String, String>? environment,
+    void Function(String line)? onStdout,
+    void Function(String line)? onStderr,
+  }) async {
+    return CommandRunResult(
+      command: [executable, ...arguments].join(' '),
+      workingDirectory: workingDirectory,
+      exitCode: 0,
+      stdout: '',
+      stderr: '',
+    );
+  }
+
+  @override
+  String? which(String command) => '/mock/bin/$command';
 }

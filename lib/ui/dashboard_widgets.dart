@@ -53,8 +53,6 @@ class DashboardTopBar extends StatelessWidget {
     required this.runningCount,
     required this.onWorkspaceChanged,
     required this.onReloadTopology,
-    required this.onOpenYaml,
-    required this.onOpenConfig,
   });
 
   final String currentWorkspaceName;
@@ -62,12 +60,14 @@ class DashboardTopBar extends StatelessWidget {
   final int runningCount;
   final ValueChanged<String> onWorkspaceChanged;
   final VoidCallback onReloadTopology;
-  final VoidCallback onOpenYaml;
-  final VoidCallback onOpenConfig;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final orderedWorkspaceNames = <String>[
+      currentWorkspaceName,
+      ...availableWorkspaceNames.where((name) => name != currentWorkspaceName),
+    ];
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 960;
@@ -161,7 +161,7 @@ class DashboardTopBar extends StatelessWidget {
                             onWorkspaceChanged(value);
                           }
                         },
-                        items: availableWorkspaceNames
+                        items: orderedWorkspaceNames
                             .map(
                               (name) => DropdownMenuItem<String>(
                                 value: name,
@@ -186,35 +186,6 @@ class DashboardTopBar extends StatelessWidget {
                       onPressed: onReloadTopology,
                       icon: const Icon(Icons.refresh, size: 18),
                       label: const Text('Reload'),
-                    ),
-                  const SizedBox(width: 8),
-                  if (compact)
-                    IconButton(
-                      onPressed: onOpenYaml,
-                      icon: const Icon(Icons.open_in_new, size: 18),
-                    )
-                  else
-                    OutlinedButton.icon(
-                      onPressed: onOpenYaml,
-                      icon: const Icon(Icons.open_in_new, size: 18),
-                      label: const Text('打开 YAML'),
-                    ),
-                  const SizedBox(width: 8),
-                  if (compact)
-                    IconButton(
-                      onPressed: onOpenConfig,
-                      icon: const Icon(Icons.settings_outlined, size: 18),
-                    )
-                  else
-                    FilledButton.tonalIcon(
-                      onPressed: onOpenConfig,
-                      icon: const Icon(Icons.settings_outlined, size: 18),
-                      label: const Text('Global Config'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor:
-                            MixBuildPalette.primary.withValues(alpha: 0.12),
-                        foregroundColor: MixBuildPalette.primary,
-                      ),
                     ),
                 ],
               ),
