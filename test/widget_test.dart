@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_app.dart';
+import 'package:mixbuild_dashboard/ui/dashboard_home_page.dart';
 
 void main() {
   testWidgets('dashboard renders key sections', (tester) async {
@@ -14,6 +15,6 @@ void main() {
 
     expect(find.text('MixBuild Dashboard v3.1'), findsOneWidget);
     expect(find.text('New Project'), findsOneWidget);
-    expect(find.textContaining('项目 A：'), findsWidgets);
+    expect(find.byType(ProjectOverviewCard), findsWidgets);
   });
 }

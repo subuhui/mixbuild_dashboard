@@ -5,7 +5,9 @@
 #include "flutter/generated_plugin_registrant.h"
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
-    : project_(project) {}
+    : project_(project) {
+  SetMinSize(kMinimumSize);
+}
 
 FlutterWindow::~FlutterWindow() {}
 
