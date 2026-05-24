@@ -45,8 +45,8 @@ void main() {
     );
 
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
     await tester.pump(const Duration(milliseconds: 100));
-    await tester.pumpAndSettle();
 
     expect(find.text('android-driver'), findsOneWidget);
     expect(find.text('driver-v2'), findsOneWidget);
@@ -101,8 +101,8 @@ void main() {
     );
 
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
     await tester.pump(const Duration(milliseconds: 100));
-    await tester.pumpAndSettle();
 
     expect(find.text('./gradlew :lib:publishToMavenLocal'), findsOneWidget);
     expect(find.text('./gradlew assembleRelease'), findsNothing);

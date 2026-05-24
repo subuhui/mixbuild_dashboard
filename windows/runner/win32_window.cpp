@@ -206,6 +206,18 @@ Win32Window::MessageHandler(HWND hwnd,
       }
       return 0;
     }
+    case WM_GETMINMAXINFO: {
+      auto minmax_info = reinterpret_cast<MINMAXINFO*>(lparam);
+      if (minimum_size_.width > 0) {
+        UINT dpi = FlutterDesktopGetDpiForWindow(hwnd);
+        double scale_factor = dpi / 96.0;
+        minmax_info->ptMinTrackSize.x =
+            Scale(minimum_size_.width, scale_factor);
+        minmax_info->ptMinTrackSize.y =
+            Scale(minimum_size_.height, scale_factor);
+      }
+      return 0;
+    }
 
     case WM_ACTIVATE:
       if (child_content_ != nullptr) {
@@ -253,6 +265,10 @@ RECT Win32Window::GetClientArea() {
   RECT frame;
   GetClientRect(window_handle_, &frame);
   return frame;
+}
+
+void Win32Window::SetMinSize(const Size& size) {
+  minimum_size_ = size;
 }
 
 HWND Win32Window::GetHandle() {

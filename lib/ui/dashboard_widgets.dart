@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:mixbuild_dashboard/app/responsive_layout.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 
@@ -48,6 +49,7 @@ class DashboardBackground extends StatelessWidget {
 class DashboardTopBar extends StatelessWidget {
   const DashboardTopBar({
     super.key,
+    this.leading,
     required this.currentWorkspaceName,
     required this.availableWorkspaceNames,
     required this.runningCount,
@@ -57,6 +59,7 @@ class DashboardTopBar extends StatelessWidget {
     required this.onOpenConfig,
   });
 
+  final Widget? leading;
   final String currentWorkspaceName;
   final List<String> availableWorkspaceNames;
   final int runningCount;
@@ -70,152 +73,178 @@ class DashboardTopBar extends StatelessWidget {
     final theme = Theme.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxWidth < 960;
+        final responsive = ResponsiveLayout.fromWidth(constraints.maxWidth);
+        final compact = responsive.isCompact;
+        final stackedSelector = !responsive.isWide;
+        final titleRow = Row(
+          children: [
+            if (leading != null) ...[leading!, const SizedBox(width: 8)],
+            Expanded(
+              child: Text(
+                'MixBuild Dashboard v3.1',
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleLarge,
+              ),
+            ),
+            if (!compact) ...[
+              const SizedBox(width: 12),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: MixBuildPalette.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: MixBuildPalette.primary.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: MixBuildPalette.primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          'Parallel Running: $runningCount',
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: MixBuildPalette.foreground,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        );
+
+        final workspaceSelector = DropdownButtonFormField<String>(
+          initialValue: currentWorkspaceName,
+          isExpanded: true,
+          decoration: const InputDecoration(isDense: true),
+          onChanged: (value) {
+            if (value != null && value != currentWorkspaceName) {
+              onWorkspaceChanged(value);
+            }
+          },
+          items: availableWorkspaceNames
+              .map(
+                (name) => DropdownMenuItem<String>(
+                  value: name,
+                  child: Text(name, overflow: TextOverflow.ellipsis),
+                ),
+              )
+              .toList(),
+        );
+
+        final actions = Wrap(
+          alignment: WrapAlignment.end,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            if (compact)
+              IconButton(
+                onPressed: onReloadTopology,
+                icon: const Icon(Icons.refresh, size: 18),
+                tooltip: 'Reload',
+              )
+            else
+              TextButton.icon(
+                onPressed: onReloadTopology,
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Reload'),
+              ),
+            if (compact)
+              IconButton(
+                onPressed: onOpenYaml,
+                icon: const Icon(Icons.open_in_new, size: 18),
+                tooltip: '打开 YAML',
+              )
+            else
+              OutlinedButton.icon(
+                onPressed: onOpenYaml,
+                icon: const Icon(Icons.open_in_new, size: 18),
+                label: const Text('打开 YAML'),
+              ),
+            if (compact)
+              IconButton(
+                onPressed: onOpenConfig,
+                icon: const Icon(Icons.settings_outlined, size: 18),
+                tooltip: 'Global Config',
+              )
+            else
+              FilledButton.tonalIcon(
+                onPressed: onOpenConfig,
+                icon: const Icon(Icons.settings_outlined, size: 18),
+                label: const Text('Global Config'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: MixBuildPalette.primary.withValues(
+                    alpha: 0.12,
+                  ),
+                  foregroundColor: MixBuildPalette.primary,
+                ),
+              ),
+          ],
+        );
+
         return ClipRRect(
           borderRadius: BorderRadius.circular(18),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
             child: Container(
-              height: 56,
-              padding: const EdgeInsets.symmetric(horizontal: 18),
+              padding: EdgeInsets.fromLTRB(
+                compact ? 12 : 18,
+                12,
+                compact ? 12 : 18,
+                12,
+              ),
               decoration: BoxDecoration(
                 color: MixBuildPalette.surface.withValues(alpha: 0.72),
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.08),
-                ),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
               ),
-              child: Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: Row(
+                  if (stackedSelector) ...[
+                    titleRow,
+                    const SizedBox(height: 12),
+                    workspaceSelector,
+                    const SizedBox(height: 12),
+                    actions,
+                  ] else
+                    Row(
                       children: [
-                        Flexible(
-                          child: Text(
-                            'MixBuild Dashboard v3.1',
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleLarge,
-                          ),
-                        ),
-                        if (!compact) ...[
-                          const SizedBox(width: 14),
-                          Container(
-                            width: 1,
-                            height: 18,
-                            color: Colors.white.withValues(alpha: 0.12),
-                          ),
-                          const SizedBox(width: 14),
-                          Flexible(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: MixBuildPalette.primary
-                                    .withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                  color: MixBuildPalette.primary
-                                      .withValues(alpha: 0.15),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      color: MixBuildPalette.primary,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(
-                                      'Parallel Running: $runningCount',
-                                      overflow: TextOverflow.ellipsis,
-                                      style:
-                                          theme.textTheme.bodySmall?.copyWith(
-                                        color: MixBuildPalette.foreground,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
+                        Expanded(child: titleRow),
+                        const SizedBox(width: 12),
+                        SizedBox(width: 230, child: workspaceSelector),
+                        const SizedBox(width: 12),
+                        Flexible(child: actions),
                       ],
                     ),
-                  ),
-                  if (!compact) ...[
-                    const SizedBox(width: 12),
-                    SizedBox(
-                      width: 230,
-                      child: DropdownButtonFormField<String>(
-                        initialValue: currentWorkspaceName,
-                        isExpanded: true,
-                        decoration: const InputDecoration(isDense: true),
-                        onChanged: (value) {
-                          if (value != null && value != currentWorkspaceName) {
-                            onWorkspaceChanged(value);
-                          }
-                        },
-                        items: availableWorkspaceNames
-                            .map(
-                              (name) => DropdownMenuItem<String>(
-                                value: name,
-                                child: Text(
-                                  name,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            )
-                            .toList(),
+                  if (compact) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      'Parallel Running: $runningCount',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: MixBuildPalette.muted,
                       ),
                     ),
                   ],
-                  const SizedBox(width: 8),
-                  if (compact)
-                    IconButton(
-                      onPressed: onReloadTopology,
-                      icon: const Icon(Icons.refresh, size: 18),
-                    )
-                  else
-                    TextButton.icon(
-                      onPressed: onReloadTopology,
-                      icon: const Icon(Icons.refresh, size: 18),
-                      label: const Text('Reload'),
-                    ),
-                  const SizedBox(width: 8),
-                  if (compact)
-                    IconButton(
-                      onPressed: onOpenYaml,
-                      icon: const Icon(Icons.open_in_new, size: 18),
-                    )
-                  else
-                    OutlinedButton.icon(
-                      onPressed: onOpenYaml,
-                      icon: const Icon(Icons.open_in_new, size: 18),
-                      label: const Text('打开 YAML'),
-                    ),
-                  const SizedBox(width: 8),
-                  if (compact)
-                    IconButton(
-                      onPressed: onOpenConfig,
-                      icon: const Icon(Icons.settings_outlined, size: 18),
-                    )
-                  else
-                    FilledButton.tonalIcon(
-                      onPressed: onOpenConfig,
-                      icon: const Icon(Icons.settings_outlined, size: 18),
-                      label: const Text('Global Config'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor:
-                            MixBuildPalette.primary.withValues(alpha: 0.12),
-                        foregroundColor: MixBuildPalette.primary,
-                      ),
-                    ),
                 ],
               ),
             ),
@@ -249,9 +278,9 @@ class DashboardSideBar extends StatelessWidget {
   final ValueChanged<String> onBranchChanged;
   final ValueChanged<String> onScenarioChanged;
   final void Function(String dependencyName, String branch)
-      onDependencyBranchChanged;
+  onDependencyBranchChanged;
   final List<String> Function(DependencyBranch dependency)
-      dependencyBranchOptions;
+  dependencyBranchOptions;
   final ValueChanged<bool> onCleanChanged;
   final VoidCallback onTrigger;
   final VoidCallback onStop;
@@ -299,8 +328,10 @@ class DashboardSideBar extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(project.name,
-                                style: theme.textTheme.titleMedium),
+                            Text(
+                              project.name,
+                              style: theme.textTheme.titleMedium,
+                            ),
                             const SizedBox(height: 4),
                             Text(
                               project.description,
@@ -388,15 +419,17 @@ class DashboardSideBar extends StatelessWidget {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: (dependency.highlight ??
-                                        MixBuildPalette.primary)
-                                    .withValues(alpha: 0.12),
+                                color:
+                                    (dependency.highlight ??
+                                            MixBuildPalette.primary)
+                                        .withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(999),
                               ),
                               child: Text(
                                 'Override',
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: dependency.highlight ??
+                                  color:
+                                      dependency.highlight ??
                                       MixBuildPalette.primary,
                                 ),
                               ),
@@ -413,7 +446,9 @@ class DashboardSideBar extends StatelessWidget {
                             : (value) {
                                 if (value != null) {
                                   onDependencyBranchChanged(
-                                      dependency.name, value);
+                                    dependency.name,
+                                    value,
+                                  );
                                 }
                               },
                         items: dependencyBranchOptions(dependency)
@@ -569,8 +604,10 @@ class ScenarioInspectorPanel extends StatelessWidget {
               children: BuildStatus.values.map((status) {
                 final active = status == scenario.status;
                 return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: active
                         ? Colors.white.withValues(alpha: 0.1)
@@ -739,8 +776,9 @@ class ScenarioInspectorPanel extends StatelessWidget {
                                 : scenario.progress,
                             minHeight: 6,
                             borderRadius: BorderRadius.circular(999),
-                            backgroundColor:
-                                Colors.white.withValues(alpha: 0.05),
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.05,
+                            ),
                             valueColor: AlwaysStoppedAnimation<Color>(
                               scenario.status.color,
                             ),
@@ -802,20 +840,23 @@ class ScenarioInspectorPanel extends StatelessWidget {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: (dependency.highlight ??
-                                        MixBuildPalette.surfaceHighest)
-                                    .withValues(alpha: 0.12),
+                                color:
+                                    (dependency.highlight ??
+                                            MixBuildPalette.surfaceHighest)
+                                        .withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(999),
                                 border: Border.all(
-                                  color: (dependency.highlight ??
-                                          MixBuildPalette.muted)
-                                      .withValues(alpha: 0.18),
+                                  color:
+                                      (dependency.highlight ??
+                                              MixBuildPalette.muted)
+                                          .withValues(alpha: 0.18),
                                 ),
                               ),
                               child: Text(
                                 dependency.branch,
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: dependency.highlight ??
+                                  color:
+                                      dependency.highlight ??
                                       MixBuildPalette.muted,
                                 ),
                               ),
@@ -846,8 +887,9 @@ class DashboardFooterBar extends StatelessWidget {
 
   _SystemRuntimeStatus get _systemStatus {
     final scenarios = projects.expand((project) => project.scenarios).toList();
-    final running =
-        scenarios.where((scenario) => scenario.status.isPipelineActive).length;
+    final running = scenarios
+        .where((scenario) => scenario.status.isPipelineActive)
+        .length;
     final failed = scenarios
         .where((scenario) => scenario.status == BuildStatus.failed)
         .length;
@@ -863,10 +905,7 @@ class DashboardFooterBar extends StatelessWidget {
         color: MixBuildPalette.error,
       );
     }
-    return _SystemRuntimeStatus(
-      label: 'Ready',
-      color: MixBuildPalette.primary,
-    );
+    return _SystemRuntimeStatus(label: 'Ready', color: MixBuildPalette.primary);
   }
 
   @override
@@ -921,10 +960,7 @@ class DashboardFooterBar extends StatelessWidget {
 }
 
 class _SystemRuntimeStatus {
-  const _SystemRuntimeStatus({
-    required this.label,
-    required this.color,
-  });
+  const _SystemRuntimeStatus({required this.label, required this.color});
 
   final String label;
   final Color color;
@@ -942,9 +978,9 @@ class DashboardMetricBar extends StatelessWidget {
       children: [
         Text(
           '${metric.label}: ${metric.value}',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: metric.color,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: metric.color),
         ),
         const SizedBox(width: 8),
         SizedBox(
@@ -987,8 +1023,9 @@ class TinyBadge extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             label,
-            style:
-                Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: color),
           ),
         ],
       ),
@@ -1017,9 +1054,10 @@ class _StatusChipState extends State<StatusChip>
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     );
-    _pulse = Tween<double>(begin: 1.0, end: 0.6).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _pulse = Tween<double>(
+      begin: 1.0,
+      end: 0.6,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
     if (widget.status.isPipelineActive) {
       _controller.repeat(reverse: true);
     }
@@ -1049,38 +1087,40 @@ class _StatusChipState extends State<StatusChip>
       decoration: BoxDecoration(
         color: widget.status.color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: widget.status.color.withValues(alpha: 0.28),
-        ),
+        border: Border.all(color: widget.status.color.withValues(alpha: 0.28)),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedBuilder(
-            animation: _pulse,
-            builder: (context, child) {
-              return Opacity(
-                opacity: widget.status.isPipelineActive ? _pulse.value : 1.0,
-                child: child,
-              );
-            },
-            child: Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: widget.status.color,
-                shape: BoxShape.circle,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedBuilder(
+              animation: _pulse,
+              builder: (context, child) {
+                return Opacity(
+                  opacity: widget.status.isPipelineActive ? _pulse.value : 1.0,
+                  child: child,
+                );
+              },
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: widget.status.color,
+                  shape: BoxShape.circle,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            widget.status.label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: widget.status.color,
-                ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Text(
+              widget.status.label,
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(color: widget.status.color),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1154,9 +1194,7 @@ class ScenarioActionButton extends StatelessWidget {
         foregroundColor: color,
         backgroundColor: color.withValues(alpha: 0.14),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       label: Text(label),
     );
