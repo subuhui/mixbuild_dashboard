@@ -939,53 +939,100 @@ class _PipelineHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+    final chipStrip = Container(
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
+        color: Colors.black.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: _buildChips()),
+    );
+
+    final statusSummary = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.schedule_outlined,
+          size: 16,
+          color: MixBuildPalette.muted.withValues(alpha: 0.8),
         ),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            scenario.status.description,
+            style: theme.textTheme.bodySmall,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+
+    final historyButton = OutlinedButton(
+      onPressed: () {},
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+        visualDensity: VisualDensity.compact,
+        minimumSize: const Size(0, 36),
       ),
-      child: Row(
-        children: [
-          // Pipeline chips
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      child: const Text('任务历史'),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 1180;
+        return Container(
+          padding: EdgeInsets.fromLTRB(
+            24,
+            compact ? 14 : 0,
+            24,
+            compact ? 14 : 0,
+          ),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
             ),
-            child: Row(mainAxisSize: MainAxisSize.min, children: _buildChips()),
           ),
-          const Spacer(),
-          // Status description
-          Icon(
-            Icons.schedule_outlined,
-            size: 16,
-            color: MixBuildPalette.muted.withValues(alpha: 0.8),
-          ),
-          const SizedBox(width: 6),
-          Text(scenario.status.description, style: theme.textTheme.bodySmall),
-          const SizedBox(width: 12),
-          Container(
-            width: 1,
-            height: 16,
-            color: Colors.white.withValues(alpha: 0.1),
-          ),
-          const SizedBox(width: 12),
-          OutlinedButton(
-            onPressed: () {},
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-              visualDensity: VisualDensity.compact,
-              minimumSize: const Size(0, 36),
-            ),
-            child: const Text('任务历史'),
-          ),
-        ],
-      ),
+          child: compact
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: chipStrip,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: statusSummary),
+                        const SizedBox(width: 12),
+                        historyButton,
+                      ],
+                    ),
+                  ],
+                )
+              : SizedBox(
+                  height: 72,
+                  child: Row(
+                    children: [
+                      Flexible(child: chipStrip),
+                      const SizedBox(width: 16),
+                      Expanded(child: statusSummary),
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 1,
+                        height: 16,
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
+                      const SizedBox(width: 12),
+                      historyButton,
+                    ],
+                  ),
+                ),
+        );
+      },
     );
   }
 

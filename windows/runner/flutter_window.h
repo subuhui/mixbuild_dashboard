@@ -15,7 +15,7 @@ class FlutterWindow : public Win32Window {
   explicit FlutterWindow(const flutter::DartProject& project);
   virtual ~FlutterWindow();
 
-  static constexpr Size kMinimumSize = Size(960, 720);
+  static constexpr Size kMinimumSize = Size(1024, 720);
 
  protected:
   // Win32Window:

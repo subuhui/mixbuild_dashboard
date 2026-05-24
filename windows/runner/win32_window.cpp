@@ -1,5 +1,6 @@
 #include "win32_window.h"
 
+#include <cmath>
 #include <dwmapi.h>
 #include <flutter_windows.h>
 
@@ -35,6 +36,64 @@ using EnableNonClientDpiScaling = BOOL __stdcall(HWND hwnd);
 // scale factor
 int Scale(int source, double scale_factor) {
   return static_cast<int>(source * scale_factor);
+}
+
+void ApplyAspectRatio(UINT edge,
+                      const Win32Window::Size& aspect_ratio,
+                      RECT* rect) {
+  if (aspect_ratio.width == 0 || aspect_ratio.height == 0) {
+    return;
+  }
+
+  const double ratio =
+      static_cast<double>(aspect_ratio.width) / aspect_ratio.height;
+  LONG width = rect->right - rect->left;
+  LONG height = rect->bottom - rect->top;
+  if (width <= 0 || height <= 0) {
+    return;
+  }
+
+  const auto adjusted_width = static_cast<LONG>(std::lround(height * ratio));
+  const auto adjusted_height = static_cast<LONG>(std::lround(width / ratio));
+
+  switch (edge) {
+    case WMSZ_LEFT:
+    case WMSZ_RIGHT:
+      rect->bottom = rect->top + adjusted_height;
+      break;
+    case WMSZ_TOP:
+    case WMSZ_BOTTOM:
+      rect->right = rect->left + adjusted_width;
+      break;
+    case WMSZ_TOPLEFT:
+      if (width > adjusted_width) {
+        rect->left = rect->right - adjusted_width;
+      } else {
+        rect->top = rect->bottom - adjusted_height;
+      }
+      break;
+    case WMSZ_TOPRIGHT:
+      if (width > adjusted_width) {
+        rect->right = rect->left + adjusted_width;
+      } else {
+        rect->top = rect->bottom - adjusted_height;
+      }
+      break;
+    case WMSZ_BOTTOMLEFT:
+      if (width > adjusted_width) {
+        rect->left = rect->right - adjusted_width;
+      } else {
+        rect->bottom = rect->top + adjusted_height;
+      }
+      break;
+    case WMSZ_BOTTOMRIGHT:
+      if (width > adjusted_width) {
+        rect->right = rect->left + adjusted_width;
+      } else {
+        rect->bottom = rect->top + adjusted_height;
+      }
+      break;
+  }
 }
 
 // Dynamically loads the |EnableNonClientDpiScaling| from the User32 module.
@@ -218,6 +277,11 @@ Win32Window::MessageHandler(HWND hwnd,
       }
       return 0;
     }
+    case WM_SIZING: {
+      auto rect = reinterpret_cast<RECT*>(lparam);
+      ApplyAspectRatio(static_cast<UINT>(wparam), aspect_ratio_, rect);
+      return TRUE;
+    }
 
     case WM_ACTIVATE:
       if (child_content_ != nullptr) {
@@ -269,6 +333,10 @@ RECT Win32Window::GetClientArea() {
 
 void Win32Window::SetMinSize(const Size& size) {
   minimum_size_ = size;
+}
+
+void Win32Window::SetAspectRatio(const Size& size) {
+  aspect_ratio_ = size;
 }
 
 HWND Win32Window::GetHandle() {

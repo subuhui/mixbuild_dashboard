@@ -58,6 +58,9 @@ class Win32Window {
   // Sets the minimum tracking size for the top-level window in logical pixels.
   void SetMinSize(const Size& size);
 
+  // Sets a fixed aspect ratio for interactive window resizing.
+  void SetAspectRatio(const Size& size);
+
  protected:
   // Processes and route salient window messages for mouse handling,
   // size change and DPI. Delegates handling of these to member overloads that
@@ -95,6 +98,7 @@ class Win32Window {
 
   bool quit_on_close_ = false;
   Size minimum_size_ = Size(0, 0);
+  Size aspect_ratio_ = Size(0, 0);
 
   // window handle for top level window.
   HWND window_handle_ = nullptr;

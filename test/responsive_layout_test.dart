@@ -66,6 +66,48 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('project detail header renders without overflow on narrow width', (
+      tester,
+    ) async {
+      _setSurfaceSize(tester, const Size(780, 1100));
+
+      final tempDir = Directory.systemTemp.createTempSync(
+        'mixbuild-responsive-detail-header',
+      );
+      addTearDown(() {
+        if (tempDir.existsSync()) {
+          tempDir.deleteSync(recursive: true);
+        }
+      });
+
+      final store = MixbuildYamlStore(configHomePath: tempDir.path);
+      store.saveConfigSync(_seedConfig());
+      final container = ProviderContainer(
+        overrides: [mixbuildYamlStoreProvider.overrideWithValue(store)],
+      );
+      addTearDown(container.dispose);
+
+      final state = container.read(dashboardControllerProvider);
+      final project = state.projects.first;
+      final scenario = project.scenarios.first;
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: ProjectDetailPage(
+              projectId: project.id,
+              scenarioId: scenario.id,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('project editor renders without overflow on medium width', (
       tester,
     ) async {
