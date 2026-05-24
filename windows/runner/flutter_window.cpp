@@ -7,7 +7,6 @@
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {
   SetMinSize(kMinimumSize);
-  SetAspectRatio(kMinimumSize);
 }
 
 FlutterWindow::~FlutterWindow() {}

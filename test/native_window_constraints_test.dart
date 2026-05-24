@@ -3,19 +3,16 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('macOS window sets minimum size and fixed aspect ratio', () async {
+  test('macOS window sets minimum size without fixed aspect ratio', () async {
     final source = await File('macos/Runner/MainFlutterWindow.swift')
         .readAsString();
 
     expect(source, contains('let baseContentSize = NSSize(width: 1024, height: 720)'));
     expect(source, contains('minSize = NSSize(width: 1024, height: 720)'));
-    expect(
-      source,
-      contains('contentAspectRatio = baseContentSize'),
-    );
+    expect(source, isNot(contains('contentAspectRatio = baseContentSize')));
   });
 
-  test('Windows runner enforces minimum size and fixed aspect ratio',
+  test('Windows runner enforces minimum size without fixed aspect ratio',
       () async {
     final windowsMain = await File('windows/runner/main.cpp').readAsString();
     final flutterWindowHeader =
@@ -31,8 +28,8 @@ void main() {
     );
     expect(windowsMain, contains('Win32Window::Size size(1280, 900);'));
     expect(flutterWindowSource, contains('SetMinSize(kMinimumSize);'));
-    expect(flutterWindowSource, contains('SetAspectRatio(kMinimumSize);'));
     expect(win32WindowSource, contains('WM_GETMINMAXINFO'));
-    expect(win32WindowSource, contains('WM_SIZING'));
+    expect(flutterWindowSource, isNot(contains('SetAspectRatio(kMinimumSize);')));
+    expect(win32WindowSource, isNot(contains('WM_SIZING')));
   });
 }
