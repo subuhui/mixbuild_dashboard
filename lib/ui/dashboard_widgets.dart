@@ -50,32 +50,21 @@ class DashboardTopBar extends StatelessWidget {
   const DashboardTopBar({
     super.key,
     this.leading,
-    required this.currentWorkspaceName,
-    required this.availableWorkspaceNames,
     required this.runningCount,
-    required this.onWorkspaceChanged,
     required this.onReloadTopology,
   });
 
   final Widget? leading;
-  final String currentWorkspaceName;
-  final List<String> availableWorkspaceNames;
   final int runningCount;
-  final ValueChanged<String> onWorkspaceChanged;
   final VoidCallback onReloadTopology;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final orderedWorkspaceNames = <String>[
-      currentWorkspaceName,
-      ...availableWorkspaceNames.where((name) => name != currentWorkspaceName),
-    ];
     return LayoutBuilder(
       builder: (context, constraints) {
         final responsive = ResponsiveLayout.fromWidth(constraints.maxWidth);
         final compact = responsive.isCompact;
-        final stackedSelector = !responsive.isWide;
         final titleRow = Row(
           children: [
             if (leading != null) ...[leading!, const SizedBox(width: 8)],
@@ -130,25 +119,6 @@ class DashboardTopBar extends StatelessWidget {
           ],
         );
 
-        final workspaceSelector = DropdownButtonFormField<String>(
-          initialValue: currentWorkspaceName,
-          isExpanded: true,
-          decoration: const InputDecoration(isDense: true),
-          onChanged: (value) {
-            if (value != null && value != currentWorkspaceName) {
-              onWorkspaceChanged(value);
-            }
-          },
-          items: availableWorkspaceNames
-              .map(
-                (name) => DropdownMenuItem<String>(
-                  value: name,
-                  child: Text(name, overflow: TextOverflow.ellipsis),
-                ),
-              )
-              .toList(),
-        );
-
         final actions = Wrap(
           alignment: WrapAlignment.end,
           crossAxisAlignment: WrapCrossAlignment.center,
@@ -186,35 +156,11 @@ class DashboardTopBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              child: Row(
                 children: [
-                  if (stackedSelector) ...[
-                    titleRow,
-                    const SizedBox(height: 12),
-                    workspaceSelector,
-                    const SizedBox(height: 12),
-                    actions,
-                  ] else
-                    Row(
-                      children: [
-                        Expanded(child: titleRow),
-                        const SizedBox(width: 12),
-                        SizedBox(width: 230, child: workspaceSelector),
-                        const SizedBox(width: 12),
-                        Flexible(child: actions),
-                      ],
-                    ),
-                  if (compact) ...[
-                    const SizedBox(height: 10),
-                    Text(
-                      'Parallel Running: $runningCount',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: MixBuildPalette.muted,
-                      ),
-                    ),
-                  ],
+                  Expanded(child: titleRow),
+                  const SizedBox(width: 12),
+                  actions,
                 ],
               ),
             ),

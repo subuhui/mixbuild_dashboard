@@ -13,9 +13,9 @@ class ResponsiveLayout {
 
   final double width;
 
-  static const double compactBreakpoint = 840;
-  static const double mediumBreakpoint = 1180;
-  static const double wideBreakpoint = 1440;
+  static const double compactBreakpoint = 1024;
+  static const double mediumBreakpoint = 1024;
+  static const double wideBreakpoint = 1024;
 
   bool get isCompact => width < compactBreakpoint;
   bool get isMedium => width >= compactBreakpoint && width < mediumBreakpoint;

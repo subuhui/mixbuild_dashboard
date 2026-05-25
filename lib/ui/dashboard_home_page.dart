@@ -139,11 +139,7 @@ class DashboardHomePage extends ConsumerWidget {
               children: [
                 DashboardTopBar(
                   leading: leading,
-                  currentWorkspaceName: dashboardState.config.workspace.name,
-                  availableWorkspaceNames:
-                      dashboardState.availableWorkspaceNames,
                   runningCount: dashboardState.runningCount,
-                  onWorkspaceChanged: controller.switchWorkspace,
                   onReloadTopology: controller.reloadTopology,
                 ),
                 Expanded(
@@ -461,71 +457,59 @@ class ProjectOverviewCard extends StatelessWidget {
                 bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
               ),
             ),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final compact = constraints.maxWidth < 720;
-                final actions = [
-                  IconButton(
-                    onPressed: onOpenYaml,
-                    icon: const Icon(Icons.data_object_outlined, size: 18),
-                    color: MixBuildPalette.muted,
-                  ),
-                  FilledButton.tonalIcon(
-                    onPressed: onEdit,
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                    label: const Text('编辑'),
-                    style: FilledButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: MixBuildPalette.primary.withValues(
-                        alpha: 0.14,
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ];
-                return Column(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          project.emoji,
-                          style: const TextStyle(fontSize: 20),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                project.name,
-                                style: theme.textTheme.titleLarge,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                project.description,
-                                style: theme.textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (!compact) ...actions,
-                      ],
+                    Text(
+                      project.emoji,
+                      style: const TextStyle(fontSize: 20),
                     ),
-                    if (compact) ...[
-                      const SizedBox(height: 12),
-                      Wrap(spacing: 8, runSpacing: 8, children: actions),
-                    ],
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            project.name,
+                            style: theme.textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            project.description,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: onOpenYaml,
+                      icon: const Icon(Icons.data_object_outlined, size: 18),
+                      color: MixBuildPalette.muted,
+                    ),
+                    FilledButton.tonalIcon(
+                      onPressed: onEdit,
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      label: const Text('编辑'),
+                      style: FilledButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: MixBuildPalette.primary.withValues(
+                          alpha: 0.14,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
                   ],
-                );
-              },
+                ),
+              ],
             ),
           ),
           Padding(
@@ -593,182 +577,143 @@ class _ScenarioPreviewTile extends StatelessWidget {
             width: isActive ? 1.5 : 1,
           ),
         ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final compact = constraints.maxWidth < 720;
-            final actionButton = ScenarioActionButton(
-              color: actionColor,
-              enabled: true,
-              label: actionLabel,
-              icon: canStop
-                  ? Icons.stop_circle_outlined
-                  : Icons.rocket_launch_outlined,
-              filled: canStop,
-              onPressed: onTap,
-            );
-
-            return Column(
-              children: [
-                if (compact)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        scenario.name,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        scenario.subtitle,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: isActive
-                              ? scenario.status.color.withValues(alpha: 0.6)
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: StatusChip(status: scenario.status),
-                      ),
-                      const SizedBox(height: 12),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: actionButton,
-                      ),
-                    ],
-                  )
-                else
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              scenario.name,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              scenario.subtitle,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: isActive
-                                    ? scenario.status.color.withValues(
-                                        alpha: 0.6,
-                                      )
-                                    : null,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Flexible(
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: StatusChip(status: scenario.status),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: actionButton,
-                      ),
-                    ],
-                  ),
-                // Active scenario: terminal log panel + progress bar
-                if (isActive) ...[
-                  const SizedBox(height: 14),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.05),
-                      ),
-                    ),
+        child: Column(
+          children: [
+            Row(
+                children: [
+                  Expanded(
+                    flex: 3,
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        for (final log in scenario.logs.take(5))
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  width: 68,
-                                  child: Text(
-                                    log.time,
-                                    style: MixBuildTheme.monoTextStyle(
-                                      fontSize: 11,
-                                      color: scenario.status.color,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    '[${log.level}] ${log.message}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: MixBuildTheme.monoTextStyle(
-                                      fontSize: 11,
-                                      color: Colors.white.withValues(
-                                        alpha: 0.76,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                        Text(
+                          scenario.name,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
                           ),
-                        const SizedBox(height: 6),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(999),
-                          child: Stack(
-                            children: [
-                              LinearProgressIndicator(
-                                value: scenario.progress,
-                                minHeight: 3,
-                                backgroundColor: Colors.white.withValues(
-                                  alpha: 0.08,
-                                ),
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  scenario.status.color,
-                                ),
-                              ),
-                              Positioned.fill(
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: scenario.status.color.withValues(
-                                          alpha: 0.4,
-                                        ),
-                                        blurRadius: 8,
-                                        spreadRadius: -1,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          scenario.subtitle,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: isActive
+                                ? scenario.status.color.withValues(
+                                    alpha: 0.6,
+                                  )
+                                : null,
                           ),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  Flexible(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: StatusChip(status: scenario.status),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ScenarioActionButton(
+                      color: actionColor,
+                      enabled: true,
+                      label: actionLabel,
+                      icon: canStop
+                          ? Icons.stop_circle_outlined
+                          : Icons.rocket_launch_outlined,
+                      filled: canStop,
+                      onPressed: onTap,
+                    ),
+                  ),
                 ],
-              ],
-            );
-          },
+              ),
+            // Active scenario: terminal log panel + progress bar
+            if (isActive) ...[
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.05),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    for (final log in scenario.logs.take(5))
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 68,
+                              child: Text(
+                                log.time,
+                                style: MixBuildTheme.monoTextStyle(
+                                  fontSize: 11,
+                                  color: scenario.status.color,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                '[${log.level}] ${log.message}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: MixBuildTheme.monoTextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white.withValues(
+                                    alpha: 0.76,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: Stack(
+                        children: [
+                          LinearProgressIndicator(
+                            value: scenario.progress,
+                            minHeight: 3,
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.08,
+                            ),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              scenario.status.color,
+                            ),
+                          ),
+                          Positioned.fill(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: scenario.status.color.withValues(
+                                      alpha: 0.4,
+                                    ),
+                                    blurRadius: 8,
+                                    spreadRadius: -1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
