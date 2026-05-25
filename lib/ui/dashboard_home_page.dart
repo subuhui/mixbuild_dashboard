@@ -295,7 +295,7 @@ class _DashboardNavRail extends StatelessWidget {
             label: 'Dashboard',
             active: true,
           ),
-          const _NavItem(
+          _NavItem(
             icon: Icons.receipt_long_outlined,
             label: 'Build Logs',
             onTap: () => onOpenBuildLogs(),
