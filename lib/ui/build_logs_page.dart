@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
+import 'package:mixbuild_dashboard/l10n/app_strings.dart';
 import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
 import 'package:mixbuild_dashboard/ui/dashboard_widgets.dart';
 
@@ -101,6 +102,7 @@ class _BuildLogsHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: MixBuildTheme.glassPanel(radius: 20),
@@ -109,15 +111,15 @@ class _BuildLogsHeader extends StatelessWidget {
           IconButton(
             onPressed: onBack,
             icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-            tooltip: '返回',
+            tooltip: strings.btnBack,
           ),
           const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Build Logs', style: theme.textTheme.titleLarge),
+              Text(strings.buildLogsTitle, style: theme.textTheme.titleLarge),
               Text(
-                hasRecords ? '执行任务历史与日志列表' : '暂无执行任务记录',
+                hasRecords ? strings.buildLogsSubtitle : strings.buildLogsEmptyDetail,
                 style: theme.textTheme.bodySmall,
               ),
             ],
@@ -141,12 +143,13 @@ class _BuildExecutionHistoryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     if (records.isEmpty) {
       return Container(
         decoration: MixBuildTheme.glassPanel(radius: 24),
         alignment: Alignment.center,
         child: Text(
-          '暂无任务历史',
+          strings.buildLogsEmpty,
           style: Theme.of(context).textTheme.bodySmall,
         ),
       );
@@ -199,7 +202,7 @@ class _BuildExecutionHistoryList extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _formatExecutionTime(record),
+                    _formatExecutionTime(record, strings),
                     style: MixBuildTheme.monoTextStyle(
                       fontSize: 11,
                       color: MixBuildPalette.muted,
@@ -232,11 +235,12 @@ class _BuildExecutionLogDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     if (record == null) {
       return Container(
         decoration: MixBuildTheme.glassPanel(radius: 24),
         alignment: Alignment.center,
-        child: Text('请选择一条任务记录', style: Theme.of(context).textTheme.bodySmall),
+        child: Text(strings.buildLogsSelectRecord, style: Theme.of(context).textTheme.bodySmall),
       );
     }
     return Container(
@@ -271,12 +275,12 @@ class _BuildExecutionLogDetail extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '分支: ${record!.branch}',
+                  strings.branchInfo(record!.branch),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _formatExecutionTime(record!),
+                  _formatExecutionTime(record!, strings),
                   style: MixBuildTheme.monoTextStyle(
                     fontSize: 11,
                     color: MixBuildPalette.muted,
@@ -289,7 +293,7 @@ class _BuildExecutionLogDetail extends StatelessWidget {
             child: record!.logs.isEmpty
                 ? Center(
                     child: Text(
-                      '当前任务暂无日志',
+                      strings.buildLogsNoLogs,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   )
@@ -346,15 +350,15 @@ class _BuildExecutionLogDetail extends StatelessWidget {
   }
 }
 
-String _formatExecutionTime(BuildExecutionRecord record) {
+String _formatExecutionTime(BuildExecutionRecord record, AppStrings strings) {
   final start = record.startedAt;
   final startLabel =
       '${start.month.toString().padLeft(2, '0')}-${start.day.toString().padLeft(2, '0')} ${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}:${start.second.toString().padLeft(2, '0')}';
   final finish = record.finishedAt;
   if (finish == null) {
-    return '开始于 $startLabel';
+    return '${strings.buildLogsStart} $startLabel';
   }
   final finishLabel =
       '${finish.hour.toString().padLeft(2, '0')}:${finish.minute.toString().padLeft(2, '0')}:${finish.second.toString().padLeft(2, '0')}';
-  return '开始于 $startLabel · 结束于 $finishLabel';
+  return '${strings.buildLogsStart} $startLabel · ${strings.buildLogsStartFinish.split(' · ').last} $finishLabel';
 }

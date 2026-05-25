@@ -11,6 +11,7 @@ import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
 import 'package:mixbuild_dashboard/state/dashboard_state.dart';
 import 'package:mixbuild_dashboard/ui/build_logs_page.dart';
 import 'package:mixbuild_dashboard/ui/dashboard_widgets.dart';
+import 'package:mixbuild_dashboard/l10n/app_strings.dart';
 import 'package:mixbuild_dashboard/ui/project_editor_page.dart';
 import 'package:mixbuild_dashboard/ui/yaml_editor_page.dart';
 
@@ -58,11 +59,12 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
   }
 
   Future<void> _openYamlPage() async {
+    final strings = AppStrings.of(context);
     final initialValue = _controller.readCurrentYaml();
     final result = await YamlEditorPage.show(
       context,
       initialValue: initialValue,
-      title: '当前项目 YAML',
+      title: strings.projectYamlTitle,
     );
     if (result == null) return;
     await _controller.saveCurrentYaml(result);
@@ -88,9 +90,10 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
     if (!mounted) {
       return;
     }
+    final strings = AppStrings.of(context);
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('完整日志已保存: ${location.path}')));
+    ).showSnackBar(SnackBar(content: Text(strings.logSaved(location.path))));
   }
 
   String _sanitizeFileName(String value) {
@@ -111,13 +114,14 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
   }
 
   Future<void> _openProjectEditor(DashboardState dashboardState) async {
+    final strings = AppStrings.of(context);
     final result = await ProjectEditorPage.show(
       context,
       config: dashboardState.globalConfig,
       scenarios: dashboardState.selectedProject.scenarios,
       baseDependencies: _controller.editorBaseDependencies(),
-      title: '项目编辑',
-      primaryActionLabel: '保存项目配置',
+      title: strings.projectEditTitle,
+      primaryActionLabel: strings.projectSaveConfig,
     );
     if (result == null) return;
     await _controller.updateProjectConfiguration(
@@ -322,16 +326,17 @@ class _SidebarPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     final content = Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SidebarSectionLabel(label: '项目工作区'),
+          _SidebarSectionLabel(label: strings.projectWorkspace),
           const SizedBox(height: 8),
           _WorkspaceChip(project: project),
           const SizedBox(height: 20),
-          _SidebarSectionLabel(label: '构建场景'),
+          _SidebarSectionLabel(label: strings.projectScenarios),
           const SizedBox(height: 8),
           _ScenarioCard(
             project: project,
@@ -339,7 +344,7 @@ class _SidebarPanel extends StatelessWidget {
             onScenarioChanged: onScenarioChanged,
           ),
           const SizedBox(height: 20),
-          _SidebarSectionLabel(label: '主工程分支'),
+          _SidebarSectionLabel(label: strings.mainProjectBranch),
           const SizedBox(height: 8),
           Container(
             width: double.infinity,
@@ -359,7 +364,7 @@ class _SidebarPanel extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           _SidebarSectionLabel(
-            label: '依赖拓扑矩阵',
+            label: strings.dependencyTopologyMatrix,
             trailing: '${scenario.dependencies.length} NODES',
           ),
           const SizedBox(height: 8),
@@ -417,6 +422,7 @@ class _SidebarHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 16, 16, 16),
       decoration: BoxDecoration(
@@ -455,11 +461,11 @@ class _SidebarHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'MixBuild Dashboard',
+                  strings.appTitle,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 Text(
-                  'VERSION v1.0',
+                  strings.appVersion,
                   style: MixBuildTheme.monoTextStyle(
                     fontSize: 10,
                     color: MixBuildPalette.muted,
@@ -477,7 +483,7 @@ class _SidebarHeader extends StatelessWidget {
             ),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-            tooltip: '编辑项目',
+            tooltip: strings.projectEditTooltip,
           ),
         ],
       ),
@@ -767,6 +773,7 @@ class _DependencyTreeNode extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
     return Stack(
       children: [
         Positioned(
@@ -820,7 +827,7 @@ class _DependencyTreeNode extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      dependency.isOverride ? '覆写' : '默认',
+                      dependency.isOverride ? strings.dependencyOverride : strings.dependencyDefault,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: _nodeColor,
                         fontSize: 9,
@@ -877,6 +884,7 @@ class _SidebarFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -890,7 +898,7 @@ class _SidebarFooter extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text('当前状态', style: theme.textTheme.bodySmall),
+              Text(strings.currentStatus, style: theme.textTheme.bodySmall),
               const Spacer(),
               Container(
                 width: 6,
@@ -902,7 +910,7 @@ class _SidebarFooter extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                scenario.status.label,
+                scenario.status.labelWithContext(context),
                 style: MixBuildTheme.monoTextStyle(
                   fontSize: 11,
                   color: scenario.status.color,
@@ -924,7 +932,7 @@ class _SidebarFooter extends StatelessWidget {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  '构建前清理 (--clean)',
+                  strings.scenarioCleanBeforeShort,
                   style: theme.textTheme.bodySmall,
                 ),
               ),
@@ -939,7 +947,7 @@ class _SidebarFooter extends StatelessWidget {
               icon: Icon(
                 scenario.status.controlsLocked ? Icons.sync : Icons.play_arrow,
               ),
-              label: Text(scenario.status.triggerLabel),
+              label: Text(scenario.status.triggerLabelWithContext(context)),
               style: FilledButton.styleFrom(
                 backgroundColor: MixBuildPalette.primary,
                 foregroundColor: Colors.white,
@@ -960,7 +968,7 @@ class _SidebarFooter extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: onStop,
                 icon: const Icon(Icons.stop_circle_outlined, size: 18),
-                label: const Text('停止构建'),
+                label: Text(strings.btnStop),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: MixBuildPalette.error,
                   side: BorderSide(
@@ -996,6 +1004,7 @@ class _PipelineHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
     final chipStrip = Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -1003,7 +1012,7 @@ class _PipelineHeader extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: _buildChips()),
+      child: Row(mainAxisSize: MainAxisSize.min, children: _buildChips(context)),
     );
 
     final statusSummary = Row(
@@ -1017,7 +1026,7 @@ class _PipelineHeader extends StatelessWidget {
         const SizedBox(width: 6),
         Flexible(
           child: Text(
-            scenario.status.description,
+            scenario.status.descriptionWithContext(context),
             style: theme.textTheme.bodySmall,
             overflow: TextOverflow.ellipsis,
           ),
@@ -1032,7 +1041,7 @@ class _PipelineHeader extends StatelessWidget {
         visualDensity: VisualDensity.compact,
         minimumSize: const Size(0, 36),
       ),
-      child: const Text('任务历史'),
+      child: Text(strings.navBuildLogs),
     );
 
     return LayoutBuilder(
@@ -1093,7 +1102,7 @@ class _PipelineHeader extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildChips() {
+  List<Widget> _buildChips(BuildContext context) {
     final currentIndex = _steps.contains(scenario.status)
         ? _steps.indexOf(scenario.status)
         : -1;
@@ -1112,7 +1121,7 @@ class _PipelineHeader extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
-            step.label,
+            step.labelWithContext(context),
             style: MixBuildTheme.monoTextStyle(
               fontSize: 11,
               color: active
@@ -1168,6 +1177,7 @@ class _TerminalPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF121212).withValues(alpha: 0.85),
@@ -1201,7 +1211,7 @@ class _TerminalPanel extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'zsh — ${scenario.command} — ${project.name}',
+                    strings.terminalTitle(scenario.command, project.name),
                     overflow: TextOverflow.ellipsis,
                     style: MixBuildTheme.monoTextStyle(
                       fontSize: 11,
@@ -1216,7 +1226,7 @@ class _TerminalPanel extends StatelessWidget {
                   padding: EdgeInsets.zero,
                   constraints:
                       const BoxConstraints(minWidth: 28, minHeight: 28),
-                  tooltip: '任务历史',
+                  tooltip: strings.navBuildLogs,
                 ),
                 const SizedBox(width: 8),
                 IconButton(
@@ -1228,7 +1238,7 @@ class _TerminalPanel extends StatelessWidget {
                     minWidth: 28,
                     minHeight: 28,
                   ),
-                  tooltip: '编辑 YAML',
+                  tooltip: strings.btnEdit,
                 ),
                 const SizedBox(width: 8),
                 IconButton(
@@ -1241,7 +1251,7 @@ class _TerminalPanel extends StatelessWidget {
                     minWidth: 28,
                     minHeight: 28,
                   ),
-                  tooltip: '保存完整日志',
+                  tooltip: strings.btnSave,
                 ),
               ],
             ),
@@ -1267,9 +1277,9 @@ class _TerminalPanel extends StatelessWidget {
                         },
                         icon: const Icon(Icons.close, size: 16),
                         splashRadius: 14,
-                        tooltip: '清空搜索',
+                        tooltip: strings.btnClose,
                       ),
-                hintText: '搜索日志时间 / 级别 / 内容',
+                hintText: strings.buildLogsNoMatch,
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 border: OutlineInputBorder(
@@ -1292,7 +1302,7 @@ class _TerminalPanel extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'Ready to receive build command for project: ${project.name}',
+                          strings.readyForCommand(project.name),
                           style: MixBuildTheme.monoTextStyle(
                             fontSize: 12,
                             color: MixBuildPalette.muted.withValues(alpha: 0.5),
@@ -1304,7 +1314,7 @@ class _TerminalPanel extends StatelessWidget {
                 : visibleLogs.isEmpty
                     ? Center(
                         child: Text(
-                          '没有匹配 "$searchQuery" 的日志',
+                          strings.noLogMatch(searchQuery),
                           style: MixBuildTheme.monoTextStyle(
                             fontSize: 12,
                             color:
@@ -1417,6 +1427,7 @@ class _HudOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: BackdropFilter(
@@ -1444,7 +1455,7 @@ class _HudOverlay extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'CONNECTED',
+                    strings.connectedStatus,
                     style: MixBuildTheme.monoTextStyle(
                       fontSize: 10,
                       color: MixBuildPalette.foreground,

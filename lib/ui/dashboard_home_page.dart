@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixbuild_dashboard/app/responsive_layout.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
+import 'package:mixbuild_dashboard/l10n/app_strings.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
 import 'package:mixbuild_dashboard/ui/build_logs_page.dart';
@@ -18,12 +19,13 @@ class DashboardHomePage extends ConsumerWidget {
     final dashboardState = ref.watch(dashboardControllerProvider);
     final controller = ref.read(dashboardControllerProvider.notifier);
     final responsive = ResponsiveLayout.of(context);
+    final strings = AppStrings.of(context);
 
     Future<void> openYamlPage() async {
       final result = await YamlEditorPage.show(
         context,
         initialValue: controller.readCurrentYaml(),
-        title: '当前项目 YAML',
+        title: strings.projectYamlTitle,
       );
       if (result == null) {
         return;
@@ -68,7 +70,7 @@ class DashboardHomePage extends ConsumerWidget {
         scenarios: project.scenarios,
         baseDependencies: controller.editorBaseDependencies(),
         title: title,
-        primaryActionLabel: title == '新增项目' ? '创建项目' : '保存项目配置',
+        primaryActionLabel: title == strings.projectNewTitle ? strings.projectNewAction : strings.projectSaveConfig,
       );
       if (result == null) {
         return;
@@ -93,8 +95,8 @@ class DashboardHomePage extends ConsumerWidget {
         config: emptyConfig,
         scenarios: const [],
         baseDependencies: const [],
-        title: '新增项目',
-        primaryActionLabel: '创建项目',
+        title: strings.projectNewTitle,
+        primaryActionLabel: strings.projectNewAction,
       );
       if (result == null) {
         return;
@@ -155,7 +157,7 @@ class DashboardHomePage extends ConsumerWidget {
                           project: project,
                           selectedScenarioId: dashboardState.selectedScenarioId,
                           onEdit: () => openProjectEditor(
-                            title: '项目编辑',
+                            title: strings.projectEditTitle,
                             targetProject: project,
                           ),
                           onOpenScenario: (scenario) =>
@@ -208,7 +210,7 @@ class DashboardHomePage extends ConsumerWidget {
                       leading: IconButton(
                         onPressed: Scaffold.of(innerContext).openDrawer,
                         icon: const Icon(Icons.menu_rounded),
-                        tooltip: 'Open navigation',
+                        tooltip: strings.navOpenMenu,
                       ),
                     ),
                   )
@@ -239,6 +241,7 @@ class _DashboardNavRail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
     return Container(
       width: compact ? 280 : 252,
       margin: compact
@@ -268,7 +271,7 @@ class _DashboardNavRail extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'MixBuild',
+                  strings.appBrand,
                   style: theme.textTheme.headlineMedium?.copyWith(
                     color: MixBuildPalette.primary,
                     fontWeight: FontWeight.w700,
@@ -276,7 +279,7 @@ class _DashboardNavRail extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'v1.0.0-stable',
+                  strings.appVersion,
                   style: theme.textTheme.bodySmall?.copyWith(
                     letterSpacing: 1.1,
                     color: MixBuildPalette.muted.withValues(alpha: 0.7),
@@ -286,22 +289,22 @@ class _DashboardNavRail extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          const _NavItem(
+          _NavItem(
             icon: Icons.dashboard_outlined,
-            label: 'Dashboard',
+            label: strings.navDashboard,
             active: true,
           ),
           _NavItem(
             icon: Icons.receipt_long_outlined,
-            label: 'Build Logs',
+            label: strings.navBuildLogs,
             onTap: () => onOpenBuildLogs(),
           ),
-          const _NavItem(icon: Icons.settings_outlined, label: 'Settings'),
+          _NavItem(icon: Icons.settings_outlined, label: strings.navSettings),
           const SizedBox(height: 18),
           FilledButton.icon(
             onPressed: onCreateProject,
             icon: const Icon(Icons.add),
-            label: const Text('New Project'),
+            label: Text(strings.navNewProject),
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(52),
               shape: RoundedRectangleBorder(
@@ -335,7 +338,7 @@ class _DashboardNavRail extends StatelessWidget {
                         color: MixBuildPalette.muted,
                       ),
                       const SizedBox(width: 10),
-                      Text('Support', style: theme.textTheme.bodySmall),
+                      Text(strings.navSupport, style: theme.textTheme.bodySmall),
                     ],
                   ),
                 ),
@@ -352,14 +355,14 @@ class _DashboardNavRail extends StatelessWidget {
                         color: MixBuildPalette.muted,
                       ),
                       const SizedBox(width: 10),
-                      Text('Docs', style: theme.textTheme.bodySmall),
+                      Text(strings.navDocs, style: theme.textTheme.bodySmall),
                     ],
                   ),
                 ),
                 const SizedBox(height: 10),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text('© 2026', style: theme.textTheme.bodySmall),
+                  child: Text(strings.copyright, style: theme.textTheme.bodySmall),
                 ),
               ],
             ),
@@ -441,6 +444,7 @@ class ProjectOverviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
     return Container(
       decoration: MixBuildTheme.glassPanel(radius: 24),
       child: Column(
@@ -492,7 +496,7 @@ class ProjectOverviewCard extends StatelessWidget {
                     FilledButton.tonalIcon(
                       onPressed: onEdit,
                       icon: const Icon(Icons.edit_outlined, size: 18),
-                      label: const Text('编辑'),
+                      label: Text(strings.btnEdit),
                       style: FilledButton.styleFrom(
                         foregroundColor: Colors.white,
                         backgroundColor: MixBuildPalette.primary.withValues(
@@ -549,9 +553,10 @@ class _ScenarioPreviewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
     final isActive = scenario.status.isPipelineActive;
     final canStop = scenario.status.canStop;
-    final actionLabel = canStop ? '停止' : '查看';
+    final actionLabel = canStop ? strings.btnStop : strings.btnView;
     final actionColor = canStop
         ? MixBuildPalette.error
         : MixBuildPalette.primary;

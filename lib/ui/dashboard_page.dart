@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
+import 'package:mixbuild_dashboard/l10n/app_strings.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
 import 'package:mixbuild_dashboard/state/dashboard_state.dart';
@@ -71,8 +72,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       if (!mounted) {
         return;
       }
+      final strings = AppStrings.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('YAML 保存失败: $error')),
+        SnackBar(content: Text(strings.yamlSaveError(error.toString()))),
       );
     }
   }
@@ -219,7 +221,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         backgroundColor: MixBuildPalette.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('新增构建场景'),
+        label: Text(AppStrings.of(context).scenarioAddNew),
       ),
     );
   }
@@ -315,6 +317,7 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 960;
@@ -339,7 +342,7 @@ class _TopBar extends StatelessWidget {
                       children: [
                         Flexible(
                           child: Text(
-                            'MixBuild Dashboard v1.0',
+                            strings.appTitleWithVersion,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.titleLarge,
                           ),
@@ -354,7 +357,7 @@ class _TopBar extends StatelessWidget {
                           const SizedBox(width: 14),
                           Flexible(
                             child: _TinyBadge(
-                              label: 'Parallel Running: $runningCount',
+                              label: strings.parallelRunningCount(runningCount),
                               color: MixBuildPalette.primary,
                             ),
                           ),
@@ -397,7 +400,7 @@ class _TopBar extends StatelessWidget {
                     TextButton.icon(
                       onPressed: onReloadTopology,
                       icon: const Icon(Icons.refresh, size: 18),
-                      label: const Text('重载 YAML'),
+                      label: Text(strings.yamlReload),
                     ),
                   const SizedBox(width: 8),
                   if (compact)
@@ -409,7 +412,7 @@ class _TopBar extends StatelessWidget {
                     OutlinedButton.icon(
                       onPressed: onOpenYaml,
                       icon: const Icon(Icons.open_in_new, size: 18),
-                      label: const Text('打开 YAML'),
+                      label: Text(strings.yamlOpen),
                     ),
                   const SizedBox(width: 8),
                   if (compact)
@@ -421,7 +424,7 @@ class _TopBar extends StatelessWidget {
                     FilledButton.tonalIcon(
                       onPressed: onOpenConfig,
                       icon: const Icon(Icons.settings_outlined, size: 18),
-                      label: const Text('Global Config'),
+                      label: Text(strings.yamlGlobalConfig),
                     ),
                 ],
               ),
@@ -465,6 +468,7 @@ class _SideBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
     return Container(
       width: 332,
       decoration: BoxDecoration(
@@ -479,13 +483,13 @@ class _SideBar extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'MixBuild',
+              strings.appBrand,
               style: theme.textTheme.headlineMedium?.copyWith(
                 color: MixBuildPalette.primary,
               ),
             ),
             const SizedBox(height: 4),
-            Text('v1.0.0-stable · Flutter Desktop / macOS',
+            Text(strings.appVersionSubtitle,
                 style: theme.textTheme.bodySmall),
             const SizedBox(height: 20),
             Container(
@@ -513,7 +517,7 @@ class _SideBar extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Text('主工程分支',
+                  Text(strings.mainProjectBranch,
                       style: theme.textTheme.labelLarge
                           ?.copyWith(color: MixBuildPalette.muted)),
                   const SizedBox(height: 8),
@@ -539,7 +543,7 @@ class _SideBar extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            Text('依赖项拓扑视图',
+            Text(strings.dependencyTopology,
                 style: theme.textTheme.labelLarge
                     ?.copyWith(color: MixBuildPalette.muted)),
             const SizedBox(height: 10),
@@ -577,7 +581,7 @@ class _SideBar extends StatelessWidget {
                                     .withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(999),
                               ),
-                              child: Text('Override',
+                              child: Text(strings.dependencyOverride,
                                   style: theme.textTheme.bodySmall?.copyWith(
                                       color: dependency.highlight ??
                                           MixBuildPalette.primary)),
@@ -609,7 +613,7 @@ class _SideBar extends StatelessWidget {
                 ),
               ),
             const SizedBox(height: 16),
-            Text('构建场景配置',
+            Text(strings.scenarioConfig,
                 style: theme.textTheme.labelLarge
                     ?.copyWith(color: MixBuildPalette.muted)),
             const SizedBox(height: 10),
@@ -662,7 +666,7 @@ class _SideBar extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.only(top: 12),
                     child: Text(
-                      '执行构建前强制清理 (--clean)',
+                      strings.scenarioCleanBefore,
                       style: theme.textTheme.bodyMedium,
                     ),
                   ),
@@ -675,7 +679,7 @@ class _SideBar extends StatelessWidget {
               icon: Icon(scenario.status.controlsLocked
                   ? Icons.sync
                   : Icons.play_arrow),
-              label: Text(scenario.status.triggerLabel),
+              label: Text(scenario.status.triggerLabelWithContext(context)),
             ),
             const SizedBox(height: 10),
             OutlinedButton.icon(
@@ -683,7 +687,7 @@ class _SideBar extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                   foregroundColor: MixBuildPalette.error),
               icon: const Icon(Icons.stop_circle_outlined),
-              label: const Text('停止'),
+              label: Text(strings.btnStop),
             ),
           ],
         ),
@@ -709,11 +713,12 @@ class _ScenarioRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     final actionLabel = scenario.status.canStop
-        ? '停止'
+        ? strings.btnStop
         : scenario.status.controlsLocked
-            ? 'Loading…'
-            : '开始';
+            ? strings.loadingLabel
+            : strings.btnStart;
     final actionIcon = scenario.status.canStop
         ? Icons.stop_circle_outlined
         : scenario.status.controlsLocked
@@ -850,7 +855,7 @@ class _StatusChip extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            status.label,
+            status.labelWithContext(context),
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: status.color,
                 ),
@@ -904,6 +909,7 @@ class _InspectorPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
     return DecoratedBox(
       decoration: MixBuildTheme.glassPanel(),
       child: Column(
@@ -926,7 +932,7 @@ class _InspectorPanel extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: onOpenYaml,
                   icon: const Icon(Icons.data_object_outlined, size: 18),
-                  label: const Text('YAML'),
+                  label: Text(strings.yamlOverride),
                 ),
               ],
             ),
@@ -948,7 +954,7 @@ class _InspectorPanel extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    status.label,
+                    status.labelWithContext(context),
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: active ? Colors.white : MixBuildPalette.muted,
                     ),
@@ -967,10 +973,10 @@ class _InspectorPanel extends StatelessWidget {
                   color: MixBuildPalette.muted.withValues(alpha: 0.9),
                 ),
                 const SizedBox(width: 8),
-                Text(scenario.status.description,
+                Text(scenario.status.descriptionWithContext(context),
                     style: theme.textTheme.bodySmall),
                 const Spacer(),
-                TextButton(onPressed: () {}, child: const Text('任务历史')),
+                TextButton(onPressed: () {}, child: Text(strings.navBuildLogs)),
               ],
             ),
           ),
@@ -1014,7 +1020,7 @@ class _InspectorPanel extends StatelessWidget {
                           const SizedBox(width: 16),
                           Expanded(
                             child: Text(
-                              'zsh — ${scenario.command} — ${project.name}',
+                              strings.terminalTitle(scenario.command, project.name),
                               overflow: TextOverflow.ellipsis,
                               style: MixBuildTheme.monoTextStyle(
                                 fontSize: 11,
@@ -1088,7 +1094,7 @@ class _InspectorPanel extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              Text('输出目录', style: theme.textTheme.bodySmall),
+                              Text(strings.outputDir, style: theme.textTheme.bodySmall),
                               const Spacer(),
                               Text(
                                 '${(scenario.progress * 100).toStringAsFixed(1)}%',
@@ -1142,7 +1148,7 @@ class _InspectorPanel extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('依赖分支覆盖', style: theme.textTheme.labelLarge),
+                    Text(strings.dependencyBranchOverride, style: theme.textTheme.labelLarge),
                     const SizedBox(height: 12),
                     for (final dependency in scenario.dependencies)
                       Padding(
@@ -1208,6 +1214,7 @@ class _FooterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
       child: BackdropFilter(
@@ -1224,7 +1231,7 @@ class _FooterBar extends StatelessWidget {
             spacing: 18,
             runSpacing: 10,
             children: [
-              Text('© 2026 MixBuild Systems', style: theme.textTheme.bodySmall),
+              Text(strings.copyright, style: theme.textTheme.bodySmall),
               for (final metric in metrics) _MetricBar(metric: metric),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1239,7 +1246,7 @@ class _FooterBar extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Connected',
+                    strings.connectedStatus,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: MixBuildPalette.primary,
                     ),
@@ -1406,6 +1413,7 @@ class _YamlEditorDialogState extends State<_YamlEditorDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     return Dialog(
       insetPadding: const EdgeInsets.all(24),
       child: ClipRRect(
@@ -1429,7 +1437,7 @@ class _YamlEditorDialogState extends State<_YamlEditorDialog> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'YAML Configuration Override',
+                          strings.yamlOverrideTitle,
                           style: Theme.of(context).textTheme.headlineMedium,
                         ),
                       ),
@@ -1506,13 +1514,13 @@ class _YamlEditorDialogState extends State<_YamlEditorDialog> {
                     children: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Cancel'),
+                        child: Text(strings.yamlEditorCancel),
                       ),
                       const SizedBox(width: 12),
                       FilledButton(
                         onPressed: () =>
                             Navigator.of(context).pop(_controller.text),
-                        child: const Text('Save Configuration'),
+                        child: Text(strings.yamlEditorSave),
                       ),
                     ],
                   ),
@@ -1564,6 +1572,7 @@ class _ConfigCenterDialogState extends State<_ConfigCenterDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     return Dialog.fullscreen(
       backgroundColor: Colors.black.withValues(alpha: 0.5),
       child: Stack(
@@ -1593,7 +1602,7 @@ class _ConfigCenterDialogState extends State<_ConfigCenterDialog> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    '工程配置中心',
+                                    strings.globalConfigTitle,
                                     style: Theme.of(context)
                                         .textTheme
                                         .headlineMedium,
@@ -1613,7 +1622,7 @@ class _ConfigCenterDialogState extends State<_ConfigCenterDialog> {
                               padding: const EdgeInsets.all(28),
                               children: [
                                 Text(
-                                  '工作区根路径',
+                                  strings.workspaceRoot,
                                   style: Theme.of(context)
                                       .textTheme
                                       .labelLarge
@@ -1631,13 +1640,13 @@ class _ConfigCenterDialogState extends State<_ConfigCenterDialog> {
                                       onPressed: () {},
                                       icon: const Icon(
                                           Icons.folder_open_outlined),
-                                      label: const Text('浏览...'),
+                                      label: Text(strings.btnBrowse),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 28),
                                 Text(
-                                  '主工程绑定',
+                                  strings.mainProjectBinding,
                                   style: Theme.of(context)
                                       .textTheme
                                       .labelLarge
@@ -1701,7 +1710,7 @@ class _ConfigCenterDialogState extends State<_ConfigCenterDialog> {
                               children: [
                                 TextButton(
                                   onPressed: () => Navigator.of(context).pop(),
-                                  child: const Text('取消'),
+                                  child: Text(strings.btnCancel),
                                 ),
                                 const SizedBox(width: 12),
                                 FilledButton(
@@ -1725,7 +1734,7 @@ class _ConfigCenterDialogState extends State<_ConfigCenterDialog> {
                                       ),
                                     );
                                   },
-                                  child: const Text('保存全局配置'),
+                                  child: Text(strings.btnSave),
                                 ),
                               ],
                             ),
@@ -1785,6 +1794,7 @@ class _AddScenarioDialogState extends State<_AddScenarioDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
     return Dialog(
       insetPadding: const EdgeInsets.all(24),
       child: ClipRRect(
@@ -1808,7 +1818,7 @@ class _AddScenarioDialogState extends State<_AddScenarioDialog> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          '新增构建场景',
+                          strings.scenarioAddNew,
                           style: Theme.of(context).textTheme.headlineMedium,
                         ),
                       ),
@@ -1834,12 +1844,12 @@ class _AddScenarioDialogState extends State<_AddScenarioDialog> {
                       const SizedBox(height: 12),
                       TextField(
                         controller: _nameController,
-                        decoration: const InputDecoration(labelText: '场景名称'),
+                        decoration: InputDecoration(labelText: strings.scenarioName),
                       ),
                       const SizedBox(height: 12),
                       TextField(
                         controller: _commandController,
-                        decoration: const InputDecoration(labelText: '构建命令'),
+                        decoration: InputDecoration(labelText: strings.scenarioCommand),
                         minLines: 3,
                         maxLines: 3,
                         style: MixBuildTheme.monoTextStyle(
@@ -1852,7 +1862,7 @@ class _AddScenarioDialogState extends State<_AddScenarioDialog> {
                         children: [
                           Expanded(
                             child: Text(
-                              '依赖分支覆盖',
+                              strings.dependencyBranchOverride,
                               style: Theme.of(context)
                                   .textTheme
                                   .labelLarge
@@ -1860,7 +1870,7 @@ class _AddScenarioDialogState extends State<_AddScenarioDialog> {
                             ),
                           ),
                           Text(
-                            '${widget.baseDependencies.length} Dependencies Detected',
+                            strings.dependenciesDetected(widget.baseDependencies.length),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -1920,7 +1930,7 @@ class _AddScenarioDialogState extends State<_AddScenarioDialog> {
                         ),
                       const SizedBox(height: 24),
                       Text(
-                        '高级选项',
+                        strings.advancedOptions,
                         style: Theme.of(context)
                             .textTheme
                             .labelLarge
@@ -1929,7 +1939,7 @@ class _AddScenarioDialogState extends State<_AddScenarioDialog> {
                       const SizedBox(height: 12),
                       TextField(
                         controller: _outputController,
-                        decoration: const InputDecoration(labelText: '输出路径'),
+                        decoration: InputDecoration(labelText: strings.outputPath),
                       ),
                       const SizedBox(height: 16),
                       Container(
@@ -1953,14 +1963,14 @@ class _AddScenarioDialogState extends State<_AddScenarioDialog> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        '自动打标签',
+                                        strings.autoTagTitle,
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleMedium,
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        '构建成功后自动应用 Git Tag',
+                                        strings.autoTagDesc,
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodySmall,
@@ -1980,7 +1990,7 @@ class _AddScenarioDialogState extends State<_AddScenarioDialog> {
                               controller: _tagController,
                               enabled: _autoTag,
                               decoration:
-                                  const InputDecoration(labelText: '标签前缀'),
+                                  InputDecoration(labelText: strings.tagPrefix),
                             ),
                           ],
                         ),
@@ -1996,7 +2006,7 @@ class _AddScenarioDialogState extends State<_AddScenarioDialog> {
                     children: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('取消'),
+                        child: Text(strings.btnCancel),
                       ),
                       const SizedBox(width: 12),
                       FilledButton(
@@ -2005,9 +2015,9 @@ class _AddScenarioDialogState extends State<_AddScenarioDialog> {
                             BuildScenario(
                               id: 'scenario-${DateTime.now().millisecondsSinceEpoch}',
                               name: _nameController.text.trim().isEmpty
-                                  ? '新场景'
+                                  ? strings.scenarioDefaultName
                                   : _nameController.text.trim(),
-                              subtitle: '手动新增场景',
+                              subtitle: strings.scenarioDefaultSubtitle,
                               environment: 'custom',
                               mainBranch: 'develop',
                               command: _commandController.text.trim(),
@@ -2018,7 +2028,7 @@ class _AddScenarioDialogState extends State<_AddScenarioDialog> {
                                   time: '19:22:10',
                                   level: 'INIT',
                                   message:
-                                      'Scenario created and waiting for execution',
+                                      strings.scenarioCreatedLog,
                                   accent: MixBuildPalette.primary,
                                 ),
                               ],
@@ -2039,7 +2049,7 @@ class _AddScenarioDialogState extends State<_AddScenarioDialog> {
                             ),
                           );
                         },
-                        child: const Text('确认新增场景'),
+                        child: Text(strings.scenarioConfirmAdd),
                       ),
                     ],
                   ),

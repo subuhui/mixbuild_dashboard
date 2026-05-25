@@ -6,6 +6,7 @@ import 'package:mixbuild_dashboard/app/responsive_layout.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
+import 'package:mixbuild_dashboard/l10n/app_strings.dart';
 import 'package:mixbuild_dashboard/services/git_branch_discovery.dart';
 import 'package:mixbuild_dashboard/services/git_project_discovery.dart';
 import 'package:mixbuild_dashboard/services/workspace_bookmark_service.dart';
@@ -30,8 +31,8 @@ class ProjectEditorPage extends StatefulWidget {
     required this.config,
     required this.scenarios,
     required this.baseDependencies,
-    this.title = '工程配置中心',
-    this.primaryActionLabel = '保存项目配置',
+    this.title = '',
+    this.primaryActionLabel = '',
   });
 
   final GlobalConfig config;
@@ -45,8 +46,8 @@ class ProjectEditorPage extends StatefulWidget {
     required GlobalConfig config,
     required List<BuildScenario> scenarios,
     required List<DependencyBranch> baseDependencies,
-    String title = '工程配置中心',
-    String primaryActionLabel = '保存项目配置',
+    String title = '',
+    String primaryActionLabel = '',
   }) {
     return Navigator.of(context).push<ProjectEditorResult>(
       MaterialPageRoute<ProjectEditorResult>(
@@ -265,7 +266,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   Future<String?> _showNativeDirectoryPicker() async {
     try {
       final selectedPath = await getDirectoryPath(
-        confirmButtonText: '选择工作区',
+        confirmButtonText: AppStrings.of(context).workspaceSelect,
         initialDirectory: _workspaceController.text.trim().isEmpty
             ? null
             : _workspaceController.text.trim(),
@@ -280,7 +281,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('申请目录访问权限失败: $error')));
+        ).showSnackBar(SnackBar(content: Text(AppStrings.of(context).dirAccessError(error.toString()))));
       }
       return null;
     }
@@ -324,7 +325,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
       }
       setState(() {
         _isScanning = false;
-        _scanError = '扫描失败: $error';
+        _scanError = AppStrings.of(context).scanError(error.toString());
         _discoveredProjects = const <DiscoveredGitProject>[];
       });
     }
@@ -368,7 +369,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
     final matchedProject = _findDiscoveredProjectByPath(path);
     if (matchedProject != null &&
         _isProjectSelected(matchedProject, excluding: draft)) {
-      _showSelectionMessage('项目 ${matchedProject.name} 已被选择，无需重复添加。');
+      _showSelectionMessage(AppStrings.of(context).projectAlreadySelected(matchedProject.name));
       return;
     }
 
@@ -393,7 +394,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
 
   void _addDependencyFromProject(DiscoveredGitProject project) {
     if (_isProjectSelected(project)) {
-      _showSelectionMessage('项目 ${project.name} 已经在当前配置中。');
+      _showSelectionMessage(AppStrings.of(context).projectAlreadyInConfig(project.name));
       return;
     }
 
@@ -594,8 +595,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
           scenarioDependencies: initialScenario?.dependencies,
         ),
         initialScenario: initialScenario,
-        title: editingDraft == null ? '新增构建场景' : '编辑构建场景',
-        primaryActionLabel: editingDraft == null ? '确认新增场景' : '保存场景修改',
+        title: editingDraft == null ? AppStrings.of(context).scenarioAddNew : '编辑构建场景',
+        primaryActionLabel: editingDraft == null ? AppStrings.of(context).scenarioConfirmAdd : '保存场景修改',
       ),
     );
     if (result == null) {
@@ -666,6 +667,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final responsive = ResponsiveLayout.of(context);
+    final strings = AppStrings.of(context);
     return Scaffold(
       body: Stack(
         children: [
@@ -718,12 +720,12 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          widget.title,
+                                          widget.title.isEmpty ? strings.projectEditorTitle : widget.title,
                                           style: theme.textTheme.headlineMedium,
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          '可视化编辑工作区、主工程绑定、依赖拓扑和构建场景矩阵',
+                                          strings.projectEditorSubtitle,
                                           style: theme.textTheme.bodySmall,
                                         ),
                                       ],
@@ -733,8 +735,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                                     width: compact ? constraints.maxWidth : 260,
                                     child: TextField(
                                       controller: _projectNameController,
-                                      decoration: const InputDecoration(
-                                        labelText: '工程名称',
+                                      decoration: InputDecoration(
+                                        labelText: strings.projectNameLabel,
                                       ),
                                     ),
                                   ),
@@ -791,7 +793,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                                     const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
-                                        '所有更改将同步到当前工作区 YAML。',
+                                        strings.yamlEditorFooter,
                                         style: theme.textTheme.bodySmall,
                                       ),
                                     ),
@@ -800,13 +802,13 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                               ),
                               TextButton(
                                 onPressed: () => Navigator.of(context).pop(),
-                                child: const Text('取消'),
+                                child: Text(strings.btnCancel),
                               ),
                               FilledButton.icon(
                                 onPressed: () =>
                                     Navigator.of(context).pop(_buildResult()),
                                 icon: const Icon(Icons.save_outlined),
-                                label: Text(widget.primaryActionLabel),
+                                label: Text(widget.primaryActionLabel.isEmpty ? strings.projectEditorSave : widget.primaryActionLabel),
                               ),
                             ],
                           ),
@@ -824,9 +826,10 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   }
 
   Widget _buildWorkspaceSection(ThemeData theme) {
+    final strings = AppStrings.of(context);
     return _ConfigSectionCard(
-      title: '工作区根路径',
-      subtitle: '输入根路径或通过系统目录选择器扫描 Git 仓库',
+      title: strings.workspaceRoot,
+      subtitle: strings.workspaceRootSubtitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -844,7 +847,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                     child: TextField(
                       controller: _workspaceController,
                       decoration: InputDecoration(
-                        hintText: '输入根路径后自动扫描 Git 项目',
+                        hintText: strings.workspaceRootHint,
                         suffixIcon: _isScanning
                             ? const Padding(
                                 padding: EdgeInsets.all(12),
@@ -864,12 +867,12 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                   OutlinedButton.icon(
                     onPressed: _pickWorkspaceRoot,
                     icon: const Icon(Icons.folder_open_outlined),
-                    label: const Text('浏览...'),
+                    label: Text(strings.btnBrowse),
                   ),
                   OutlinedButton.icon(
                     onPressed: _refreshDiscoveredProjects,
                     icon: const Icon(Icons.refresh_outlined),
-                    label: const Text('刷新仓库'),
+                    label: Text(strings.btnRefresh),
                   ),
                 ],
               );
@@ -879,8 +882,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
           Text(
             _scanError ??
                 (_discoveredProjects.isEmpty
-                    ? '输入或选择工作区后，将自动扫描根目录及子目录中的 Git 仓库；遇到无权限目录会自动跳过。'
-                    : '已发现 ${_discoveredProjects.length} 个 Git 项目，可用于主工程和依赖拓扑的路径选择。'),
+                    ? strings.workspaceScanInfo
+                    : strings.discoveredGitProjects(_discoveredProjects.length)),
             style: theme.textTheme.bodySmall?.copyWith(
               color: _scanError == null
                   ? MixBuildPalette.muted
@@ -964,26 +967,27 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   }
 
   Widget _buildMainProjectSection(ThemeData theme) {
+    final strings = AppStrings.of(context);
     final draft = _mainBindingDraft;
     return _ConfigSectionCard(
-      title: '主工程绑定',
-      subtitle: '配置主工程路径与默认分支',
+      title: strings.mainProjectBinding,
+      subtitle: strings.mainProjectBindingSubtitle,
       child: Row(
         children: [
           Expanded(
             child: _EditorFieldTile(
-              label: '工程名称',
+              label: strings.projectNameLabel,
               child: _ReadOnlyField(value: draft.projectName),
             ),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: _EditorFieldTile(
-              label: '路径选择',
+              label: strings.pathLabel,
               child: _PathSelectorField(
                 controller: draft.pathController,
                 options: _pathOptionsForDraft(draft),
-                hintText: '选择或输入相对路径',
+                hintText: strings.pathHint,
                 onPathSelected: (value) {
                   _applyPathToDraft(draft, value);
                   unawaited(_refreshBranchOptionsForDraft(draft));
@@ -994,7 +998,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
           const SizedBox(width: 16),
           Expanded(
             child: _EditorFieldTile(
-              label: '默认分支',
+              label: strings.mainBranchLabel,
               child: _BranchSelectorField(
                 value: draft.defaultBranchController.text.trim(),
                 options: _branchOptionsForDraft(draft),
@@ -1012,12 +1016,13 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   }
 
   Widget _buildDependencySection(ThemeData theme) {
+    final strings = AppStrings.of(context);
     return _ConfigSectionCard(
-      title: '依赖项拓扑编排',
-      subtitle: '自动解析 ${_dependencyDrafts.length} 个模块，并允许调整路径、分支与恢复命令',
+      title: strings.dependencyTopology,
+      subtitle: strings.dependencyCountInfo(_dependencyDrafts.length),
       trailing: PopupMenuButton<DiscoveredGitProject>(
         enabled: _availableDiscoveredProjects.isNotEmpty,
-        tooltip: '选择添加依赖',
+        tooltip: strings.dependencyAddSelect,
         onSelected: _addDependencyFromProject,
         itemBuilder: (context) {
           return _availableDiscoveredProjects
@@ -1044,7 +1049,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
           onPressed: null,
           icon: const Icon(Icons.add_link_outlined),
           label: Text(
-            _availableDiscoveredProjects.isEmpty ? '无可选依赖' : '选择添加依赖',
+            _availableDiscoveredProjects.isEmpty ? strings.dependencyAddNone : strings.dependencyAddSelect,
           ),
         ),
       ),
@@ -1067,12 +1072,12 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('新增依赖项', style: theme.textTheme.titleMedium),
+                      Text(strings.dependencyAddItem, style: theme.textTheme.titleMedium),
                       const SizedBox(height: 4),
                       Text(
                         _availableDiscoveredProjects.isEmpty
-                            ? '工作区中没有可继续添加的项目。'
-                            : '点击右上角“选择添加依赖”，从工作区扫描结果中选择要加入的模块。',
+                            ? strings.dependencyAddEmpty
+                            : strings.dependencyAddEmptyHint,
                         style: theme.textTheme.bodySmall,
                       ),
                     ],
@@ -1088,7 +1093,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    '可选 ${_availableDiscoveredProjects.length}',
+                    strings.availableCount(_availableDiscoveredProjects.length),
                     style: theme.textTheme.bodySmall,
                   ),
                 ),
@@ -1105,7 +1110,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                 border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
               ),
               child: Text(
-                '当前没有依赖项。通过“选择添加依赖”即可生成可编辑依赖行。',
+                strings.dependencyEmpty,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: MixBuildPalette.muted,
                 ),
@@ -1158,7 +1163,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                           child: _PathSelectorField(
                             controller: draft.pathController,
                             options: _pathOptionsForDraft(draft),
-                            hintText: '选择模块路径',
+                            hintText: strings.dependencyModulePath,
                             onPathSelected: (value) {
                               _applyPathToDraft(draft, value);
                               unawaited(_refreshBranchOptionsForDraft(draft));
@@ -1181,7 +1186,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                         ),
                         const SizedBox(width: 8),
                         IconButton(
-                          tooltip: '移除依赖',
+                          tooltip: strings.dependencyRemoveTooltip,
                           onPressed: () => _removeDependencyDraft(draft),
                           icon: const Icon(Icons.close),
                         ),
@@ -1192,7 +1197,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                       controller: draft.restoreCommandController,
                       decoration: InputDecoration(
                         isDense: true,
-                        hintText: 'restore 命令',
+                        hintText: strings.dependencyRestoreCmd,
                         prefixIcon: Icon(
                           draft.type == MixbuildProjectType.flutter
                               ? Icons.terminal
@@ -1212,13 +1217,14 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   }
 
   Widget _buildScenarioSection(ThemeData theme) {
+    final strings = AppStrings.of(context);
     return _ConfigSectionCard(
-      title: '构建场景矩阵编辑器',
-      subtitle: '维护命令、依赖分支覆盖、输出目录和自动标签策略',
+      title: strings.scenarioMatrixEditor,
+      subtitle: strings.scenarioMatrixEditorSubtitle,
       trailing: FilledButton.icon(
         onPressed: _openAddScenarioDialog,
         icon: const Icon(Icons.add),
-        label: const Text('新增构建场景'),
+        label: Text(strings.scenarioAddNew),
       ),
       child: Wrap(
         spacing: 16,
@@ -1271,7 +1277,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                               children: [
                                 Text(
                                   draft.nameController.text.trim().isEmpty
-                                      ? '未命名场景'
+                                      ? strings.scenarioUnnamed
                                       : draft.nameController.text.trim(),
                                   style: theme.textTheme.titleMedium,
                                 ),
@@ -1284,12 +1290,12 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                             ),
                           ),
                           IconButton(
-                            tooltip: '编辑场景',
+                            tooltip: strings.scenarioEditTooltip,
                             onPressed: () => _openEditScenarioDialog(draft),
                             icon: const Icon(Icons.edit_outlined),
                           ),
                           IconButton(
-                            tooltip: '删除场景',
+                            tooltip: strings.scenarioDeleteTooltip,
                             onPressed: () => _removeScenarioDraft(draft),
                             icon: const Icon(Icons.delete_outline),
                           ),
@@ -1298,7 +1304,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                       const SizedBox(height: 16),
                       Text(
                         draft.commandController.text.trim().isEmpty
-                            ? '未配置执行指令'
+                            ? strings.scenarioNoCommand
                             : draft.commandController.text.trim(),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -1312,14 +1318,14 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                         children: [
                           Expanded(
                             child: _ScenarioMetaItem(
-                              label: '主分支',
+                              label: strings.mainBranchLabel,
                               value: draft.mainBranch,
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: _ScenarioMetaItem(
-                              label: '输出目录',
+                              label: strings.outputDir,
                               value: draft.outputController.text.trim().isEmpty
                                   ? '未配置'
                                   : draft.outputController.text.trim(),
@@ -1328,12 +1334,12 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: _ScenarioMetaItem(
-                              label: '自动标签',
+                              label: strings.autoTag,
                               value: draft.autoTag
                                   ? (draft.tagController.text.trim().isEmpty
-                                        ? '已开启'
+                                        ? strings.autoTagEnabled
                                         : draft.tagController.text.trim())
-                                  : '关闭',
+                                  : strings.autoTagDisabled,
                             ),
                           ),
                         ],
@@ -1344,7 +1350,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                         runSpacing: 8,
                         children: [
                           TinyBadge(
-                            label: '主项目: ${draft.mainBranch}',
+                            label: strings.mainProjectBranchInfo(draft.mainBranch),
                             color: MixBuildPalette.tertiary,
                           ),
                           ...draft.dependencies.map((dependency) {
@@ -1653,7 +1659,7 @@ class _PathSelectorField extends StatelessWidget {
         if (options.isNotEmpty) ...[
           const SizedBox(width: 8),
           PopupMenuButton<String>(
-            tooltip: '选择路径',
+            tooltip: AppStrings.of(context).pathLabel,
             onSelected: onPathSelected,
             itemBuilder: (context) {
               return options
@@ -1744,7 +1750,7 @@ class _BranchSelectorField extends StatelessWidget {
               width: 40,
               height: 40,
               child: IconButton(
-                tooltip: '刷新分支',
+                tooltip: AppStrings.of(context).btnRefresh,
                 onPressed: isLoading ? null : onRefresh,
                 icon: isLoading
                     ? const SizedBox(
@@ -1823,8 +1829,8 @@ class AddScenarioDialog extends StatefulWidget {
     required this.mainProject,
     required this.dependencyDrafts,
     this.initialScenario,
-    this.title = '新增构建场景',
-    this.primaryActionLabel = '确认新增场景',
+    this.title = '',
+    this.primaryActionLabel = '',
   });
 
   final ScenarioBranchDraft mainProject;
@@ -1897,6 +1903,7 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
     return Dialog(
       insetPadding: const EdgeInsets.all(24),
       child: ClipRRect(
@@ -1920,7 +1927,7 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        widget.title,
+                        widget.title.isEmpty ? strings.scenarioAddNew : widget.title,
                         style: theme.textTheme.headlineMedium,
                       ),
                     ),
@@ -1943,15 +1950,15 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                         children: [
                           TextField(
                             controller: _nameController,
-                            decoration: const InputDecoration(
-                              labelText: '场景名称',
+                            decoration: InputDecoration(
+                              labelText: strings.scenarioName,
                             ),
                           ),
                           const SizedBox(height: 12),
                           TextField(
                             controller: _commandController,
-                            decoration: const InputDecoration(
-                              labelText: '构建命令',
+                            decoration: InputDecoration(
+                              labelText: strings.scenarioCommand,
                             ),
                             minLines: 3,
                             maxLines: 3,
@@ -1965,8 +1972,8 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                     ),
                     const SizedBox(height: 24),
                     _ConfigSectionCard(
-                      title: '主项目分支',
-                      subtitle: '新增场景时同步确认主项目默认 Git 分支',
+                      title: strings.scenarioMainBranch,
+                      subtitle: strings.scenarioMainBranchSubtitle,
                       child: Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
@@ -2021,9 +2028,9 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                     ),
                     const SizedBox(height: 24),
                     _ConfigSectionCard(
-                      title: '依赖分支覆盖',
+                      title: strings.dependencyBranchOverride,
                       subtitle:
-                          '${widget.dependencyDrafts.length} Dependencies Detected',
+                          strings.dependenciesDetected(widget.dependencyDrafts.length),
                       child: Column(
                         children: [
                           for (final dependency in widget.dependencyDrafts)
@@ -2087,14 +2094,14 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                     ),
                     const SizedBox(height: 24),
                     _ConfigSectionCard(
-                      title: '高级选项',
-                      subtitle: '配置产物输出目录以及构建成功后的自动标签行为',
+                      title: strings.advancedOptions,
+                      subtitle: strings.advancedOptionsSubtitle,
                       child: Column(
                         children: [
                           TextField(
                             controller: _outputController,
-                            decoration: const InputDecoration(
-                              labelText: '输出路径',
+                            decoration: InputDecoration(
+                              labelText: strings.outputPath,
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -2121,12 +2128,12 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            '自动打标签',
+                                            strings.autoTagTitle,
                                             style: theme.textTheme.titleMedium,
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            '构建成功后自动应用 Git Tag',
+                                            strings.autoTagDesc,
                                             style: theme.textTheme.bodySmall,
                                           ),
                                         ],
@@ -2143,8 +2150,8 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                 TextField(
                                   controller: _tagController,
                                   enabled: _autoTag,
-                                  decoration: const InputDecoration(
-                                    labelText: '标签前缀',
+                                  decoration: InputDecoration(
+                                    labelText: strings.tagPrefix,
                                   ),
                                 ),
                               ],
@@ -2164,7 +2171,7 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                   children: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('取消'),
+                      child: Text(strings.btnCancel),
                     ),
                     const SizedBox(width: 12),
                     FilledButton(
@@ -2175,10 +2182,10 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                 widget.initialScenario?.id ??
                                 'scenario-${DateTime.now().millisecondsSinceEpoch}',
                             name: _nameController.text.trim().isEmpty
-                                ? (widget.initialScenario?.name ?? '新场景')
+                                ? (widget.initialScenario?.name ?? strings.scenarioDefaultName)
                                 : _nameController.text.trim(),
                             subtitle:
-                                widget.initialScenario?.subtitle ?? '手动新增场景',
+                                widget.initialScenario?.subtitle ?? strings.scenarioDefaultSubtitle,
                             environment:
                                 widget.initialScenario?.environment ?? 'custom',
                             mainBranch:
@@ -2196,7 +2203,7 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                     time: '19:22:10',
                                     level: 'INIT',
                                     message:
-                                        'Scenario created and waiting for execution',
+                                        strings.scenarioCreatedLog,
                                     accent: MixBuildPalette.primary,
                                   ),
                                 ],
@@ -2220,7 +2227,7 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                           ),
                         );
                       },
-                      child: Text(widget.primaryActionLabel),
+                      child: Text(widget.primaryActionLabel.isEmpty ? strings.scenarioConfirmAdd : widget.primaryActionLabel),
                     ),
                   ],
                 ),

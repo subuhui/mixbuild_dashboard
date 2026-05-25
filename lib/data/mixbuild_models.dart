@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
+import 'package:mixbuild_dashboard/l10n/app_strings.dart';
 
 /// 构建流水线生命周期状态。
 ///
@@ -120,6 +121,59 @@ extension BuildStatusX on BuildStatus {
   bool get canTrigger => !controlsLocked;
 
   String get triggerLabel => controlsLocked ? 'Loading…' : '开始构建任务';
+
+  String labelWithContext(BuildContext context) {
+    final strings = AppStrings.of(context);
+    switch (this) {
+      case BuildStatus.idle:
+        return strings.statusIdle;
+      case BuildStatus.validating:
+        return strings.statusValidating;
+      case BuildStatus.syncing:
+        return strings.statusSyncing;
+      case BuildStatus.restoring:
+        return strings.statusRestoring;
+      case BuildStatus.building:
+        return strings.statusBuilding;
+      case BuildStatus.postHook:
+        return strings.statusPostHook;
+      case BuildStatus.success:
+        return strings.statusSuccess;
+      case BuildStatus.failed:
+        return strings.statusFailed;
+      case BuildStatus.interrupted:
+        return strings.statusInterrupted;
+    }
+  }
+
+  String descriptionWithContext(BuildContext context) {
+    final strings = AppStrings.of(context);
+    switch (this) {
+      case BuildStatus.idle:
+        return strings.statusIdleDesc;
+      case BuildStatus.validating:
+        return strings.statusValidatingDesc;
+      case BuildStatus.syncing:
+        return strings.statusSyncingDesc;
+      case BuildStatus.restoring:
+        return strings.statusRestoringDesc;
+      case BuildStatus.building:
+        return strings.statusBuildingDesc;
+      case BuildStatus.postHook:
+        return strings.statusPostHookDesc;
+      case BuildStatus.success:
+        return strings.statusSuccessDesc;
+      case BuildStatus.failed:
+        return strings.statusFailedDesc;
+      case BuildStatus.interrupted:
+        return strings.statusInterruptedDesc;
+    }
+  }
+
+  String triggerLabelWithContext(BuildContext context) {
+    final strings = AppStrings.of(context);
+    return controlsLocked ? strings.loadingLabel : strings.triggerLabel;
+  }
 }
 
 /// 构建日志条目，包含时间戳、级别、消息文本和主题色。

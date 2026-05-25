@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
+import 'package:mixbuild_dashboard/l10n/app_strings.dart';
 import 'package:mixbuild_dashboard/ui/dashboard_widgets.dart';
 
 class YamlEditorPage extends StatefulWidget {
   const YamlEditorPage({
     super.key,
     required this.initialValue,
-    this.title = 'YAML Configuration Override',
+    this.title,
   });
 
   final String initialValue;
-  final String title;
+  final String? title;
 
   static Future<String?> show(
     BuildContext context, {
     required String initialValue,
-    String title = 'YAML Configuration Override',
+    String? title,
   }) {
     return Navigator.of(context).push<String>(
       MaterialPageRoute<String>(
@@ -50,6 +51,7 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
     final lineCount = _controller.text.split('\n').length.clamp(12, 200);
     return Scaffold(
       body: Stack(
@@ -94,12 +96,12 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        widget.title,
+                                        widget.title ?? strings.yamlEditorTitle,
                                         style: theme.textTheme.headlineMedium,
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        '编辑 YAML 覆写内容并即时应用到当前工作区配置',
+                                        strings.yamlEditorSubtitle,
                                         style: theme.textTheme.bodySmall,
                                       ),
                                     ],
@@ -173,7 +175,7 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                                           child: Row(
                                             children: [
                                               Text(
-                                                'mixbuild.config.yaml',
+                                                strings.yamlEditorFilename,
                                                 style:
                                                     MixBuildTheme.monoTextStyle(
                                                   fontSize: 11,
@@ -232,19 +234,19 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    '所有更改将保存到当前工作区 YAML。',
+                                    strings.yamlEditorFooter,
                                     style: theme.textTheme.bodySmall,
                                   ),
                                 ),
                                 TextButton(
                                   onPressed: () => Navigator.of(context).pop(),
-                                  child: const Text('Cancel'),
+                                  child: Text(strings.yamlEditorCancel),
                                 ),
                                 const SizedBox(width: 12),
                                 FilledButton(
                                   onPressed: () => Navigator.of(context)
                                       .pop(_controller.text),
-                                  child: const Text('Save Configuration'),
+                                  child: Text(strings.yamlEditorSave),
                                 ),
                               ],
                             ),

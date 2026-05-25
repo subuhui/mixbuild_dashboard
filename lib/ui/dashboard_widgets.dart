@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mixbuild_dashboard/app/responsive_layout.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
+import 'package:mixbuild_dashboard/l10n/app_strings.dart';
 
 class DashboardBackground extends StatelessWidget {
   const DashboardBackground({super.key});
@@ -61,6 +62,7 @@ class DashboardTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         final responsive = ResponsiveLayout.fromWidth(constraints.maxWidth);
@@ -70,7 +72,7 @@ class DashboardTopBar extends StatelessWidget {
             if (leading != null) ...[leading!, const SizedBox(width: 8)],
             Expanded(
               child: Text(
-                'MixBuild Dashboard v1.0',
+                strings.appTitleWithVersion,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.titleLarge,
               ),
@@ -104,7 +106,7 @@ class DashboardTopBar extends StatelessWidget {
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          'Parallel Running: $runningCount',
+                          strings.parallelRunningCount(runningCount),
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: MixBuildPalette.foreground,
@@ -129,13 +131,13 @@ class DashboardTopBar extends StatelessWidget {
               IconButton(
                 onPressed: onReloadTopology,
                 icon: const Icon(Icons.refresh, size: 18),
-                tooltip: 'Reload',
+                tooltip: strings.btnReload,
               )
             else
               TextButton.icon(
                 onPressed: onReloadTopology,
                 icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Reload'),
+                label: Text(strings.btnReload),
               ),
           ],
         );
@@ -204,6 +206,7 @@ class DashboardSideBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
     return Container(
       width: 332,
       decoration: BoxDecoration(
@@ -218,14 +221,14 @@ class DashboardSideBar extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'MixBuild',
+              strings.appBrand,
               style: theme.textTheme.headlineMedium?.copyWith(
                 color: MixBuildPalette.primary,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              'v1.0.0-stable · Flutter Desktop / macOS',
+              strings.appVersionSubtitle,
               style: theme.textTheme.bodySmall,
             ),
             const SizedBox(height: 20),
@@ -261,7 +264,7 @@ class DashboardSideBar extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    '主工程分支',
+                    strings.mainProjectBranch,
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: MixBuildPalette.muted,
                     ),
@@ -292,7 +295,7 @@ class DashboardSideBar extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              '依赖项拓扑视图',
+              strings.dependencyTopology,
               style: theme.textTheme.labelLarge?.copyWith(
                 color: MixBuildPalette.muted,
               ),
@@ -342,7 +345,7 @@ class DashboardSideBar extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(999),
                               ),
                               child: Text(
-                                'Override',
+                                strings.dependencyOverride,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color:
                                       dependency.highlight ??
@@ -382,7 +385,7 @@ class DashboardSideBar extends StatelessWidget {
               ),
             const SizedBox(height: 16),
             Text(
-              '构建场景配置',
+              strings.scenarioConfig,
               style: theme.textTheme.labelLarge?.copyWith(
                 color: MixBuildPalette.muted,
               ),
@@ -439,7 +442,7 @@ class DashboardSideBar extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.only(top: 12),
                     child: Text(
-                      '执行构建前强制清理 (--clean)',
+                      strings.scenarioCleanBefore,
                       style: theme.textTheme.bodyMedium,
                     ),
                   ),
@@ -452,7 +455,7 @@ class DashboardSideBar extends StatelessWidget {
               icon: Icon(
                 scenario.status.controlsLocked ? Icons.sync : Icons.play_arrow,
               ),
-              label: Text(scenario.status.triggerLabel),
+              label: Text(scenario.status.triggerLabelWithContext(context)),
             ),
             const SizedBox(height: 10),
             OutlinedButton.icon(
@@ -461,7 +464,7 @@ class DashboardSideBar extends StatelessWidget {
                 foregroundColor: MixBuildPalette.error,
               ),
               icon: const Icon(Icons.stop_circle_outlined),
-              label: const Text('停止'),
+              label: Text(strings.btnStop),
             ),
           ],
         ),
@@ -485,6 +488,7 @@ class ScenarioInspectorPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
     return DecoratedBox(
       decoration: MixBuildTheme.glassPanel(),
       child: Column(
@@ -507,7 +511,7 @@ class ScenarioInspectorPanel extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: onOpenYaml,
                   icon: const Icon(Icons.data_object_outlined, size: 18),
-                  label: const Text('YAML'),
+                  label: Text(strings.yamlOverride),
                 ),
               ],
             ),
@@ -531,7 +535,7 @@ class ScenarioInspectorPanel extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    status.label,
+                    status.labelWithContext(context),
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: active ? Colors.white : MixBuildPalette.muted,
                     ),
@@ -552,11 +556,11 @@ class ScenarioInspectorPanel extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    scenario.status.description,
+                    scenario.status.descriptionWithContext(context),
                     style: theme.textTheme.bodySmall,
                   ),
                 ),
-                TextButton(onPressed: () {}, child: const Text('任务历史')),
+                TextButton(onPressed: () {}, child: Text(strings.navBuildLogs)),
               ],
             ),
           ),
@@ -601,7 +605,7 @@ class ScenarioInspectorPanel extends StatelessWidget {
                           const SizedBox(width: 16),
                           Expanded(
                             child: Text(
-                              'zsh — ${scenario.command} — ${project.name}',
+                              strings.terminalTitle(scenario.command, project.name),
                               overflow: TextOverflow.ellipsis,
                               style: MixBuildTheme.monoTextStyle(
                                 fontSize: 11,
@@ -675,7 +679,7 @@ class ScenarioInspectorPanel extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              Text('输出目录', style: theme.textTheme.bodySmall),
+                              Text(strings.outputDir, style: theme.textTheme.bodySmall),
                               const Spacer(),
                               Text(
                                 '${(scenario.progress * 100).toStringAsFixed(1)}%',
@@ -730,7 +734,7 @@ class ScenarioInspectorPanel extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('依赖分支覆盖', style: theme.textTheme.labelLarge),
+                    Text(strings.dependencyBranchOverride, style: theme.textTheme.labelLarge),
                     const SizedBox(height: 12),
                     for (final dependency in scenario.dependencies)
                       Padding(
@@ -801,7 +805,10 @@ class DashboardFooterBar extends StatelessWidget {
   final List<ResourceMetric> metrics;
   final List<ProjectBuild> projects;
 
-  _SystemRuntimeStatus get _systemStatus {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final strings = AppStrings.of(context);
     final scenarios = projects.expand((project) => project.scenarios).toList();
     final running = scenarios
         .where((scenario) => scenario.status.isPipelineActive)
@@ -809,25 +816,20 @@ class DashboardFooterBar extends StatelessWidget {
     final failed = scenarios
         .where((scenario) => scenario.status == BuildStatus.failed)
         .length;
+    _SystemRuntimeStatus systemStatus;
     if (running > 0) {
-      return _SystemRuntimeStatus(
-        label: running == 1 ? 'Running' : 'Running $running',
+      systemStatus = _SystemRuntimeStatus(
+        label: running == 1 ? strings.runningStatus : strings.runningCount(running),
         color: MixBuildPalette.warning,
       );
-    }
-    if (failed > 0) {
-      return _SystemRuntimeStatus(
-        label: failed == 1 ? 'Failed' : 'Failed $failed',
+    } else if (failed > 0) {
+      systemStatus = _SystemRuntimeStatus(
+        label: failed == 1 ? strings.failedStatus : strings.failedCount(failed),
         color: MixBuildPalette.error,
       );
+    } else {
+      systemStatus = _SystemRuntimeStatus(label: strings.readyStatus, color: MixBuildPalette.primary);
     }
-    return _SystemRuntimeStatus(label: 'Ready', color: MixBuildPalette.primary);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final systemStatus = _systemStatus;
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
       child: BackdropFilter(
@@ -845,7 +847,7 @@ class DashboardFooterBar extends StatelessWidget {
             spacing: 18,
             runSpacing: 10,
             children: [
-              Text('© 2026 MixBuild Systems', style: theme.textTheme.bodySmall),
+              Text(strings.copyright, style: theme.textTheme.bodySmall),
               for (final metric in metrics) DashboardMetricBar(metric: metric),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1030,7 +1032,7 @@ class _StatusChipState extends State<StatusChip>
             ),
             const SizedBox(width: 8),
             Text(
-              widget.status.label,
+              widget.status.labelWithContext(context),
               style: Theme.of(
                 context,
               ).textTheme.labelLarge?.copyWith(color: widget.status.color),
