@@ -459,7 +459,7 @@ class _SidebarHeader extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 Text(
-                  'VERSION v3.1',
+                  'VERSION v1.0',
                   style: MixBuildTheme.monoTextStyle(
                     fontSize: 10,
                     color: MixBuildPalette.muted,

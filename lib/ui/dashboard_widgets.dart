@@ -70,7 +70,7 @@ class DashboardTopBar extends StatelessWidget {
             if (leading != null) ...[leading!, const SizedBox(width: 8)],
             Expanded(
               child: Text(
-                'MixBuild Dashboard v3.1',
+                'MixBuild Dashboard v1.0',
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.titleLarge,
               ),
@@ -225,7 +225,7 @@ class DashboardSideBar extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'v3.1.0-stable · Flutter Desktop / macOS',
+              'v1.0.0-stable · Flutter Desktop / macOS',
               style: theme.textTheme.bodySmall,
             ),
             const SizedBox(height: 20),

@@ -13,14 +13,14 @@ class MixBuildRepository {
         emoji: '🚚',
         name: '项目 A：物流核心平台',
         description: '隔离打包区',
-        branch: 'release/v3.1',
+        branch: 'release/v1.0',
         scenarios: [
           BuildScenario(
             id: 'a-debug',
             name: '常规测试包 (Debug)',
             subtitle: '本地快速构建',
             environment: 'production (debug)',
-            mainBranch: 'release/v3.1',
+            mainBranch: 'release/v1.0',
             command: './gradlew assembleDebug',
             status: BuildStatus.idle,
             progress: 0,
@@ -58,8 +58,8 @@ class MixBuildRepository {
             id: 'a-release',
             name: 'FVM 生产发布包 (Release)',
             subtitle: '云端隔离构建',
-            environment: 'production (release-v3.1)',
-            mainBranch: 'release/v3.1',
+            environment: 'production (release-v1.0)',
+            mainBranch: 'release/v1.0',
             command: 'fvm flutter build ipa --release',
             status: BuildStatus.restoring,
             progress: 0.41,
@@ -71,7 +71,7 @@ class MixBuildRepository {
             dependencies: [
               DependencyBranch(
                   name: 'common_ui',
-                  branch: 'release/3.1',
+                  branch: 'release/1.0',
                   icon: Icons.layers_outlined),
               DependencyBranch(
                 name: 'analytics_sdk',

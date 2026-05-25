@@ -97,8 +97,8 @@ class DashboardController extends Notifier<DashboardState> {
       state.config.mainProject.defaultBranch,
       'master',
       'develop',
-      'release/v3.1',
-      'hotfix/v3.1.1',
+      'release/v1.0',
+      'hotfix/v1.0.1',
     }.toList();
   }
 
@@ -111,7 +111,7 @@ class DashboardController extends Notifier<DashboardState> {
       'master',
       'develop',
       'main',
-      'release/3.1',
+      'release/1.0',
       'feature/v18-support',
     }.toList();
   }

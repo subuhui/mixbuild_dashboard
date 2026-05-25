@@ -5,7 +5,7 @@ main_project:
   name: "LogisticsClient"
   path: "LogisticsClient"
   type: "android"
-  default_branch: "release/v3.1"
+  default_branch: "release/v1.0"
 dependencies:
   - name: "common_ui"
     path: "modules/common_ui"

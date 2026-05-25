@@ -276,7 +276,7 @@ class _DashboardNavRail extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'v3.1.0-stable',
+                  'v1.0.0-stable',
                   style: theme.textTheme.bodySmall?.copyWith(
                     letterSpacing: 1.1,
                     color: MixBuildPalette.muted.withValues(alpha: 0.7),
