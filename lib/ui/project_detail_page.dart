@@ -11,9 +11,9 @@ import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
 import 'package:mixbuild_dashboard/state/dashboard_state.dart';
 import 'package:mixbuild_dashboard/ui/build_logs_page.dart';
 import 'package:mixbuild_dashboard/ui/dashboard_widgets.dart';
+import 'package:mixbuild_dashboard/ui/log_viewport.dart';
 import 'package:mixbuild_dashboard/l10n/app_strings.dart';
 import 'package:mixbuild_dashboard/ui/project_editor_page.dart';
-import 'package:mixbuild_dashboard/ui/yaml_editor_page.dart';
 
 class ProjectDetailPage extends ConsumerStatefulWidget {
   const ProjectDetailPage({
@@ -34,6 +34,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
       ref.read(dashboardControllerProvider.notifier);
   final TextEditingController _logSearchController = TextEditingController();
   String _logSearchQuery = '';
+  int _visibleTerminalLogCount = kProjectDetailLogPageSize;
 
   @override
   void initState() {
@@ -58,18 +59,6 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
     super.dispose();
   }
 
-  Future<void> _openYamlPage() async {
-    final strings = AppStrings.of(context);
-    final initialValue = _controller.readCurrentYaml();
-    final result = await YamlEditorPage.show(
-      context,
-      initialValue: initialValue,
-      title: strings.projectYamlTitle,
-    );
-    if (result == null) return;
-    await _controller.saveCurrentYaml(result);
-  }
-
   Future<void> _saveScenarioLogs(
     ProjectBuild project,
     BuildScenario scenario,
@@ -81,11 +70,9 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
     if (location == null) {
       return;
     }
-    final lines = scenario.logs.reversed
-        .map((log) {
-          return '[${log.time}] [${log.level}] ${log.message}';
-        })
-        .join('\n');
+    final lines = scenario.logs.reversed.map((log) {
+      return '[${log.time}] [${log.level}] ${log.message}';
+    }).join('\n');
     await File(location.path).writeAsString('$lines\n');
     if (!mounted) {
       return;
@@ -158,7 +145,11 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
     final selectedProject = dashboardState.selectedProject;
     final selectedScenario = dashboardState.selectedScenario;
     final responsive = ResponsiveLayout.of(context);
-    final filteredLogs = _filterLogs(selectedScenario.logs, _logSearchQuery);
+    final logViewport = buildLogViewport(
+      logs: selectedScenario.logs,
+      query: _logSearchQuery,
+      visibleCount: _visibleTerminalLogCount,
+    );
 
     final sidebarPanel = _SidebarPanel(
       project: selectedProject,
@@ -170,7 +161,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
       dependencyBranchOptions: _controller.dependencyBranchOptions,
       cleanBeforeBuild:
           dashboardState.cleanBeforeBuild[dashboardState.selectedScenarioId] ??
-          false,
+              false,
       onCleanChanged: _controller.setCleanBeforeBuild,
       onTrigger: _controller.triggerSelectedScenario,
       onStop: _controller.stopSelectedScenario,
@@ -182,27 +173,37 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
 
     final terminalSection = Column(
       children: [
-        _PipelineHeader(scenario: selectedScenario),
+        _PipelineHeader(
+          scenario: selectedScenario,
+          onOpenHistory: () => _openBuildLogsPage(
+            dashboardState,
+            selectedProject,
+            selectedScenario,
+          ),
+        ),
         Expanded(
           child: Padding(
             padding: responsive.shellPadding,
             child: _TerminalPanel(
               project: selectedProject,
               scenario: selectedScenario,
-              visibleLogs: filteredLogs,
+              visibleLogs: logViewport.visibleLogs,
+              hiddenLogCount: logViewport.hiddenCount,
               searchController: _logSearchController,
               searchQuery: _logSearchQuery,
               onSearchChanged: (value) {
                 setState(() {
                   _logSearchQuery = value;
+                  _visibleTerminalLogCount = kProjectDetailLogPageSize;
                 });
               },
-              onOpenYaml: _openYamlPage,
-              onOpenHistory: () => _openBuildLogsPage(
-                dashboardState,
-                selectedProject,
-                selectedScenario,
-              ),
+              onLoadOlderLogs: logViewport.canLoadOlder
+                  ? () {
+                      setState(() {
+                        _visibleTerminalLogCount += kProjectDetailLogPageSize;
+                      });
+                    }
+                  : null,
               onSaveLogs: () => _saveScenarioLogs(
                 selectedProject,
                 selectedScenario,
@@ -270,17 +271,6 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
       ),
     );
   }
-
-  List<LogEntry> _filterLogs(List<LogEntry> logs, String query) {
-    final normalizedQuery = query.trim().toLowerCase();
-    if (normalizedQuery.isEmpty) {
-      return logs;
-    }
-    return logs.where((log) {
-      final haystack = '${log.time} ${log.level} ${log.message}'.toLowerCase();
-      return haystack.contains(normalizedQuery);
-    }).toList(growable: false);
-  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -312,9 +302,9 @@ class _SidebarPanel extends StatelessWidget {
   final ValueChanged<String> onBranchChanged;
   final ValueChanged<String> onScenarioChanged;
   final void Function(String dependencyName, String branch)
-  onDependencyBranchChanged;
+      onDependencyBranchChanged;
   final List<String> Function(DependencyBranch dependency)
-  dependencyBranchOptions;
+      dependencyBranchOptions;
   final bool cleanBeforeBuild;
   final ValueChanged<bool> onCleanChanged;
   final VoidCallback onTrigger;
@@ -504,11 +494,11 @@ class _SidebarSectionLabel extends StatelessWidget {
         Text(
           label.toUpperCase(),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: MixBuildPalette.muted,
-            fontWeight: FontWeight.w700,
-            fontSize: 11,
-            letterSpacing: 1.0,
-          ),
+                color: MixBuildPalette.muted,
+                fontWeight: FontWeight.w700,
+                fontSize: 11,
+                letterSpacing: 1.0,
+              ),
         ),
         if (trailing != null) ...[
           const Spacer(),
@@ -670,9 +660,9 @@ class _DependencyTree extends StatelessWidget {
   final ProjectBuild project;
   final BuildScenario scenario;
   final void Function(String dependencyName, String branch)
-  onDependencyBranchChanged;
+      onDependencyBranchChanged;
   final List<String> Function(DependencyBranch dependency)
-  dependencyBranchOptions;
+      dependencyBranchOptions;
 
   @override
   Widget build(BuildContext context) {
@@ -827,7 +817,9 @@ class _DependencyTreeNode extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      dependency.isOverride ? strings.dependencyOverride : strings.dependencyDefault,
+                      dependency.isOverride
+                          ? strings.dependencyOverride
+                          : strings.dependencyDefault,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: _nodeColor,
                         fontSize: 9,
@@ -989,9 +981,13 @@ class _SidebarFooter extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _PipelineHeader extends StatelessWidget {
-  const _PipelineHeader({required this.scenario});
+  const _PipelineHeader({
+    required this.scenario,
+    required this.onOpenHistory,
+  });
 
   final BuildScenario scenario;
+  final VoidCallback onOpenHistory;
 
   static const _steps = [
     BuildStatus.idle,
@@ -1012,7 +1008,8 @@ class _PipelineHeader extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: _buildChips(context)),
+      child:
+          Row(mainAxisSize: MainAxisSize.min, children: _buildChips(context)),
     );
 
     final statusSummary = Row(
@@ -1024,18 +1021,17 @@ class _PipelineHeader extends StatelessWidget {
           color: MixBuildPalette.muted.withValues(alpha: 0.8),
         ),
         const SizedBox(width: 6),
-        Flexible(
-          child: Text(
-            scenario.status.descriptionWithContext(context),
-            style: theme.textTheme.bodySmall,
-            overflow: TextOverflow.ellipsis,
-          ),
+        Text(
+          scenario.status.descriptionWithContext(context),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodySmall,
         ),
       ],
     );
 
     final historyButton = OutlinedButton(
-      onPressed: () {},
+      onPressed: onOpenHistory,
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
         visualDensity: VisualDensity.compact,
@@ -1047,6 +1043,16 @@ class _PipelineHeader extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 1180;
+        final alignedSummary = Align(
+          alignment: Alignment.centerRight,
+          child: Wrap(
+            alignment: WrapAlignment.end,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 12,
+            runSpacing: 8,
+            children: [statusSummary, historyButton],
+          ),
+        );
         return Container(
           padding: EdgeInsets.fromLTRB(
             24,
@@ -1069,14 +1075,7 @@ class _PipelineHeader extends StatelessWidget {
                       child: chipStrip,
                     ),
                     const SizedBox(height: 12),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: statusSummary),
-                        const SizedBox(width: 12),
-                        historyButton,
-                      ],
-                    ),
+                    alignedSummary,
                   ],
                 )
               : SizedBox(
@@ -1085,15 +1084,7 @@ class _PipelineHeader extends StatelessWidget {
                     children: [
                       Flexible(child: chipStrip),
                       const SizedBox(width: 16),
-                      Expanded(child: statusSummary),
-                      const SizedBox(width: 12),
-                      Container(
-                        width: 1,
-                        height: 16,
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
-                      const SizedBox(width: 12),
-                      historyButton,
+                      Expanded(child: alignedSummary),
                     ],
                   ),
                 ),
@@ -1103,9 +1094,8 @@ class _PipelineHeader extends StatelessWidget {
   }
 
   List<Widget> _buildChips(BuildContext context) {
-    final currentIndex = _steps.contains(scenario.status)
-        ? _steps.indexOf(scenario.status)
-        : -1;
+    final currentIndex =
+        _steps.contains(scenario.status) ? _steps.indexOf(scenario.status) : -1;
     final result = <Widget>[];
     for (int i = 0; i < _steps.length; i++) {
       final step = _steps[i];
@@ -1156,22 +1146,22 @@ class _TerminalPanel extends StatelessWidget {
     required this.project,
     required this.scenario,
     required this.visibleLogs,
+    required this.hiddenLogCount,
     required this.searchController,
     required this.searchQuery,
     required this.onSearchChanged,
-    required this.onOpenYaml,
-    required this.onOpenHistory,
+    required this.onLoadOlderLogs,
     required this.onSaveLogs,
   });
 
   final ProjectBuild project;
   final BuildScenario scenario;
   final List<LogEntry> visibleLogs;
+  final int hiddenLogCount;
   final TextEditingController searchController;
   final String searchQuery;
   final ValueChanged<String> onSearchChanged;
-  final VoidCallback onOpenYaml;
-  final VoidCallback onOpenHistory;
+  final VoidCallback? onLoadOlderLogs;
   final VoidCallback onSaveLogs;
 
   @override
@@ -1219,28 +1209,6 @@ class _TerminalPanel extends StatelessWidget {
                     ),
                   ),
                 ),
-                IconButton(
-                  onPressed: onOpenHistory,
-                  icon: const Icon(Icons.receipt_long_outlined, size: 18),
-                  color: MixBuildPalette.muted,
-                  padding: EdgeInsets.zero,
-                  constraints:
-                      const BoxConstraints(minWidth: 28, minHeight: 28),
-                  tooltip: strings.navBuildLogs,
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: onOpenYaml,
-                  icon: const Icon(Icons.data_object_outlined, size: 18),
-                  color: MixBuildPalette.muted,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 28,
-                    minHeight: 28,
-                  ),
-                  tooltip: strings.btnEdit,
-                ),
-                const SizedBox(width: 8),
                 IconButton(
                   onPressed: scenario.logs.isEmpty ? null : onSaveLogs,
                   icon: const Icon(Icons.download_outlined, size: 18),
@@ -1324,9 +1292,21 @@ class _TerminalPanel extends StatelessWidget {
                       )
                     : ListView.separated(
                         padding: const EdgeInsets.all(20),
-                        itemCount: visibleLogs.length,
+                        itemCount:
+                            visibleLogs.length + (hiddenLogCount > 0 ? 1 : 0),
                         separatorBuilder: (_, r) => const SizedBox(height: 6),
                         itemBuilder: (context, index) {
+                          if (index == visibleLogs.length) {
+                            return Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton(
+                                onPressed: onLoadOlderLogs,
+                                child: Text(
+                                  strings.buildLogsLoadOlder(hiddenLogCount),
+                                ),
+                              ),
+                            );
+                          }
                           final log = visibleLogs[index];
                           return Row(
                             crossAxisAlignment: CrossAxisAlignment.start,

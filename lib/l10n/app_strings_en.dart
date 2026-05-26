@@ -96,8 +96,7 @@ class AppStringsEn extends AppStrings {
   @override
   String get workspaceRoot => 'Workspace Root';
   @override
-  String get workspaceRootHint =>
-      'Enter root path to auto-scan Git projects';
+  String get workspaceRootHint => 'Enter root path to auto-scan Git projects';
   @override
   String get workspaceRootSubtitle =>
       'Enter root path or scan Git repos via system directory picker';
@@ -147,8 +146,7 @@ class AppStringsEn extends AppStrings {
   @override
   String get dependencyAddItem => 'Select to Add Dependency';
   @override
-  String get dependencyAddEmpty =>
-      'No projects available to add in workspace.';
+  String get dependencyAddEmpty => 'No projects available to add in workspace.';
   @override
   String get dependencyAddEmptyHint =>
       'Click "Select to Add Dependency" in the top right to choose modules from workspace scan results.';
@@ -193,8 +191,7 @@ class AppStringsEn extends AppStrings {
   @override
   String get scenarioCommandHint => '';
   @override
-  String get scenarioCleanBefore =>
-      'Force clean before build (--clean)';
+  String get scenarioCleanBefore => 'Force clean before build (--clean)';
   @override
   String get scenarioCleanBeforeShort => 'Clean before build (--clean)';
   @override
@@ -215,8 +212,7 @@ class AppStringsEn extends AppStrings {
   @override
   String get scenarioDefaultSubtitle => 'Manually added scenario';
   @override
-  String get scenarioCreatedLog =>
-      'Scenario created and waiting for execution';
+  String get scenarioCreatedLog => 'Scenario created and waiting for execution';
 
   // Build status
   @override
@@ -256,8 +252,7 @@ class AppStringsEn extends AppStrings {
   @override
   String get statusSuccessDesc => 'Full pipeline completed';
   @override
-  String get statusFailedDesc =>
-      'Unrecoverable error, waiting for retrigger';
+  String get statusFailedDesc => 'Unrecoverable error, waiting for retrigger';
   @override
   String get statusInterruptedDesc =>
       'User interrupted, needs to restart from VALIDATING';
@@ -412,4 +407,12 @@ class AppStringsEn extends AppStrings {
       'zsh — $command — $project';
   @override
   String dependenciesDetected(int count) => '$count Dependencies Detected';
+  @override
+  String buildLogsShowingLatest(int visible, int total) =>
+      'Showing latest $visible of $total logs';
+  @override
+  String buildLogsShowingMatches(int visible, int total) =>
+      'Showing $visible of $total matching logs';
+  @override
+  String buildLogsLoadOlder(int count) => 'Load older ($count)';
 }

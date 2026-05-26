@@ -69,8 +69,7 @@ class AppStringsZh extends AppStrings {
   @override
   String get projectEditorTitle => '工程配置中心';
   @override
-  String get projectEditorSubtitle =>
-      '可视化编辑工作区、主工程绑定、依赖拓扑和构建场景矩阵';
+  String get projectEditorSubtitle => '可视化编辑工作区、主工程绑定、依赖拓扑和构建场景矩阵';
   @override
   String get projectEditorSave => '保存项目配置';
   @override
@@ -145,8 +144,7 @@ class AppStringsZh extends AppStrings {
   @override
   String get dependencyAddEmpty => '工作区中没有可继续添加的项目。';
   @override
-  String get dependencyAddEmptyHint =>
-      '点击右上角"选择添加依赖"，从工作区扫描结果中选择要加入的模块。';
+  String get dependencyAddEmptyHint => '点击右上角"选择添加依赖"，从工作区扫描结果中选择要加入的模块。';
   @override
   String get dependencyEmpty => '当前没有依赖项。通过"选择添加依赖"即可生成可编辑依赖行。';
   @override
@@ -366,13 +364,13 @@ class AppStringsZh extends AppStrings {
   @override
   String noLogMatch(String query) => '没有匹配 "$query" 的日志';
   @override
-  String readyForCommand(String name) => 'Ready to receive build command for project: $name';
+  String readyForCommand(String name) =>
+      'Ready to receive build command for project: $name';
   @override
   String discoveredGitProjects(int count) =>
       '已发现 $count 个 Git 项目，可用于主工程和依赖拓扑的路径选择。';
   @override
-  String dependencyCountInfo(int count) =>
-      '自动解析 $count 个模块，并允许调整路径、分支与恢复命令';
+  String dependencyCountInfo(int count) => '自动解析 $count 个模块，并允许调整路径、分支与恢复命令';
   @override
   String availableCount(int count) => '可选 $count';
   @override
@@ -386,7 +384,16 @@ class AppStringsZh extends AppStrings {
   @override
   String branchInfo(String branch) => '分支: $branch';
   @override
-  String terminalTitle(String command, String project) => 'zsh — $command — $project';
+  String terminalTitle(String command, String project) =>
+      'zsh — $command — $project';
   @override
   String dependenciesDetected(int count) => '$count 个依赖项已检测';
+  @override
+  String buildLogsShowingLatest(int visible, int total) =>
+      '显示最近 $visible / $total 条日志';
+  @override
+  String buildLogsShowingMatches(int visible, int total) =>
+      '显示匹配结果 $visible / $total 条';
+  @override
+  String buildLogsLoadOlder(int count) => '加载更早日志 ($count)';
 }

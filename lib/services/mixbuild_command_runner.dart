@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
@@ -51,6 +52,7 @@ abstract class MixbuildCommandRunner {
 /// macOS/Linux 使用 `/bin/zsh -lc` 执行 shell 命令，Windows 使用 `cmd /c`。
 /// 支持实时 stdout/stderr 回调和 SIGKILL 终止。
 class ProcessRunCommandRunner implements MixbuildCommandRunner {
+  static const Duration _streamCloseGracePeriod = Duration(milliseconds: 150);
   static const List<String> _macOsFallbackBins = <String>[
     '/opt/homebrew/bin',
     '/usr/local/bin',
@@ -95,18 +97,21 @@ class ProcessRunCommandRunner implements MixbuildCommandRunner {
       _activeProcess = process;
       final stdoutBuffer = StringBuffer();
       final stderrBuffer = StringBuffer();
-      final stdoutFuture = _collectStream(
+      final stdoutSubscription = _listenToStream(
         process.stdout,
         stdoutBuffer,
         onLine: onStdout,
       );
-      final stderrFuture = _collectStream(
+      final stderrSubscription = _listenToStream(
         process.stderr,
         stderrBuffer,
         onLine: onStderr,
       );
       final exitCode = await process.exitCode;
-      await Future.wait(<Future<void>>[stdoutFuture, stderrFuture]);
+      await Future.wait(<Future<void>>[
+        _closeStreamSubscription(stdoutSubscription),
+        _closeStreamSubscription(stderrSubscription),
+      ]);
       return CommandRunResult(
         command: command,
         workingDirectory: workingDirectory,
@@ -151,18 +156,21 @@ class ProcessRunCommandRunner implements MixbuildCommandRunner {
       _activeProcess = process;
       final stdoutBuffer = StringBuffer();
       final stderrBuffer = StringBuffer();
-      final stdoutFuture = _collectStream(
+      final stdoutSubscription = _listenToStream(
         process.stdout,
         stdoutBuffer,
         onLine: onStdout,
       );
-      final stderrFuture = _collectStream(
+      final stderrSubscription = _listenToStream(
         process.stderr,
         stderrBuffer,
         onLine: onStderr,
       );
       final exitCode = await process.exitCode;
-      await Future.wait(<Future<void>>[stdoutFuture, stderrFuture]);
+      await Future.wait(<Future<void>>[
+        _closeStreamSubscription(stdoutSubscription),
+        _closeStreamSubscription(stderrSubscription),
+      ]);
       return CommandRunResult(
         command: _formatCommand(executable, arguments),
         workingDirectory: workingDirectory,
@@ -208,20 +216,82 @@ class ProcessRunCommandRunner implements MixbuildCommandRunner {
     if (process == null) {
       return false;
     }
-    final killed = process.kill(signal);
+    final killed = _killProcessTree(process.pid, signal);
     _activeProcess = null;
     return killed;
   }
 
-  Future<void> _collectStream(
+  _StreamCollection _listenToStream(
     Stream<List<int>> stream,
     StringBuffer buffer, {
     void Function(String line)? onLine,
-  }) async {
-    await for (final line
-        in stream.transform(utf8.decoder).transform(const LineSplitter())) {
-      buffer.writeln(line);
-      onLine?.call(line);
+  }) {
+    final done = Completer<void>();
+    final subscription =
+        stream.transform(utf8.decoder).transform(const LineSplitter()).listen(
+      (line) {
+        buffer.writeln(line);
+        onLine?.call(line);
+      },
+      onDone: () {
+        if (!done.isCompleted) {
+          done.complete();
+        }
+      },
+      onError: (_) {
+        if (!done.isCompleted) {
+          done.complete();
+        }
+      },
+      cancelOnError: false,
+    );
+    return _StreamCollection(subscription: subscription, done: done.future);
+  }
+
+  Future<void> _closeStreamSubscription(_StreamCollection stream) async {
+    try {
+      await stream.done.timeout(_streamCloseGracePeriod);
+    } on TimeoutException {
+      await stream.subscription.cancel();
+    }
+  }
+
+  bool _killProcessTree(int pid, ProcessSignal signal) {
+    var killedAny = false;
+    for (final childPid in _childProcessIds(pid)) {
+      if (_killProcessTree(childPid, signal)) {
+        killedAny = true;
+      }
+    }
+    return Process.killPid(pid, signal) || killedAny;
+  }
+
+  List<int> _childProcessIds(int pid) {
+    if (Platform.isWindows) {
+      return const <int>[];
+    }
+    final pgrepExecutable =
+        _findExecutableInKnownPaths('pgrep') ?? whichSync('pgrep');
+    if (pgrepExecutable == null || pgrepExecutable.trim().isEmpty) {
+      return const <int>[];
+    }
+    try {
+      final result = Process.runSync(
+        pgrepExecutable,
+        <String>['-P', '$pid'],
+        runInShell: false,
+      );
+      if (result.exitCode != 0) {
+        return const <int>[];
+      }
+      return result.stdout
+          .toString()
+          .split('\n')
+          .map((line) => int.tryParse(line.trim()))
+          .whereType<int>()
+          .toList(growable: false);
+    } catch (_) {
+      return const <int>[];
     }
   }
 
@@ -269,4 +339,14 @@ class ProcessRunCommandRunner implements MixbuildCommandRunner {
     }
     return pathEntries.toList(growable: false);
   }
+}
+
+class _StreamCollection {
+  const _StreamCollection({
+    required this.subscription,
+    required this.done,
+  });
+
+  final StreamSubscription<String> subscription;
+  final Future<void> done;
 }

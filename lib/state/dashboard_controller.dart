@@ -49,12 +49,21 @@ final dashboardControllerProvider =
 /// - 触发/终止构建流水线（委托给 [MixbuildEngine]）
 /// - 持久化配置变更（委托给 [MixbuildYamlStore]）
 class DashboardController extends Notifier<DashboardState> {
+  static const Duration _historyPersistDebounceDelay =
+      Duration(milliseconds: 320);
+  static const Duration _logFlushInterval = Duration(milliseconds: 120);
+  static const int _maxScenarioLogEntries = 320;
+
   bool _stopRequested = false;
   bool _isDisposed = false;
   StreamSubscription<FileSystemEvent>? _yamlWatchSubscription;
   Timer? _watchDebounce;
   Timer? _resourceRefreshTimer;
+  Timer? _historyPersistDebounce;
   SystemResourceSnapshot? _latestResourceSnapshot;
+  bool _historyPersistDirty = false;
+  bool _historyPersistInFlight = false;
+  Future<void>? _historyPersistTask;
   final Map<String, _ActiveExecutionContext> _activeExecutions =
       <String, _ActiveExecutionContext>{};
 
@@ -66,6 +75,10 @@ class DashboardController extends Notifier<DashboardState> {
       _watchDebounce?.cancel();
       _yamlWatchSubscription?.cancel();
       _resourceRefreshTimer?.cancel();
+      _historyPersistDebounce?.cancel();
+      for (final context in _activeExecutions.values) {
+        context.flushTimer?.cancel();
+      }
     });
     final store = ref.read(mixbuildYamlStoreProvider);
     final yamlFiles = store.discoverWorkspaceYamlFilesSync();
@@ -530,9 +543,34 @@ class DashboardController extends Notifier<DashboardState> {
     if (!scenario.status.canTrigger) {
       return;
     }
+    if (state.runningCount > 0) {
+      state = state.copyWith(
+        lastError:
+            'A build is already running. Stop it before starting another task.',
+      );
+      return;
+    }
 
     _stopRequested = false;
     _startExecution(project, scenario);
+    final queuedLogs = <LogEntry>[
+      _log(
+        level: 'INFO',
+        message: 'Queued pipeline for ${project.name} / ${scenario.name}',
+        accent: MixBuildPalette.warning,
+      ),
+      if (state.cleanBeforeBuild[scenario.id] ?? false)
+        _log(
+          level: 'INFO',
+          message: 'Clean flag enabled. Build command will append --clean.',
+          accent: MixBuildPalette.tertiary,
+        ),
+    ];
+    _recordImmediateExecutionLogs(
+      projectId: project.id,
+      scenarioId: scenario.id,
+      logs: queuedLogs,
+    );
     _updateScenario(
       projectId: project.id,
       scenarioId: scenario.id,
@@ -540,17 +578,7 @@ class DashboardController extends Notifier<DashboardState> {
         status: BuildStatus.validating,
         progress: 0.05,
         logs: [
-          _log(
-            level: 'INFO',
-            message: 'Queued pipeline for ${project.name} / ${scenario.name}',
-            accent: MixBuildPalette.warning,
-          ),
-          if (state.cleanBeforeBuild[scenario.id] ?? false)
-            _log(
-              level: 'INFO',
-              message: 'Clean flag enabled. Build command will append --clean.',
-              accent: MixBuildPalette.tertiary,
-            ),
+          ...queuedLogs,
           ...current.logs,
         ].toList(growable: false),
       ),
@@ -575,19 +603,29 @@ class DashboardController extends Notifier<DashboardState> {
               );
             },
             onLog: (entry) {
-              _updateScenario(
+              _enqueueExecutionLog(
                 projectId: project.id,
                 scenarioId: scenario.id,
-                transform: (current) => current.copyWith(
-                  logs: [entry, ...current.logs].toList(growable: false),
-                ),
+                entry: entry,
               );
             },
           );
+      _flushExecutionLogs(project.id, scenario.id);
     } catch (error) {
       if (_stopRequested) {
         return;
       }
+      _flushExecutionLogs(project.id, scenario.id);
+      final errorLog = _log(
+        level: 'ERROR',
+        message: '$error',
+        accent: MixBuildPalette.error,
+      );
+      _recordImmediateExecutionLogs(
+        projectId: project.id,
+        scenarioId: scenario.id,
+        logs: <LogEntry>[errorLog],
+      );
       _updateScenario(
         projectId: project.id,
         scenarioId: scenario.id,
@@ -596,16 +634,12 @@ class DashboardController extends Notifier<DashboardState> {
           progress: 0,
           mainBranch: project.branch,
           logs: [
-            _log(
-              level: 'ERROR',
-              message: '$error',
-              accent: MixBuildPalette.error,
-            ),
+            errorLog,
             ...current.logs,
           ].toList(growable: false),
         ),
       );
-      _finalizeExecution(
+      await _finalizeExecution(
         projectId: project.id,
         scenarioId: scenario.id,
         status: BuildStatus.failed,
@@ -613,7 +647,7 @@ class DashboardController extends Notifier<DashboardState> {
       state = state.copyWith(lastError: '$error');
       return;
     }
-    _finalizeExecution(
+    await _finalizeExecution(
       projectId: project.id,
       scenarioId: scenario.id,
       status: BuildStatus.success,
@@ -626,6 +660,18 @@ class DashboardController extends Notifier<DashboardState> {
     ref.read(mixbuildEngineProvider).killActive();
     final project = state.selectedProject;
     final scenario = state.selectedScenario;
+    _flushExecutionLogs(project.id, scenario.id);
+    final interruptionLog = _log(
+      level: 'WARN',
+      message:
+          'Stop signal dispatched to the active build process tree. Background children may need a short moment to exit.',
+      accent: MixBuildPalette.error,
+    );
+    _recordImmediateExecutionLogs(
+      projectId: project.id,
+      scenarioId: scenario.id,
+      logs: <LogEntry>[interruptionLog],
+    );
     _updateScenario(
       projectId: project.id,
       scenarioId: scenario.id,
@@ -633,21 +679,16 @@ class DashboardController extends Notifier<DashboardState> {
         status: BuildStatus.interrupted,
         progress: 0,
         logs: [
-          _log(
-            level: 'WARN',
-            message:
-                'Safe Kill dispatched. All child processes and Gradle daemons were terminated.',
-            accent: MixBuildPalette.error,
-          ),
+          interruptionLog,
           ...current.logs,
         ].toList(growable: false),
       ),
     );
-    _finalizeExecution(
+    unawaited(_finalizeExecution(
       projectId: project.id,
       scenarioId: scenario.id,
       status: BuildStatus.interrupted,
-    );
+    ));
   }
 
   DashboardState _stateFromConfigs(
@@ -847,7 +888,6 @@ class DashboardController extends Notifier<DashboardState> {
       ),
       executionHistory: updatedExecutionHistory,
     );
-    _persistExecutionHistory();
   }
 
   LogEntry _log({
@@ -988,7 +1028,6 @@ class DashboardController extends Notifier<DashboardState> {
     final executionKey = _executionKey(project.id, scenario.id);
     _activeExecutions[executionKey] = _ActiveExecutionContext(
       executionId: taskId,
-      baselineLogCount: scenario.logs.length,
     );
     state = state.copyWith(
       executionHistory: <BuildExecutionRecord>[
@@ -1008,14 +1047,15 @@ class DashboardController extends Notifier<DashboardState> {
         ...state.executionHistory,
       ],
     );
-    _persistExecutionHistory();
+    _scheduleHistoryPersist(immediate: false);
   }
 
-  void _finalizeExecution({
+  Future<void> _finalizeExecution({
     required String projectId,
     required String scenarioId,
     required BuildStatus status,
-  }) {
+  }) async {
+    _flushExecutionLogs(projectId, scenarioId);
     final executionKey = _executionKey(projectId, scenarioId);
     final context = _activeExecutions[executionKey];
     if (context == null) {
@@ -1038,15 +1078,55 @@ class DashboardController extends Notifier<DashboardState> {
       }
       return record.copyWith(status: status, finishedAt: DateTime.now());
     }).toList(growable: false);
+    context.flushTimer?.cancel();
     _activeExecutions.remove(executionKey);
     state = state.copyWith(executionHistory: syncedHistory);
-    _persistExecutionHistory();
+    await _persistExecutionHistoryNow();
   }
 
-  void _persistExecutionHistory() {
-    ref
-        .read(buildExecutionHistoryStoreProvider)
-        .saveHistorySync(state.executionHistory);
+  void _scheduleHistoryPersist({required bool immediate}) {
+    _historyPersistDirty = true;
+    _historyPersistDebounce?.cancel();
+    if (immediate) {
+      unawaited(_persistExecutionHistoryIfNeeded());
+      return;
+    }
+    _historyPersistDebounce = Timer(
+      _historyPersistDebounceDelay,
+      () => unawaited(_persistExecutionHistoryIfNeeded()),
+    );
+  }
+
+  Future<void> _persistExecutionHistoryIfNeeded() async {
+    if (_historyPersistInFlight || !_historyPersistDirty) {
+      return;
+    }
+    _historyPersistDirty = false;
+    _historyPersistInFlight = true;
+    final snapshot = List<BuildExecutionRecord>.from(state.executionHistory);
+    try {
+      _historyPersistTask =
+          ref.read(buildExecutionHistoryStoreProvider).saveHistory(snapshot);
+      await _historyPersistTask;
+    } finally {
+      _historyPersistTask = null;
+      _historyPersistInFlight = false;
+      if (_historyPersistDirty) {
+        unawaited(_persistExecutionHistoryIfNeeded());
+      }
+    }
+  }
+
+  Future<void> _persistExecutionHistoryNow() async {
+    _historyPersistDirty = true;
+    _historyPersistDebounce?.cancel();
+    while (_historyPersistInFlight) {
+      await _historyPersistTask;
+    }
+    await _persistExecutionHistoryIfNeeded();
+    while (_historyPersistInFlight) {
+      await _historyPersistTask;
+    }
   }
 
   String _executionKey(String projectId, String scenarioId) {
@@ -1080,10 +1160,6 @@ class DashboardController extends Notifier<DashboardState> {
     if (context == null) {
       return history;
     }
-    final executionLogCount = (scenario.logs.length - context.baselineLogCount)
-        .clamp(0, scenario.logs.length);
-    final executionLogs =
-        scenario.logs.take(executionLogCount).toList(growable: false);
     return history.map((record) {
       if (record.id != context.executionId) {
         return record;
@@ -1091,9 +1167,71 @@ class DashboardController extends Notifier<DashboardState> {
       return record.copyWith(
         status: scenario.status,
         branch: scenario.mainBranch,
-        logs: executionLogs,
+        logs: List<LogEntry>.from(context.executionLogs, growable: false),
       );
     }).toList(growable: false);
+  }
+
+  void _recordImmediateExecutionLogs({
+    required String projectId,
+    required String scenarioId,
+    required List<LogEntry> logs,
+  }) {
+    if (logs.isEmpty) {
+      return;
+    }
+    final context = _activeExecutions[_executionKey(projectId, scenarioId)];
+    if (context != null) {
+      context.executionLogs.insertAll(0, logs);
+    }
+    _scheduleHistoryPersist(immediate: false);
+  }
+
+  void _enqueueExecutionLog({
+    required String projectId,
+    required String scenarioId,
+    required LogEntry entry,
+  }) {
+    final context = _activeExecutions[_executionKey(projectId, scenarioId)];
+    if (context == null) {
+      _updateScenario(
+        projectId: projectId,
+        scenarioId: scenarioId,
+        transform: (current) => current.copyWith(
+          logs: [entry, ...current.logs].toList(growable: false),
+        ),
+      );
+      return;
+    }
+    context.pendingLogs.add(entry);
+    context.flushTimer ??= Timer(_logFlushInterval, () {
+      context.flushTimer = null;
+      _flushExecutionLogs(projectId, scenarioId);
+    });
+  }
+
+  void _flushExecutionLogs(String projectId, String scenarioId) {
+    final context = _activeExecutions[_executionKey(projectId, scenarioId)];
+    if (context == null || context.pendingLogs.isEmpty) {
+      return;
+    }
+    context.flushTimer?.cancel();
+    context.flushTimer = null;
+    final batch = List<LogEntry>.from(context.pendingLogs, growable: false);
+    context.pendingLogs.clear();
+    final newestFirstBatch = batch.reversed.toList(growable: false);
+    context.executionLogs.insertAll(0, newestFirstBatch);
+    _updateScenario(
+      projectId: projectId,
+      scenarioId: scenarioId,
+      transform: (current) => current.copyWith(
+        logs: <LogEntry>[
+          ...newestFirstBatch,
+          ...current.logs,
+        ].take(_maxScenarioLogEntries).toList(growable: false),
+      ),
+    );
+    _scheduleHistoryPersist(immediate: false);
   }
 
   void _startResourceMonitoring() {
@@ -1125,11 +1263,10 @@ class DashboardController extends Notifier<DashboardState> {
 }
 
 class _ActiveExecutionContext {
-  const _ActiveExecutionContext({
-    required this.executionId,
-    required this.baselineLogCount,
-  });
+  _ActiveExecutionContext({required this.executionId});
 
   final String executionId;
-  final int baselineLogCount;
+  final List<LogEntry> executionLogs = <LogEntry>[];
+  final List<LogEntry> pendingLogs = <LogEntry>[];
+  Timer? flushTimer;
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ import 'package:mixbuild_dashboard/services/mixbuild_engine.dart';
 import 'package:mixbuild_dashboard/services/system_resource_monitor.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_yaml_store.dart';
 import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
+import 'package:mixbuild_dashboard/state/dashboard_state.dart';
 
 void main() {
   group('DashboardController', () {
@@ -245,6 +247,68 @@ void main() {
       expect(restoredState.executionHistory.first.logs.single.message,
           'Persisted failure');
     });
+
+    test('triggerSelectedScenario batches log UI updates and history writes',
+        () async {
+      final historySpy = _SpyBuildExecutionHistoryStore(
+        configHomePath: tempDir.path,
+      );
+      final fakeEngine = _FakeMixbuildEngine(
+        onRunPipelineImpl: ({
+          required config,
+          required project,
+          required scenario,
+          required cleanBeforeBuild,
+          required dependencyOverrides,
+          required onProgress,
+          required onLog,
+        }) async {
+          onProgress(BuildStatus.building, 0.6);
+          for (var i = 0; i < 40; i++) {
+            onLog(
+              LogEntry(
+                time: '11:20:${i.toString().padLeft(2, '0')}',
+                level: 'OUT',
+                message: 'line-$i',
+                accent: MixBuildPalette.muted,
+              ),
+            );
+          }
+          onProgress(BuildStatus.success, 1.0);
+        },
+      );
+      final localContainer = ProviderContainer(
+        overrides: [
+          mixbuildYamlStoreProvider.overrideWithValue(store),
+          buildExecutionHistoryStoreProvider.overrideWithValue(historySpy),
+          systemResourceMonitorProvider.overrideWithValue(resourceMonitor),
+          mixbuildEngineProvider.overrideWithValue(fakeEngine),
+        ],
+      );
+      addTearDown(localContainer.dispose);
+
+      var stateChanges = 0;
+      final subscription = localContainer.listen<DashboardState>(
+        dashboardControllerProvider,
+        (_, __) => stateChanges++,
+      );
+      addTearDown(subscription.close);
+
+      final controller =
+          localContainer.read(dashboardControllerProvider.notifier);
+      await controller.triggerSelectedScenario();
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+
+      final history =
+          localContainer.read(dashboardControllerProvider).executionHistory;
+      final lineLogs = history.first.logs
+          .where((entry) => entry.message.startsWith('line-'))
+          .toList(growable: false);
+
+      expect(lineLogs, hasLength(40));
+      expect(stateChanges, lessThan(18));
+      expect(historySpy.saveCalls, lessThan(18));
+    });
   });
 }
 
@@ -290,6 +354,18 @@ class _FakeSystemResourceMonitor implements SystemResourceMonitor {
 
   @override
   Future<SystemResourceSnapshot> sample() async => snapshot;
+}
+
+class _SpyBuildExecutionHistoryStore extends BuildExecutionHistoryStore {
+  _SpyBuildExecutionHistoryStore({required super.configHomePath});
+
+  int saveCalls = 0;
+
+  @override
+  Future<void> saveHistory(List<BuildExecutionRecord> history) async {
+    saveCalls++;
+    await super.saveHistory(history);
+  }
 }
 
 class _FakeMixbuildEngine extends MixbuildEngine {

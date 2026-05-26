@@ -1,11 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_app.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
+import 'package:mixbuild_dashboard/l10n/app_strings.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_yaml_store.dart';
 import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
 import 'package:mixbuild_dashboard/ui/project_detail_page.dart';
@@ -52,7 +54,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: MaterialApp(
+          child: _testApp(
             home: ProjectDetailPage(
               projectId: project.id,
               scenarioId: scenario.id,
@@ -63,10 +65,14 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
 
+      await tester.pumpWidget(const SizedBox.shrink());
+      container.dispose();
+      await tester.pump();
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('project detail header renders without overflow on narrow width', (
+    testWidgets(
+        'project detail header renders without overflow on narrow width', (
       tester,
     ) async {
       _setSurfaceSize(tester, const Size(780, 1100));
@@ -94,7 +100,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: MaterialApp(
+          child: _testApp(
             home: ProjectDetailPage(
               projectId: project.id,
               scenarioId: scenario.id,
@@ -105,6 +111,9 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
 
+      await tester.pumpWidget(const SizedBox.shrink());
+      container.dispose();
+      await tester.pump();
       expect(tester.takeException(), isNull);
     });
 
@@ -114,7 +123,7 @@ void main() {
       _setSurfaceSize(tester, const Size(860, 1100));
 
       await tester.pumpWidget(
-        MaterialApp(
+        _testApp(
           home: ProjectEditorPage(
             config: const GlobalConfig(
               workspaceRoot: '/tmp/workspace-demo',
@@ -182,6 +191,23 @@ void _setSurfaceSize(WidgetTester tester, Size size) {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
+}
+
+Widget _testApp({required Widget home}) {
+  return MaterialApp(
+    localizationsDelegates: const [
+      AppLocalizationsDelegate(),
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
+    supportedLocales: const [
+      Locale('zh', 'CN'),
+      Locale('en', 'US'),
+    ],
+    locale: const Locale('zh', 'CN'),
+    home: home,
+  );
 }
 
 MixbuildConfig _seedConfig() {

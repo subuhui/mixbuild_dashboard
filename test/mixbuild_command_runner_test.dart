@@ -81,4 +81,31 @@ void main() {
     expect(result.exitCode, 0);
     expect(result.stdout, contains('fake-fvm --version'));
   });
+
+  test('run returns promptly after shell exits even if child keeps pipes open',
+      () async {
+    final tempDirectory = await Directory.systemTemp.createTemp(
+      'mixbuild_runner_hang_test_',
+    );
+    addTearDown(() async {
+      if (await tempDirectory.exists()) {
+        await tempDirectory.delete(recursive: true);
+      }
+    });
+
+    final runner = ProcessRunCommandRunner();
+    final stopwatch = Stopwatch()..start();
+    final result = await runner.run(
+      'sleep 2 & echo done',
+      workingDirectory: tempDirectory.path,
+    );
+    stopwatch.stop();
+
+    expect(result.exitCode, 0);
+    expect(result.stdout, contains('done'));
+    expect(
+      stopwatch.elapsed,
+      lessThan(const Duration(milliseconds: 1200)),
+    );
+  });
 }

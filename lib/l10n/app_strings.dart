@@ -218,6 +218,9 @@ abstract class AppStrings {
   String branchInfo(String branch);
   String terminalTitle(String command, String project);
   String dependenciesDetected(int count);
+  String buildLogsShowingLatest(int visible, int total);
+  String buildLogsShowingMatches(int visible, int total);
+  String buildLogsLoadOlder(int count);
 }
 
 class AppLocalizationsDelegate extends LocalizationsDelegate<AppStrings> {

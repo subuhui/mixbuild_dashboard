@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 import 'package:path/path.dart' as p;
@@ -50,6 +51,15 @@ class BuildExecutionHistoryStore {
     } catch (_) {}
   }
 
+  Future<void> saveHistory(List<BuildExecutionRecord> history) async {
+    final payload =
+        history.map((record) => record.toJson()).toList(growable: false);
+    final filePath = historyFilePath;
+    try {
+      await Isolate.run<void>(() => _writeHistoryPayload(filePath, payload));
+    } catch (_) {}
+  }
+
   String get _configHomePath {
     final overridePath = _configHomePathOverride;
     if (overridePath != null && overridePath.trim().isNotEmpty) {
@@ -68,4 +78,13 @@ class BuildExecutionHistoryStore {
 
     throw StateError('Unable to determine user config directory.');
   }
+}
+
+void _writeHistoryPayload(
+  String filePath,
+  List<Map<String, dynamic>> payload,
+) {
+  final file = File(filePath);
+  file.parent.createSync(recursive: true);
+  file.writeAsStringSync(jsonEncode(payload));
 }

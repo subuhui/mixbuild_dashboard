@@ -13,8 +13,8 @@ void main() {
     await tester.pumpWidget(const MixBuildApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('MixBuild Dashboard v3.1'), findsOneWidget);
-    expect(find.text('New Project'), findsOneWidget);
+    expect(find.text('MixBuild Dashboard v1.0'), findsOneWidget);
+    expect(find.text('新增项目'), findsOneWidget);
     expect(find.byType(ProjectOverviewCard), findsWidgets);
   });
 }
