@@ -70,6 +70,7 @@ class MixbuildEngine {
       projectBranch: scenario.mainBranch.trim().isEmpty
           ? project.branch
           : scenario.mainBranch,
+      recreateLocalBranches: cleanBeforeBuild,
       dependencyOverrides: dependencyOverrides,
       onLog: onLog,
     );
@@ -189,6 +190,7 @@ class MixbuildEngine {
   Future<void> _runSync({
     required MixbuildConfig config,
     required String projectBranch,
+    required bool recreateLocalBranches,
     required Map<String, String> dependencyOverrides,
     required void Function(LogEntry entry) onLog,
   }) async {
@@ -198,7 +200,7 @@ class MixbuildEngine {
       name: config.mainProject.name,
       repoPath: mainProjectPath,
       targetBranch: projectBranch,
-      fallbackBranch: config.mainProject.defaultBranch,
+      recreateLocalBranch: recreateLocalBranches,
       onLog: onLog,
     );
 
@@ -209,7 +211,7 @@ class MixbuildEngine {
         name: dependency.name,
         repoPath: dependency.absolutePath(config.workspace.rootPath),
         targetBranch: targetBranch,
-        fallbackBranch: dependency.defaultBranch,
+        recreateLocalBranch: recreateLocalBranches,
         onLog: onLog,
       );
     }
@@ -365,7 +367,7 @@ class MixbuildEngine {
     required String name,
     required String repoPath,
     required String targetBranch,
-    required String fallbackBranch,
+    required bool recreateLocalBranch,
     required void Function(LogEntry entry) onLog,
   }) async {
     await _runGitCommandOrThrow(
@@ -384,20 +386,50 @@ class MixbuildEngine {
       errorPrefix: 'Git clean failed for $name',
     );
 
-    final checkoutPlan = await _resolveBranch(
+    final remoteBranchRef = await _findRemoteBranchRef(
       repoPath: repoPath,
-      requestedBranch: targetBranch,
-      fallbackBranch: fallbackBranch,
+      branchName: targetBranch,
     );
+    if (remoteBranchRef == null) {
+      throw MixbuildEngineException(
+        'Git checkout failed for $name: Remote branch origin/$targetBranch not found',
+      );
+    }
+    if (recreateLocalBranch) {
+      await _deleteLocalBranchIfPresent(
+        name: name,
+        repoPath: repoPath,
+        branchName: targetBranch,
+        onLog: onLog,
+      );
+    }
     final checkout = await _runner.runProcess(
       _resolveGitExecutable(),
-      <String>['-C', repoPath, ...checkoutPlan.checkoutArguments],
+      <String>['-C', repoPath, 'checkout', '-B', targetBranch, remoteBranchRef],
       workingDirectory: Directory.current.path,
     );
     _appendProcessLog(result: checkout, onLog: onLog);
     if (checkout.exitCode != 0) {
       throw MixbuildEngineException(
           'Git checkout failed for $name: ${checkout.stderr.trim()}');
+    }
+    final setUpstream = await _runner.runProcess(
+      _resolveGitExecutable(),
+      <String>[
+        '-C',
+        repoPath,
+        'branch',
+        '--set-upstream-to',
+        remoteBranchRef,
+        targetBranch,
+      ],
+      workingDirectory: Directory.current.path,
+    );
+    _appendProcessLog(result: setUpstream, onLog: onLog);
+    if (setUpstream.exitCode != 0) {
+      throw MixbuildEngineException(
+        'Git upstream setup failed for $name: ${setUpstream.stderr.trim()}',
+      );
     }
     final pull = await _runner.runProcess(
       _resolveGitExecutable(),
@@ -409,48 +441,12 @@ class MixbuildEngine {
       throw MixbuildEngineException(
           'Git pull failed for $name: ${pull.stderr.trim()}');
     }
-    if (checkoutPlan.branchName != targetBranch) {
-      onLog(
-        _entry(
-          level: 'WARN',
-          message:
-              '$name missing branch $targetBranch, fallback to default_branch=$fallbackBranch',
-          accent: MixBuildPalette.warning,
-        ),
-      );
-      return;
-    }
     onLog(
       _entry(
         level: 'INFO',
-        message: '$name aligned to branch ${checkoutPlan.branchName}',
+        message: '$name aligned to branch $targetBranch',
         accent: MixBuildPalette.tertiary,
       ),
-    );
-  }
-
-  Future<_BranchCheckoutPlan> _resolveBranch({
-    required String repoPath,
-    required String requestedBranch,
-    required String fallbackBranch,
-  }) async {
-    final requestedPlan = await _resolveCheckoutPlanForBranch(
-      repoPath: repoPath,
-      branchName: requestedBranch,
-    );
-    if (requestedPlan != null) {
-      return requestedPlan;
-    }
-    final fallbackPlan = await _resolveCheckoutPlanForBranch(
-      repoPath: repoPath,
-      branchName: fallbackBranch,
-    );
-    if (fallbackPlan != null) {
-      return fallbackPlan;
-    }
-    return _BranchCheckoutPlan(
-      branchName: fallbackBranch,
-      checkoutArguments: <String>['checkout', fallbackBranch],
     );
   }
 
@@ -557,29 +553,6 @@ class MixbuildEngine {
     return false;
   }
 
-  Future<_BranchCheckoutPlan?> _resolveCheckoutPlanForBranch({
-    required String repoPath,
-    required String branchName,
-  }) async {
-    if (await _hasLocalBranch(repoPath: repoPath, branchName: branchName)) {
-      return _BranchCheckoutPlan(
-        branchName: branchName,
-        checkoutArguments: <String>['checkout', branchName],
-      );
-    }
-    final remoteBranchRef = await _findRemoteBranchRef(
-      repoPath: repoPath,
-      branchName: branchName,
-    );
-    if (remoteBranchRef == null) {
-      return null;
-    }
-    return _BranchCheckoutPlan(
-      branchName: branchName,
-      checkoutArguments: <String>['checkout', '--track', remoteBranchRef],
-    );
-  }
-
   Future<bool> _hasLocalBranch({
     required String repoPath,
     required String branchName,
@@ -597,6 +570,64 @@ class MixbuildEngine {
       workingDirectory: Directory.current.path,
     );
     return branchCheck.exitCode == 0;
+  }
+
+  Future<void> _deleteLocalBranchIfPresent({
+    required String name,
+    required String repoPath,
+    required String branchName,
+    required void Function(LogEntry entry) onLog,
+  }) async {
+    if (!await _hasLocalBranch(repoPath: repoPath, branchName: branchName)) {
+      return;
+    }
+    final currentBranch = await _currentBranchName(repoPath: repoPath);
+    if (currentBranch == branchName) {
+      final detach = await _runner.runProcess(
+        _resolveGitExecutable(),
+        <String>['-C', repoPath, 'checkout', '--detach'],
+        workingDirectory: Directory.current.path,
+      );
+      _appendProcessLog(result: detach, onLog: onLog);
+      if (detach.exitCode != 0) {
+        throw MixbuildEngineException(
+          'Git checkout failed for $name: ${detach.stderr.trim()}',
+        );
+      }
+    }
+    final deleteBranch = await _runner.runProcess(
+      _resolveGitExecutable(),
+      <String>['-C', repoPath, 'branch', '-D', branchName],
+      workingDirectory: Directory.current.path,
+    );
+    _appendProcessLog(result: deleteBranch, onLog: onLog);
+    if (deleteBranch.exitCode != 0) {
+      throw MixbuildEngineException(
+        'Git branch delete failed for $name: ${deleteBranch.stderr.trim()}',
+      );
+    }
+    onLog(
+      _entry(
+        level: 'INFO',
+        message: '$name deleted local branch $branchName before clean sync',
+        accent: MixBuildPalette.warning,
+      ),
+    );
+  }
+
+  Future<String?> _currentBranchName({
+    required String repoPath,
+  }) async {
+    final currentBranch = await _runner.runProcess(
+      _resolveGitExecutable(),
+      <String>['-C', repoPath, 'symbolic-ref', '--quiet', '--short', 'HEAD'],
+      workingDirectory: Directory.current.path,
+    );
+    if (currentBranch.exitCode != 0) {
+      return null;
+    }
+    final normalized = currentBranch.stdout.trim();
+    return normalized.isEmpty ? null : normalized;
   }
 
   Future<String?> _findRemoteBranchRef({
@@ -697,14 +728,4 @@ class MixbuildEngine {
     return normalized.contains('operation not permitted') ||
         normalized.contains('permission denied');
   }
-}
-
-class _BranchCheckoutPlan {
-  const _BranchCheckoutPlan({
-    required this.branchName,
-    required this.checkoutArguments,
-  });
-
-  final String branchName;
-  final List<String> checkoutArguments;
 }
