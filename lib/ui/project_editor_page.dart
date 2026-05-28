@@ -686,7 +686,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                     maxHeight: 920,
                   ),
                   child: Container(
-                    decoration: MixBuildTheme.surfacePanel(radius: 28),
+                    decoration: MixBuildTheme.surfacePanel(context, radius: 28),
                     child: Column(
                       children: [
                         Container(
@@ -1937,7 +1937,7 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
         borderRadius: BorderRadius.circular(24),
         child: Container(
           constraints: const BoxConstraints(maxWidth: 720, maxHeight: 820),
-          decoration: MixBuildTheme.surfacePanel(radius: 24),
+          decoration: MixBuildTheme.surfacePanel(context, radius: 24),
           child: Column(
             children: [
               Padding(

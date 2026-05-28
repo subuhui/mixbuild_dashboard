@@ -146,66 +146,74 @@ class MixBuildTheme {
     final base = brightness == Brightness.dark
         ? ThemeData.dark(useMaterial3: true)
         : ThemeData.light(useMaterial3: true);
-    final textTheme = base.textTheme.copyWith(
-      headlineLarge: base.textTheme.headlineLarge?.copyWith(
-        fontSize: 34,
-        fontWeight: FontWeight.w700,
-        color: palette.foreground,
-      ),
-      headlineMedium: base.textTheme.headlineMedium?.copyWith(
-        fontSize: 24,
-        fontWeight: FontWeight.w600,
-        color: palette.foreground,
-      ),
-      titleLarge: base.textTheme.titleLarge?.copyWith(
-        fontSize: 17,
-        fontWeight: FontWeight.w600,
-        color: palette.foreground,
-      ),
-      titleMedium: base.textTheme.titleMedium?.copyWith(
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-        color: palette.foreground,
-      ),
-      bodyLarge: base.textTheme.bodyLarge?.copyWith(
-        fontSize: 17,
-        color: palette.foreground,
-      ),
-      bodyMedium: base.textTheme.bodyMedium?.copyWith(
-        fontSize: 15,
-        color: palette.foreground,
-      ),
-      bodySmall: base.textTheme.bodySmall?.copyWith(
-        fontSize: 12,
-        color: palette.muted,
-      ),
-      labelLarge: base.textTheme.labelLarge?.copyWith(
-        fontSize: 13,
-        letterSpacing: 0.8,
-        fontWeight: FontWeight.w600,
-        color: palette.foreground,
-      ),
+    final textTheme = base.textTheme
+        .apply(
+          bodyColor: palette.foreground,
+          displayColor: palette.foreground,
+        )
+        .copyWith(
+          headlineLarge: base.textTheme.headlineLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: palette.foreground,
+          ),
+          headlineMedium: base.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: palette.foreground,
+          ),
+          titleLarge: base.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: palette.foreground,
+          ),
+          titleMedium: base.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: palette.foreground,
+          ),
+          bodySmall: base.textTheme.bodySmall?.copyWith(
+            color: palette.muted,
+          ),
+          labelLarge: base.textTheme.labelLarge?.copyWith(
+            letterSpacing: 0.2,
+            fontWeight: FontWeight.w600,
+            color: palette.foreground,
+          ),
+        );
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: palette.primary,
+      brightness: brightness,
+      primary: palette.primary,
+      secondary: palette.tertiary,
+      surface: palette.surface,
+      error: palette.error,
     );
 
     return base.copyWith(
       scaffoldBackgroundColor: palette.background,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: palette.primary,
-        brightness: brightness,
-        primary: palette.primary,
-        secondary: palette.tertiary,
-        surface: palette.surface,
-        error: palette.error,
-      ),
+      colorScheme: colorScheme,
       textTheme: textTheme,
       dividerColor: palette.foreground.withValues(alpha: 0.08),
       cardColor: palette.surfaceHigh,
       canvasColor: palette.surface,
-      splashFactory: NoSplash.splashFactory,
       dialogTheme: DialogThemeData(
-        backgroundColor: palette.surface,
+        backgroundColor: colorScheme.surface,
         barrierColor: palette.barrier,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      ),
+      navigationRailTheme: NavigationRailThemeData(
+        backgroundColor: colorScheme.surfaceContainerLow,
+        indicatorColor: colorScheme.secondaryContainer,
+        selectedIconTheme:
+            IconThemeData(color: colorScheme.onSecondaryContainer),
+        selectedLabelTextStyle: textTheme.labelLarge?.copyWith(
+          color: colorScheme.onSurface,
+        ),
+        unselectedIconTheme: IconThemeData(color: colorScheme.onSurfaceVariant),
+        unselectedLabelTextStyle: textTheme.labelLarge?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+        ),
+      ),
+      navigationDrawerTheme: NavigationDrawerThemeData(
+        backgroundColor: colorScheme.surfaceContainerLow,
+        indicatorColor: colorScheme.secondaryContainer,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -235,12 +243,30 @@ class MixBuildTheme {
     );
   }
 
-  static BoxDecoration surfacePanel({double radius = 24, Color? color}) {
+  static Color surfacePanelColor(BuildContext context, {Color? color}) {
+    return color ?? Theme.of(context).colorScheme.surfaceContainerHigh;
+  }
+
+  static Color surfaceChromeColor(BuildContext context) {
+    return Theme.of(context).colorScheme.surfaceContainerHighest;
+  }
+
+  static Color surfacePanelBorderColor(BuildContext context) {
+    return Theme.of(
+      context,
+    ).colorScheme.outlineVariant.withValues(alpha: 0.45);
+  }
+
+  static BoxDecoration surfacePanel(
+    BuildContext context, {
+    double radius = 24,
+    Color? color,
+  }) {
     return BoxDecoration(
-      color: color ?? MixBuildPalette.surfaceHigh,
+      color: surfacePanelColor(context, color: color),
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
-        color: MixBuildPalette.foreground.withValues(alpha: 0.08),
+        color: surfacePanelBorderColor(context),
       ),
     );
   }

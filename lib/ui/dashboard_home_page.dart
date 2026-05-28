@@ -128,6 +128,33 @@ class DashboardHomePage extends ConsumerWidget {
       );
     }
 
+    Future<void> handleNavigationSelection(
+      int index, {
+      bool closeDrawer = false,
+    }) async {
+      if (closeDrawer) {
+        Navigator.of(context).pop();
+      }
+      switch (index) {
+        case 1:
+          await openBuildLogsPage();
+          break;
+        case 2:
+          await openSettingsPage();
+          break;
+        case 0:
+        default:
+          break;
+      }
+    }
+
+    Future<void> handleCreateProject({bool closeDrawer = false}) async {
+      if (closeDrawer) {
+        Navigator.of(context).pop();
+      }
+      await createNewProject();
+    }
+
     void openDetail(ProjectBuild project, BuildScenario scenario) {
       controller.selectScenario(project, scenario);
       Navigator.of(context).push(
@@ -197,12 +224,14 @@ class DashboardHomePage extends ConsumerWidget {
 
     final drawer = responsive.isCompact
         ? Drawer(
-            backgroundColor: MixBuildPalette.surface,
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
             child: SafeArea(
-              child: _DashboardNavRail(
-                onCreateProject: createNewProject,
-                onOpenBuildLogs: openBuildLogsPage,
-                onOpenSettings: openSettingsPage,
+              child: _DashboardNavigationMenu(
+                onCreateProject: () => handleCreateProject(closeDrawer: true),
+                onDestinationSelected: (index) => handleNavigationSelection(
+                  index,
+                  closeDrawer: true,
+                ),
                 compact: true,
               ),
             ),
@@ -227,10 +256,9 @@ class DashboardHomePage extends ConsumerWidget {
                   )
                 : Row(
                     children: [
-                      _DashboardNavRail(
-                        onCreateProject: createNewProject,
-                        onOpenBuildLogs: openBuildLogsPage,
-                        onOpenSettings: openSettingsPage,
+                      _DashboardNavigationMenu(
+                        onCreateProject: handleCreateProject,
+                        onDestinationSelected: handleNavigationSelection,
                       ),
                       Expanded(child: buildMainContent()),
                     ],
@@ -242,204 +270,159 @@ class DashboardHomePage extends ConsumerWidget {
   }
 }
 
-class _DashboardNavRail extends StatelessWidget {
-  const _DashboardNavRail({
+class _DashboardNavigationMenu extends StatelessWidget {
+  const _DashboardNavigationMenu({
     required this.onCreateProject,
-    required this.onOpenBuildLogs,
-    required this.onOpenSettings,
+    required this.onDestinationSelected,
     this.compact = false,
   });
 
   final VoidCallback onCreateProject;
+  final ValueChanged<int> onDestinationSelected;
   final bool compact;
-  final Future<void> Function({String? initialExecutionId}) onOpenBuildLogs;
-  final Future<void> Function() onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final strings = AppStrings.of(context);
-    return Container(
-      width: compact ? 280 : 252,
-      margin:
-          compact ? EdgeInsets.zero : const EdgeInsets.fromLTRB(16, 16, 16, 14),
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-      decoration: BoxDecoration(
-        color: MixBuildPalette.surfaceLow,
-        borderRadius: BorderRadius.circular(compact ? 0 : 28),
-        border: Border.all(
-          color: MixBuildPalette.foreground.withValues(alpha: 0.06),
-        ),
+    final destinations = <NavigationRailDestination>[
+      NavigationRailDestination(
+        icon: const Icon(Icons.dashboard_outlined),
+        selectedIcon: const Icon(Icons.dashboard),
+        label: Text(strings.navDashboard),
       ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.receipt_long_outlined),
+        selectedIcon: const Icon(Icons.receipt_long),
+        label: Text(strings.navBuildLogs),
+      ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.settings_outlined),
+        selectedIcon: const Icon(Icons.settings),
+        label: Text(strings.navSettings),
+      ),
+    ];
+
+    final drawerDestinations = <Widget>[
+      NavigationDrawerDestination(
+        icon: const Icon(Icons.dashboard_outlined),
+        selectedIcon: const Icon(Icons.dashboard),
+        label: Text(strings.navDashboard),
+      ),
+      NavigationDrawerDestination(
+        icon: const Icon(Icons.receipt_long_outlined),
+        selectedIcon: const Icon(Icons.receipt_long),
+        label: Text(strings.navBuildLogs),
+      ),
+      NavigationDrawerDestination(
+        icon: const Icon(Icons.settings_outlined),
+        selectedIcon: const Icon(Icons.settings),
+        label: Text(strings.navSettings),
+      ),
+    ];
+
+    final header = Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  strings.appBrand,
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    color: MixBuildPalette.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  strings.appVersion,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    letterSpacing: 1.1,
-                    color: MixBuildPalette.muted.withValues(alpha: 0.7),
-                  ),
-                ),
-              ],
+          Text(
+            strings.appBrand,
+            style: theme.textTheme.headlineMedium?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 24),
-          _NavItem(
-            icon: Icons.dashboard_outlined,
-            label: strings.navDashboard,
-            active: true,
-          ),
-          _NavItem(
-            icon: Icons.receipt_long_outlined,
-            label: strings.navBuildLogs,
-            onTap: () => onOpenBuildLogs(),
-          ),
-          _NavItem(
-            icon: Icons.settings_outlined,
-            label: strings.navSettings,
-            onTap: onOpenSettings,
-          ),
-          const SizedBox(height: 18),
-          FilledButton.icon(
-            onPressed: onCreateProject,
-            icon: const Icon(Icons.add),
-            label: Text(strings.navNewProject),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(52),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-              textStyle: theme.textTheme.labelLarge,
-            ),
-          ),
-          const Spacer(),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.only(top: 14),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(
-                  color: MixBuildPalette.foreground.withValues(alpha: 0.06),
-                ),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 6,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.help_outline,
-                        size: 16,
-                        color: MixBuildPalette.muted,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(strings.navSupport,
-                          style: theme.textTheme.bodySmall),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 6,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.description_outlined,
-                        size: 16,
-                        color: MixBuildPalette.muted,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(strings.navDocs, style: theme.textTheme.bodySmall),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child:
-                      Text(strings.copyright, style: theme.textTheme.bodySmall),
-                ),
-              ],
+          const SizedBox(height: 4),
+          Text(
+            strings.appVersion,
+            style: theme.textTheme.bodySmall?.copyWith(
+              letterSpacing: 1.1,
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
         ],
       ),
     );
-  }
-}
 
-class _NavItem extends StatelessWidget {
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    this.active = false,
-    this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: active
-              ? MixBuildPalette.primary.withValues(alpha: 0.14)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          border: active
-              ? Border.all(
-                  color: MixBuildPalette.primary.withValues(alpha: 0.2))
-              : null,
+    final footer = Column(
+      children: [
+        Divider(color: colorScheme.outlineVariant.withValues(alpha: 0.8)),
+        ListTile(
+          dense: true,
+          leading: const Icon(Icons.help_outline, size: 18),
+          title: Text(strings.navSupport, style: theme.textTheme.bodySmall),
         ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 18,
-              color: active ? MixBuildPalette.primary : MixBuildPalette.muted,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: active
-                        ? MixBuildPalette.primary
-                        : MixBuildPalette.muted,
-                    fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-                  ),
-            ),
-          ],
+        ListTile(
+          dense: true,
+          leading: const Icon(Icons.description_outlined, size: 18),
+          title: Text(strings.navDocs, style: theme.textTheme.bodySmall),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+          child: Text(strings.copyright, style: theme.textTheme.bodySmall),
+        ),
+      ],
+    );
+
+    if (compact) {
+      return NavigationDrawer(
+        selectedIndex: 0,
+        onDestinationSelected: onDestinationSelected,
+        children: [
+          header,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: FilledButton.icon(
+              onPressed: onCreateProject,
+              icon: const Icon(Icons.add),
+              label: Text(strings.navNewProject),
+            ),
+          ),
+          ...drawerDestinations,
+          const SizedBox(height: 12),
+          footer,
+        ],
+      );
+    }
+
+    return Container(
+      width: 300,
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      decoration: MixBuildTheme.surfacePanel(
+        context,
+        radius: 28,
+        color: colorScheme.surfaceContainerLow,
+      ),
+      child: Column(
+        children: [
+          header,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: onCreateProject,
+                icon: const Icon(Icons.add),
+                label: Text(strings.navNewProject),
+              ),
+            ),
+          ),
+          Expanded(
+            child: NavigationRail(
+              backgroundColor: Colors.transparent,
+              selectedIndex: 0,
+              extended: true,
+              minExtendedWidth: 220,
+              destinations: destinations,
+              onDestinationSelected: onDestinationSelected,
+              useIndicator: true,
+              groupAlignment: -1,
+            ),
+          ),
+          footer,
+        ],
       ),
     );
   }
@@ -466,7 +449,7 @@ class ProjectOverviewCard extends StatelessWidget {
     final theme = Theme.of(context);
     final strings = AppStrings.of(context);
     return Container(
-      decoration: MixBuildTheme.surfacePanel(radius: 24),
+      decoration: MixBuildTheme.surfacePanel(context, radius: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -505,33 +488,30 @@ class ProjectOverviewCard extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             project.description,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodySmall,
                           ),
                         ],
                       ),
                     ),
-                    IconButton(
-                      onPressed: onOpenYaml,
-                      icon: const Icon(Icons.data_object_outlined, size: 18),
-                      color: MixBuildPalette.muted,
-                    ),
-                    FilledButton.tonalIcon(
-                      onPressed: onEdit,
-                      icon: const Icon(Icons.edit_outlined, size: 18),
-                      label: Text(strings.btnEdit),
-                      style: FilledButton.styleFrom(
-                        foregroundColor: MixBuildPalette.primary,
-                        backgroundColor: MixBuildPalette.primary.withValues(
-                          alpha: 0.14,
+                    const SizedBox(width: 12),
+                    OverflowBar(
+                      spacing: 8,
+                      children: [
+                        IconButton(
+                          onPressed: onOpenYaml,
+                          icon:
+                              const Icon(Icons.data_object_outlined, size: 18),
+                          color: MixBuildPalette.muted,
+                          tooltip: strings.yamlOverride,
                         ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
+                        IconButton.filledTonal(
+                          onPressed: onEdit,
+                          icon: const Icon(Icons.edit_outlined, size: 18),
+                          tooltip: strings.btnEdit,
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
@@ -599,59 +579,58 @@ class _ScenarioPreviewTile extends StatelessWidget {
                 ? scenario.status.color.withValues(alpha: 0.32)
                 : selected
                     ? scenario.status.color.withValues(alpha: 0.24)
-                    : MixBuildPalette.foreground.withValues(alpha: 0.06),
+                    : MixBuildTheme.surfacePanelBorderColor(context),
             width: isActive ? 1.5 : 1,
           ),
         ),
         child: Column(
           children: [
-            Row(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  flex: 3,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        scenario.name,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        scenario.subtitle,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: isActive
-                              ? scenario.status.color.withValues(
-                                  alpha: 0.6,
-                                )
-                              : null,
-                        ),
-                      ),
-                    ],
+                Text(
+                  scenario.name,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: StatusChip(status: scenario.status),
+                const SizedBox(height: 4),
+                Text(
+                  scenario.subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: isActive
+                        ? scenario.status.color.withValues(
+                            alpha: 0.6,
+                          )
+                        : null,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ScenarioActionButton(
-                    color: actionColor,
-                    enabled: true,
-                    label: actionLabel,
-                    icon: canStop
-                        ? Icons.stop_circle_outlined
-                        : Icons.rocket_launch_outlined,
-                    filled: canStop,
-                    onPressed: onTap,
-                  ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: StatusChip(status: scenario.status),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ScenarioActionButton(
+                        color: actionColor,
+                        enabled: true,
+                        label: actionLabel,
+                        icon: canStop
+                            ? Icons.stop_circle_outlined
+                            : Icons.rocket_launch_outlined,
+                        filled: canStop,
+                        onPressed: onTap,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -664,13 +643,10 @@ class _ScenarioPreviewTile extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: MixBuildPalette.foreground.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: MixBuildPalette.foreground.withValues(alpha: 0.08),
-                  ),
                 ),
                 child: Column(
                   children: [
-                    for (final log in scenario.logs.take(5))
+                    for (final log in scenario.logs.take(3))
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Row(

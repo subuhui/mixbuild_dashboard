@@ -16,16 +16,16 @@ class DashboardBackground extends StatelessWidget {
       children: [
         Container(color: theme.scaffoldBackgroundColor),
         Positioned(
-          top: -120,
-          left: -80,
+          top: -96,
+          left: -64,
           child: Container(
-            width: 420,
-            height: 420,
+            width: 360,
+            height: 360,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  colorScheme.primary.withValues(alpha: isDark ? 0.22 : 0.12),
+                  colorScheme.primary.withValues(alpha: isDark ? 0.14 : 0.08),
                   Colors.transparent,
                 ],
               ),
@@ -33,17 +33,17 @@ class DashboardBackground extends StatelessWidget {
           ),
         ),
         Positioned(
-          right: -120,
-          bottom: -160,
+          right: -96,
+          bottom: -132,
           child: Container(
-            width: 520,
-            height: 520,
+            width: 420,
+            height: 420,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
                   colorScheme.tertiary.withValues(
-                    alpha: isDark ? 0.18 : 0.08,
+                    alpha: isDark ? 0.12 : 0.06,
                   ),
                   Colors.transparent,
                 ],
@@ -89,41 +89,24 @@ class DashboardTopBar extends StatelessWidget {
             if (!compact) ...[
               const SizedBox(width: 12),
               Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: MixBuildPalette.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: MixBuildPalette.primary.withValues(alpha: 0.15),
+                child: Chip(
+                  avatar: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      shape: BoxShape.circle,
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: MixBuildPalette.primary,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          strings.parallelRunningCount(runningCount),
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: MixBuildPalette.foreground,
-                          ),
-                        ),
-                      ),
-                    ],
+                  label: Text(
+                    strings.parallelRunningCount(runningCount),
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall,
                   ),
+                  side: BorderSide.none,
+                  backgroundColor: theme.colorScheme.secondaryContainer,
+                  labelPadding: const EdgeInsets.only(right: 2),
+                  visualDensity: VisualDensity.compact,
                 ),
               ),
             ],
@@ -159,6 +142,7 @@ class DashboardTopBar extends StatelessWidget {
             12,
           ),
           decoration: MixBuildTheme.surfacePanel(
+            context,
             radius: 18,
             color: MixBuildPalette.surface,
           ),
@@ -239,6 +223,7 @@ class DashboardSideBar extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: MixBuildTheme.surfacePanel(
+                context,
                 radius: 20,
                 color: MixBuildPalette.surface,
               ),
@@ -492,7 +477,7 @@ class ScenarioInspectorPanel extends StatelessWidget {
     final theme = Theme.of(context);
     final strings = AppStrings.of(context);
     return DecoratedBox(
-      decoration: MixBuildTheme.surfacePanel(),
+      decoration: MixBuildTheme.surfacePanel(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -840,6 +825,7 @@ class DashboardFooterBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
       decoration: MixBuildTheme.surfacePanel(
+        context,
         radius: 18,
         color: MixBuildPalette.surfaceLow,
       ),
@@ -851,25 +837,9 @@ class DashboardFooterBar extends StatelessWidget {
         children: [
           Text(strings.copyright, style: theme.textTheme.bodySmall),
           for (final metric in metrics) DashboardMetricBar(metric: metric),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: systemStatus.color,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                systemStatus.label,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: systemStatus.color,
-                ),
-              ),
-            ],
+          TinyBadge(
+            label: systemStatus.label,
+            color: systemStatus.color,
           ),
         ],
       ),
@@ -924,29 +894,20 @@ class TinyBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.18)),
+    return Chip(
+      avatar: Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: color),
-          ),
-        ],
+      label: Text(
+        label,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
       ),
+      backgroundColor: color.withValues(alpha: 0.12),
+      side: BorderSide(color: color.withValues(alpha: 0.16)),
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 }
@@ -1000,46 +961,34 @@ class _StatusChipState extends State<StatusChip>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: widget.status.color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: widget.status.color.withValues(alpha: 0.28)),
-      ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedBuilder(
-              animation: _pulse,
-              builder: (context, child) {
-                return Opacity(
-                  opacity: widget.status.isPipelineActive ? _pulse.value : 1.0,
-                  child: child,
-                );
-              },
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: widget.status.color,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              widget.status.labelWithContext(context),
-              style: Theme.of(
-                context,
-              ).textTheme.labelLarge?.copyWith(color: widget.status.color),
-            ),
-          ],
+    return Chip(
+      avatar: AnimatedBuilder(
+        animation: _pulse,
+        builder: (context, child) {
+          return Opacity(
+            opacity: widget.status.isPipelineActive ? _pulse.value : 1.0,
+            child: child,
+          );
+        },
+        child: Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: widget.status.color,
+            shape: BoxShape.circle,
+          ),
         ),
       ),
+      label: Text(
+        widget.status.labelWithContext(context),
+        style: Theme.of(
+          context,
+        ).textTheme.labelLarge?.copyWith(color: widget.status.color),
+      ),
+      backgroundColor: widget.status.color.withValues(alpha: 0.14),
+      side: BorderSide(color: widget.status.color.withValues(alpha: 0.18)),
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 }

@@ -1429,6 +1429,7 @@ class _HudOverlay extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: MixBuildTheme.surfacePanel(
+        context,
         radius: 14,
         color: MixBuildPalette.surfaceHigh,
       ),

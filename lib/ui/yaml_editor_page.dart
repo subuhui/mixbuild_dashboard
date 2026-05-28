@@ -67,7 +67,10 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(24),
                     child: Container(
-                      decoration: MixBuildTheme.surfacePanel(radius: 24),
+                      decoration: MixBuildTheme.surfacePanel(
+                        context,
+                        radius: 24,
+                      ),
                       child: Column(
                         children: [
                           Container(

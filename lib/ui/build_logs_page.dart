@@ -160,7 +160,7 @@ class _BuildLogsHeader extends StatelessWidget {
     final strings = AppStrings.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: MixBuildTheme.surfacePanel(radius: 20),
+      decoration: MixBuildTheme.surfacePanel(context, radius: 20),
       child: Row(
         children: [
           IconButton(
@@ -203,7 +203,7 @@ class _BuildExecutionHistoryList extends StatelessWidget {
     final strings = AppStrings.of(context);
     if (records.isEmpty) {
       return Container(
-        decoration: MixBuildTheme.surfacePanel(radius: 24),
+        decoration: MixBuildTheme.surfacePanel(context, radius: 24),
         alignment: Alignment.center,
         child: Text(
           strings.buildLogsEmpty,
@@ -212,7 +212,7 @@ class _BuildExecutionHistoryList extends StatelessWidget {
       );
     }
     return Container(
-      decoration: MixBuildTheme.surfacePanel(radius: 24),
+      decoration: MixBuildTheme.surfacePanel(context, radius: 24),
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: records.length,
@@ -309,7 +309,7 @@ class _BuildExecutionLogDetail extends StatelessWidget {
     final strings = AppStrings.of(context);
     if (record == null) {
       return Container(
-        decoration: MixBuildTheme.surfacePanel(radius: 24),
+        decoration: MixBuildTheme.surfacePanel(context, radius: 24),
         alignment: Alignment.center,
         child: Text(
           strings.buildLogsSelectRecord,
@@ -318,7 +318,7 @@ class _BuildExecutionLogDetail extends StatelessWidget {
       );
     }
     return Container(
-      decoration: MixBuildTheme.surfacePanel(radius: 24),
+      decoration: MixBuildTheme.surfacePanel(context, radius: 24),
       child: Column(
         children: [
           Container(
