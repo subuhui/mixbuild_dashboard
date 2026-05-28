@@ -96,7 +96,7 @@ class DashboardTopBar extends StatelessWidget {
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           color: MixBuildPalette.primary,
                           shape: BoxShape.circle,
                         ),
@@ -203,7 +203,9 @@ class DashboardSideBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: MixBuildPalette.surfaceLow,
         border: Border(
-          right: BorderSide(color: Colors.black.withValues(alpha: 0.08)),
+          right: BorderSide(
+            color: MixBuildPalette.foreground.withValues(alpha: 0.08),
+          ),
         ),
       ),
       child: SingleChildScrollView(
@@ -298,10 +300,10 @@ class DashboardSideBar extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.04),
+                    color: MixBuildPalette.surfaceHighest,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.06),
+                      color: MixBuildPalette.foreground.withValues(alpha: 0.06),
                     ),
                   ),
                   child: Column(
@@ -405,7 +407,7 @@ class DashboardSideBar extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.18),
+                color: MixBuildPalette.foreground.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
@@ -563,7 +565,7 @@ class ScenarioInspectorPanel extends StatelessWidget {
                   color: MixBuildPalette.surfaceLow,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: Colors.black.withValues(alpha: 0.08),
+                    color: MixBuildPalette.foreground.withValues(alpha: 0.08),
                   ),
                 ),
                 child: Column(
@@ -578,7 +580,8 @@ class ScenarioInspectorPanel extends StatelessWidget {
                         ),
                         border: Border(
                           bottom: BorderSide(
-                            color: Colors.black.withValues(alpha: 0.08),
+                            color: MixBuildPalette.foreground
+                                .withValues(alpha: 0.08),
                           ),
                         ),
                       ),
@@ -690,8 +693,8 @@ class ScenarioInspectorPanel extends StatelessWidget {
                                 : scenario.progress,
                             minHeight: 6,
                             borderRadius: BorderRadius.circular(999),
-                            backgroundColor:
-                                Colors.black.withValues(alpha: 0.06),
+                            backgroundColor: MixBuildPalette.foreground
+                                .withValues(alpha: 0.06),
                             valueColor: AlwaysStoppedAnimation<Color>(
                               scenario.status.color,
                             ),
@@ -893,7 +896,7 @@ class DashboardMetricBar extends StatelessWidget {
             value: metric.progress,
             minHeight: 5,
             borderRadius: BorderRadius.circular(999),
-            backgroundColor: Colors.white.withValues(alpha: 0.05),
+            backgroundColor: MixBuildPalette.foreground.withValues(alpha: 0.05),
             valueColor: AlwaysStoppedAnimation<Color>(metric.color),
           ),
         ),

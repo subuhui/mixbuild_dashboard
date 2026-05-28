@@ -9,6 +9,7 @@ import 'package:mixbuild_dashboard/ui/build_logs_page.dart';
 import 'package:mixbuild_dashboard/ui/dashboard_widgets.dart';
 import 'package:mixbuild_dashboard/ui/project_detail_page.dart';
 import 'package:mixbuild_dashboard/ui/project_editor_page.dart';
+import 'package:mixbuild_dashboard/ui/settings_page.dart';
 import 'package:mixbuild_dashboard/ui/yaml_editor_page.dart';
 
 class DashboardHomePage extends ConsumerWidget {
@@ -119,6 +120,14 @@ class DashboardHomePage extends ConsumerWidget {
       );
     }
 
+    Future<void> openSettingsPage() async {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => const SettingsPage(),
+        ),
+      );
+    }
+
     void openDetail(ProjectBuild project, BuildScenario scenario) {
       controller.selectScenario(project, scenario);
       Navigator.of(context).push(
@@ -193,6 +202,7 @@ class DashboardHomePage extends ConsumerWidget {
               child: _DashboardNavRail(
                 onCreateProject: createNewProject,
                 onOpenBuildLogs: openBuildLogsPage,
+                onOpenSettings: openSettingsPage,
                 compact: true,
               ),
             ),
@@ -220,6 +230,7 @@ class DashboardHomePage extends ConsumerWidget {
                       _DashboardNavRail(
                         onCreateProject: createNewProject,
                         onOpenBuildLogs: openBuildLogsPage,
+                        onOpenSettings: openSettingsPage,
                       ),
                       Expanded(child: buildMainContent()),
                     ],
@@ -235,12 +246,14 @@ class _DashboardNavRail extends StatelessWidget {
   const _DashboardNavRail({
     required this.onCreateProject,
     required this.onOpenBuildLogs,
+    required this.onOpenSettings,
     this.compact = false,
   });
 
   final VoidCallback onCreateProject;
   final bool compact;
   final Future<void> Function({String? initialExecutionId}) onOpenBuildLogs;
+  final Future<void> Function() onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -254,7 +267,9 @@ class _DashboardNavRail extends StatelessWidget {
       decoration: BoxDecoration(
         color: MixBuildPalette.surfaceLow,
         borderRadius: BorderRadius.circular(compact ? 0 : 28),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+        border: Border.all(
+          color: MixBuildPalette.foreground.withValues(alpha: 0.06),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -293,7 +308,11 @@ class _DashboardNavRail extends StatelessWidget {
             label: strings.navBuildLogs,
             onTap: () => onOpenBuildLogs(),
           ),
-          _NavItem(icon: Icons.settings_outlined, label: strings.navSettings),
+          _NavItem(
+            icon: Icons.settings_outlined,
+            label: strings.navSettings,
+            onTap: onOpenSettings,
+          ),
           const SizedBox(height: 18),
           FilledButton.icon(
             onPressed: onCreateProject,
@@ -313,7 +332,9 @@ class _DashboardNavRail extends StatelessWidget {
             padding: const EdgeInsets.only(top: 14),
             decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
+                top: BorderSide(
+                  color: MixBuildPalette.foreground.withValues(alpha: 0.06),
+                ),
               ),
             ),
             child: Column(
@@ -457,7 +478,9 @@ class ProjectOverviewCard extends StatelessWidget {
                 top: Radius.circular(24),
               ),
               border: Border(
-                bottom: BorderSide(color: Colors.black.withValues(alpha: 0.08)),
+                bottom: BorderSide(
+                  color: MixBuildPalette.foreground.withValues(alpha: 0.08),
+                ),
               ),
             ),
             child: Column(
@@ -569,14 +592,14 @@ class _ScenarioPreviewTile extends StatelessWidget {
               ? scenario.status.color.withValues(alpha: 0.05)
               : selected
                   ? scenario.status.color.withValues(alpha: 0.1)
-                  : Colors.white.withValues(alpha: 0.03),
+                  : MixBuildPalette.surfaceHighest,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isActive
                 ? scenario.status.color.withValues(alpha: 0.32)
                 : selected
                     ? scenario.status.color.withValues(alpha: 0.24)
-                    : Colors.white.withValues(alpha: 0.06),
+                    : MixBuildPalette.foreground.withValues(alpha: 0.06),
             width: isActive ? 1.5 : 1,
           ),
         ),
@@ -639,10 +662,10 @@ class _ScenarioPreviewTile extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.3),
+                  color: MixBuildPalette.foreground.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.05),
+                    color: MixBuildPalette.foreground.withValues(alpha: 0.08),
                   ),
                 ),
                 child: Column(
@@ -670,7 +693,7 @@ class _ScenarioPreviewTile extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: MixBuildTheme.monoTextStyle(
                                   fontSize: 11,
-                                  color: Colors.white.withValues(
+                                  color: MixBuildPalette.foreground.withValues(
                                     alpha: 0.76,
                                   ),
                                 ),
@@ -685,7 +708,7 @@ class _ScenarioPreviewTile extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: scenario.progress,
                         minHeight: 3,
-                        backgroundColor: Colors.white.withValues(
+                        backgroundColor: MixBuildPalette.foreground.withValues(
                           alpha: 0.08,
                         ),
                         valueColor: AlwaysStoppedAnimation<Color>(

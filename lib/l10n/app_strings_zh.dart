@@ -313,6 +313,18 @@ class AppStringsZh extends AppStrings {
   // Global config
   @override
   String get globalConfigTitle => '工程配置中心';
+  @override
+  String get settingsAppearanceTitle => '外观';
+  @override
+  String get settingsAppearanceSubtitle => '选择应用主题，切换结果会自动保存到本地。';
+  @override
+  String get settingsThemeSystem => '跟随系统';
+  @override
+  String get settingsThemeLight => '亮色 Material 3';
+  @override
+  String get settingsThemeDark => '暗色 Material 3';
+  @override
+  String get settingsThemeSectionNote => '主题切换会立即生效，并在下次启动时自动恢复。';
 
   // Advanced options
   @override

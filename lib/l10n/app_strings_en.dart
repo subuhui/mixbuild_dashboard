@@ -327,6 +327,20 @@ class AppStringsEn extends AppStrings {
   // Global config
   @override
   String get globalConfigTitle => 'Global Configuration';
+  @override
+  String get settingsAppearanceTitle => 'Appearance';
+  @override
+  String get settingsAppearanceSubtitle =>
+      'Choose the app theme. Your selection is saved locally.';
+  @override
+  String get settingsThemeSystem => 'Follow System';
+  @override
+  String get settingsThemeLight => 'Light Material 3';
+  @override
+  String get settingsThemeDark => 'Dark Material 3';
+  @override
+  String get settingsThemeSectionNote =>
+      'Theme changes take effect immediately and are restored on next launch.';
 
   // Advanced options
   @override

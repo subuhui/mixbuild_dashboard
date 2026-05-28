@@ -79,8 +79,9 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                                   top: Radius.circular(24)),
                               border: Border(
                                 bottom: BorderSide(
-                                    color:
-                                        Colors.black.withValues(alpha: 0.08)),
+                                  color: MixBuildPalette.foreground
+                                      .withValues(alpha: 0.08),
+                                ),
                               ),
                             ),
                             child: Row(
@@ -128,7 +129,7 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                                       color: MixBuildPalette.surfaceHighest,
                                       border: Border(
                                         right: BorderSide(
-                                          color: Colors.black
+                                          color: MixBuildPalette.foreground
                                               .withValues(alpha: 0.08),
                                         ),
                                       ),
@@ -165,7 +166,8 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                                             color: MixBuildPalette.surface,
                                             border: Border(
                                               bottom: BorderSide(
-                                                color: Colors.black
+                                                color: MixBuildPalette
+                                                    .foreground
                                                     .withValues(alpha: 0.06),
                                               ),
                                             ),
@@ -224,8 +226,9 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                               color: MixBuildPalette.surfaceHighest,
                               border: Border(
                                 top: BorderSide(
-                                    color:
-                                        Colors.black.withValues(alpha: 0.08)),
+                                  color: MixBuildPalette.foreground
+                                      .withValues(alpha: 0.08),
+                                ),
                               ),
                             ),
                             child: Row(

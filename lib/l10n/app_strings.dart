@@ -177,6 +177,12 @@ abstract class AppStrings {
 
   // Global config
   String get globalConfigTitle;
+  String get settingsAppearanceTitle;
+  String get settingsAppearanceSubtitle;
+  String get settingsThemeSystem;
+  String get settingsThemeLight;
+  String get settingsThemeDark;
+  String get settingsThemeSectionNote;
 
   // Advanced options
   String get advancedOptions;

@@ -698,7 +698,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                             ),
                             border: Border(
                               bottom: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.06),
+                                color: MixBuildPalette.foreground
+                                    .withValues(alpha: 0.06),
                               ),
                             ),
                           ),
@@ -776,7 +777,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                             ),
                             border: Border(
                               top: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.08),
+                                color: MixBuildPalette.foreground
+                                    .withValues(alpha: 0.08),
                               ),
                             ),
                           ),
@@ -910,14 +912,14 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                   width: 208,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(
-                      alpha: selected ? 0.02 : 0.04,
-                    ),
+                    color: selected
+                        ? MixBuildPalette.primary.withValues(alpha: 0.06)
+                        : MixBuildPalette.surfaceHighest,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: selected
                           ? MixBuildPalette.primary.withValues(alpha: 0.22)
-                          : Colors.white.withValues(alpha: 0.06),
+                          : MixBuildPalette.foreground.withValues(alpha: 0.06),
                     ),
                   ),
                   child: Column(
@@ -1071,7 +1073,9 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
             decoration: BoxDecoration(
               color: MixBuildPalette.surfaceHighest,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+              border: Border.all(
+                color: MixBuildPalette.foreground.withValues(alpha: 0.08),
+              ),
             ),
             child: Row(
               children: [
@@ -1117,7 +1121,9 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
               decoration: BoxDecoration(
                 color: MixBuildPalette.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+                border: Border.all(
+                  color: MixBuildPalette.foreground.withValues(alpha: 0.06),
+                ),
               ),
               child: Text(
                 strings.dependencyEmpty,
@@ -1138,7 +1144,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                   color: MixBuildPalette.surface,
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                    color: Colors.black.withValues(alpha: 0.06),
+                    color: MixBuildPalette.foreground.withValues(alpha: 0.06),
                   ),
                 ),
                 child: Column(
@@ -1150,7 +1156,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.18),
+                            color: MixBuildPalette.foreground
+                                .withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -1250,10 +1257,10 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                 child: Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.18),
+                    color: MixBuildPalette.foreground.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: MixBuildPalette.foreground.withValues(alpha: 0.08),
                     ),
                   ),
                   child: Column(
@@ -1554,7 +1561,9 @@ class _ConfigSectionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: MixBuildPalette.surface,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+        border: Border.all(
+          color: MixBuildPalette.foreground.withValues(alpha: 0.06),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1625,9 +1634,11 @@ class _ReadOnlyField extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.24),
+        color: MixBuildPalette.foreground.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(
+          color: MixBuildPalette.foreground.withValues(alpha: 0.08),
+        ),
       ),
       child: Text(
         value,
@@ -1679,9 +1690,11 @@ class _PathSelectorField extends StatelessWidget {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.22),
+                color: MixBuildPalette.foreground.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                border: Border.all(
+                  color: MixBuildPalette.foreground.withValues(alpha: 0.08),
+                ),
               ),
               child: Icon(Icons.expand_more, color: MixBuildPalette.muted),
             ),
@@ -1996,7 +2009,8 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                           color: MixBuildPalette.surface,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: Colors.black.withValues(alpha: 0.06),
+                            color: MixBuildPalette.foreground
+                                .withValues(alpha: 0.06),
                           ),
                         ),
                         child: Row(
@@ -2052,10 +2066,11 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                               child: Container(
                                 padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.04),
+                                  color: MixBuildPalette.surfaceHighest,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.06),
+                                    color: MixBuildPalette.foreground
+                                        .withValues(alpha: 0.06),
                                   ),
                                 ),
                                 child: Row(

@@ -233,7 +233,7 @@ class _BuildExecutionHistoryList extends StatelessWidget {
                 border: Border.all(
                   color: selected
                       ? MixBuildPalette.primary.withValues(alpha: 0.28)
-                      : Colors.black.withValues(alpha: 0.06),
+                      : MixBuildPalette.foreground.withValues(alpha: 0.06),
                 ),
               ),
               child: Column(
@@ -328,7 +328,9 @@ class _BuildExecutionLogDetail extends StatelessWidget {
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(24)),
               border: Border(
-                bottom: BorderSide(color: Colors.black.withValues(alpha: 0.08)),
+                bottom: BorderSide(
+                  color: MixBuildPalette.foreground.withValues(alpha: 0.08),
+                ),
               ),
             ),
             child: Column(

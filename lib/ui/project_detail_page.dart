@@ -339,9 +339,11 @@ class _SidebarPanel extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.24),
+              color: MixBuildPalette.foreground.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+              border: Border.all(
+                color: MixBuildPalette.foreground.withValues(alpha: 0.06),
+              ),
             ),
             child: Text(
               scenario.mainBranch,
@@ -375,7 +377,9 @@ class _SidebarPanel extends StatelessWidget {
         border: Border(
           right: stacked
               ? BorderSide.none
-              : BorderSide(color: Colors.black.withValues(alpha: 0.1)),
+              : BorderSide(
+                  color: MixBuildPalette.foreground.withValues(alpha: 0.1),
+                ),
         ),
       ),
       child: Column(
@@ -411,7 +415,9 @@ class _SidebarHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 16, 16, 16),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          bottom: BorderSide(
+            color: MixBuildPalette.foreground.withValues(alpha: 0.1),
+          ),
         ),
       ),
       child: Row(
@@ -520,9 +526,11 @@ class _WorkspaceChip extends StatelessWidget {
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: MixBuildPalette.foreground.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: MixBuildPalette.foreground.withValues(alpha: 0.1),
+        ),
       ),
       child: Row(
         children: [
@@ -572,9 +580,11 @@ class _ScenarioCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: MixBuildPalette.foreground.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: MixBuildPalette.foreground.withValues(alpha: 0.1),
+        ),
       ),
       child: Column(
         children: [
@@ -662,9 +672,11 @@ class _DependencyTree extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.2),
+        color: MixBuildPalette.foreground.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        border: Border.all(
+          color: MixBuildPalette.foreground.withValues(alpha: 0.06),
+        ),
       ),
       padding: const EdgeInsets.all(10),
       child: Column(
@@ -710,7 +722,7 @@ class _DependencyTree extends StatelessWidget {
                   bottom: 0,
                   child: Container(
                     width: 1,
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: MixBuildPalette.foreground.withValues(alpha: 0.1),
                   ),
                 ),
                 Padding(
@@ -766,7 +778,7 @@ class _DependencyTreeNode extends StatelessWidget {
           child: Container(
             width: 10,
             height: 1,
-            color: Colors.white.withValues(alpha: 0.1),
+            color: MixBuildPalette.foreground.withValues(alpha: 0.1),
           ),
         ),
         Container(
@@ -830,10 +842,10 @@ class _DependencyTreeNode extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.24),
+                  color: MixBuildPalette.foreground.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: MixBuildPalette.foreground.withValues(alpha: 0.06),
                   ),
                 ),
                 child: Text(
@@ -874,9 +886,11 @@ class _SidebarFooter extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.02),
+        color: MixBuildPalette.foreground.withValues(alpha: 0.02),
         border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          top: BorderSide(
+            color: MixBuildPalette.foreground.withValues(alpha: 0.1),
+          ),
         ),
       ),
       child: Column(
@@ -936,7 +950,7 @@ class _SidebarFooter extends StatelessWidget {
               label: Text(scenario.status.triggerLabelWithContext(context)),
               style: FilledButton.styleFrom(
                 backgroundColor: MixBuildPalette.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: theme.colorScheme.onPrimary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -998,9 +1012,11 @@ class _PipelineHeader extends StatelessWidget {
     final chipStrip = Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.4),
+        color: MixBuildPalette.foreground.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: MixBuildPalette.foreground.withValues(alpha: 0.1),
+        ),
       ),
       child:
           Row(mainAxisSize: MainAxisSize.min, children: _buildChips(context)),
@@ -1056,7 +1072,9 @@ class _PipelineHeader extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             border: Border(
-              bottom: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
+              bottom: BorderSide(
+                color: MixBuildPalette.foreground.withValues(alpha: 0.06),
+              ),
             ),
           ),
           child: compact
@@ -1122,7 +1140,7 @@ class _PipelineHeader extends StatelessWidget {
           Icon(
             Icons.chevron_right,
             size: 14,
-            color: Colors.white.withValues(alpha: 0.2),
+            color: MixBuildPalette.foreground.withValues(alpha: 0.2),
           ),
         );
       }
@@ -1166,7 +1184,9 @@ class _TerminalPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: MixBuildPalette.surfaceLow,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+        border: Border.all(
+          color: MixBuildPalette.foreground.withValues(alpha: 0.06),
+        ),
       ),
       child: Column(
         children: [
@@ -1180,7 +1200,9 @@ class _TerminalPanel extends StatelessWidget {
                 top: Radius.circular(20),
               ),
               border: Border(
-                bottom: BorderSide(color: Colors.black.withValues(alpha: 0.08)),
+                bottom: BorderSide(
+                  color: MixBuildPalette.foreground.withValues(alpha: 0.08),
+                ),
               ),
             ),
             child: Row(
@@ -1377,7 +1399,8 @@ class _TerminalPanel extends StatelessWidget {
                       : scenario.progress,
                   minHeight: 4,
                   borderRadius: BorderRadius.circular(999),
-                  backgroundColor: Colors.white.withValues(alpha: 0.05),
+                  backgroundColor:
+                      MixBuildPalette.foreground.withValues(alpha: 0.05),
                   valueColor: AlwaysStoppedAnimation<Color>(
                     scenario.status.color,
                   ),
@@ -1468,7 +1491,9 @@ class _HudMetric extends StatelessWidget {
                 borderRadius: BorderRadius.circular(999),
                 child: Stack(
                   children: [
-                    Container(color: Colors.white.withValues(alpha: 0.1)),
+                    Container(
+                      color: MixBuildPalette.foreground.withValues(alpha: 0.1),
+                    ),
                     FractionallySizedBox(
                       widthFactor: metric.progress.clamp(0.0, 1.0),
                       child: Container(

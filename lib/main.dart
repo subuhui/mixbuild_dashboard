@@ -6,5 +6,5 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // 恢复上次已授权目录的 security-scoped bookmark 访问权限
   await WorkspaceBookmarkService().restoreAll();
-  runApp(const MixBuildApp());
+  runApp(const MixBuildRoot());
 }
