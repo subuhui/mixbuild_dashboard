@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
@@ -369,36 +368,31 @@ class _SidebarPanel extends StatelessWidget {
       ),
     );
 
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: Container(
-          width: stacked ? double.infinity : width,
-          decoration: BoxDecoration(
-            color: const Color(0xFF282828).withValues(alpha: 0.65),
-            border: Border(
-              right: stacked
-                  ? BorderSide.none
-                  : BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-            ),
-          ),
-          child: Column(
-            children: [
-              _SidebarHeader(onBack: onBack, onOpenSettings: onOpenSettings),
-              if (stacked)
-                content
-              else
-                Expanded(child: SingleChildScrollView(child: content)),
-              _SidebarFooter(
-                scenario: scenario,
-                cleanBeforeBuild: cleanBeforeBuild,
-                onCleanChanged: onCleanChanged,
-                onTrigger: onTrigger,
-                onStop: onStop,
-              ),
-            ],
-          ),
+    return Container(
+      width: stacked ? double.infinity : width,
+      decoration: BoxDecoration(
+        color: MixBuildPalette.surfaceLow,
+        border: Border(
+          right: stacked
+              ? BorderSide.none
+              : BorderSide(color: Colors.black.withValues(alpha: 0.1)),
         ),
+      ),
+      child: Column(
+        children: [
+          _SidebarHeader(onBack: onBack, onOpenSettings: onOpenSettings),
+          if (stacked)
+            content
+          else
+            Expanded(child: SingleChildScrollView(child: content)),
+          _SidebarFooter(
+            scenario: scenario,
+            cleanBeforeBuild: cleanBeforeBuild,
+            onCleanChanged: onCleanChanged,
+            onTrigger: onTrigger,
+            onStop: onStop,
+          ),
+        ],
       ),
     );
   }
@@ -1106,7 +1100,7 @@ class _PipelineHeader extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: active
-                ? Colors.white.withValues(alpha: 0.1)
+                ? MixBuildPalette.primary.withValues(alpha: 0.1)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
@@ -1115,7 +1109,7 @@ class _PipelineHeader extends StatelessWidget {
             style: MixBuildTheme.monoTextStyle(
               fontSize: 11,
               color: active
-                  ? Colors.white
+                  ? MixBuildPalette.primary
                   : MixBuildPalette.muted.withValues(
                       alpha: dimmed ? 0.45 : 1.0,
                     ),
@@ -1170,9 +1164,9 @@ class _TerminalPanel extends StatelessWidget {
     final strings = AppStrings.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF121212).withValues(alpha: 0.85),
+        color: MixBuildPalette.surfaceLow,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
       ),
       child: Column(
         children: [
@@ -1181,12 +1175,12 @@ class _TerminalPanel extends StatelessWidget {
             height: 44,
             padding: const EdgeInsets.symmetric(horizontal: 18),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.03),
+              color: MixBuildPalette.surfaceHighest,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(20),
               ),
               border: Border(
-                bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                bottom: BorderSide(color: Colors.black.withValues(alpha: 0.08)),
               ),
             ),
             child: Row(
@@ -1231,7 +1225,7 @@ class _TerminalPanel extends StatelessWidget {
               onChanged: onSearchChanged,
               style: MixBuildTheme.monoTextStyle(
                 fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.82),
+                color: MixBuildPalette.foreground,
               ),
               decoration: InputDecoration(
                 isDense: true,
@@ -1320,7 +1314,8 @@ class _TerminalPanel extends StatelessWidget {
                                   overflow: TextOverflow.clip,
                                   style: MixBuildTheme.monoTextStyle(
                                     fontSize: 12,
-                                    color: Colors.white.withValues(alpha: 0.3),
+                                    color: MixBuildPalette.muted
+                                        .withValues(alpha: 0.7),
                                   ),
                                 ),
                               ),
@@ -1342,7 +1337,7 @@ class _TerminalPanel extends StatelessWidget {
                                   log.message,
                                   style: MixBuildTheme.monoTextStyle(
                                     fontSize: 12,
-                                    color: Colors.white.withValues(alpha: 0.82),
+                                    color: MixBuildPalette.foreground,
                                   ),
                                 ),
                               ),
@@ -1408,44 +1403,37 @@ class _HudOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings.of(context);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF282828).withValues(alpha: 0.72),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-          ),
-          child: Wrap(
-            spacing: 14,
-            runSpacing: 10,
-            crossAxisAlignment: WrapCrossAlignment.center,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: MixBuildTheme.surfacePanel(
+        radius: 14,
+        color: MixBuildPalette.surfaceHigh,
+      ),
+      child: Wrap(
+        spacing: 14,
+        runSpacing: 10,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          for (final metric in metrics) _HudMetric(metric: metric),
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              for (final metric in metrics) _HudMetric(metric: metric),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.cloud_done_outlined,
-                    size: 18,
-                    color: MixBuildPalette.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    strings.connectedStatus,
-                    style: MixBuildTheme.monoTextStyle(
-                      fontSize: 10,
-                      color: MixBuildPalette.foreground,
-                    ).copyWith(fontWeight: FontWeight.w700),
-                  ),
-                ],
+              Icon(
+                Icons.cloud_done_outlined,
+                size: 18,
+                color: MixBuildPalette.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                strings.connectedStatus,
+                style: MixBuildTheme.monoTextStyle(
+                  fontSize: 10,
+                  color: MixBuildPalette.foreground,
+                ).copyWith(fontWeight: FontWeight.w700),
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }

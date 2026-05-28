@@ -37,8 +37,7 @@ class DashboardHomePage extends ConsumerWidget {
       required String title,
       ProjectBuild? targetProject,
     }) async {
-      final project =
-          targetProject ??
+      final project = targetProject ??
           ref.read(dashboardControllerProvider).selectedProject;
       final projectConfig = controller.configForProject(project);
       final projectGlobalConfig = GlobalConfig(
@@ -70,7 +69,9 @@ class DashboardHomePage extends ConsumerWidget {
         scenarios: project.scenarios,
         baseDependencies: controller.editorBaseDependencies(),
         title: title,
-        primaryActionLabel: title == strings.projectNewTitle ? strings.projectNewAction : strings.projectSaveConfig,
+        primaryActionLabel: title == strings.projectNewTitle
+            ? strings.projectNewAction
+            : strings.projectSaveConfig,
       );
       if (result == null) {
         return;
@@ -216,7 +217,10 @@ class DashboardHomePage extends ConsumerWidget {
                   )
                 : Row(
                     children: [
-                      _DashboardNavRail(onCreateProject: createNewProject,onOpenBuildLogs: openBuildLogsPage,),
+                      _DashboardNavRail(
+                        onCreateProject: createNewProject,
+                        onOpenBuildLogs: openBuildLogsPage,
+                      ),
                       Expanded(child: buildMainContent()),
                     ],
                   ),
@@ -244,23 +248,13 @@ class _DashboardNavRail extends StatelessWidget {
     final strings = AppStrings.of(context);
     return Container(
       width: compact ? 280 : 252,
-      margin: compact
-          ? EdgeInsets.zero
-          : const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      margin:
+          compact ? EdgeInsets.zero : const EdgeInsets.fromLTRB(16, 16, 16, 14),
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
       decoration: BoxDecoration(
-        color: MixBuildPalette.surfaceLow.withValues(alpha: 0.88),
+        color: MixBuildPalette.surfaceLow,
         borderRadius: BorderRadius.circular(compact ? 0 : 28),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-        boxShadow: compact
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.22),
-                  blurRadius: 28,
-                  offset: const Offset(8, 0),
-                ),
-              ],
+        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -338,7 +332,8 @@ class _DashboardNavRail extends StatelessWidget {
                         color: MixBuildPalette.muted,
                       ),
                       const SizedBox(width: 10),
-                      Text(strings.navSupport, style: theme.textTheme.bodySmall),
+                      Text(strings.navSupport,
+                          style: theme.textTheme.bodySmall),
                     ],
                   ),
                 ),
@@ -362,7 +357,8 @@ class _DashboardNavRail extends StatelessWidget {
                 const SizedBox(height: 10),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(strings.copyright, style: theme.textTheme.bodySmall),
+                  child:
+                      Text(strings.copyright, style: theme.textTheme.bodySmall),
                 ),
               ],
             ),
@@ -389,37 +385,40 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: active
-            ? MixBuildPalette.primary.withValues(alpha: 0.14)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        border: active
-            ? Border.all(color: MixBuildPalette.primary.withValues(alpha: 0.2))
-            : null,
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 18,
-            color: active ? MixBuildPalette.primary : MixBuildPalette.muted,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: active ? Colors.white : MixBuildPalette.muted,
-              fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: active
+              ? MixBuildPalette.primary.withValues(alpha: 0.14)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          border: active
+              ? Border.all(
+                  color: MixBuildPalette.primary.withValues(alpha: 0.2))
+              : null,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: active ? MixBuildPalette.primary : MixBuildPalette.muted,
             ),
-          ),
-        ],
-      ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: active
+                        ? MixBuildPalette.primary
+                        : MixBuildPalette.muted,
+                    fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -446,19 +445,19 @@ class ProjectOverviewCard extends StatelessWidget {
     final theme = Theme.of(context);
     final strings = AppStrings.of(context);
     return Container(
-      decoration: MixBuildTheme.glassPanel(radius: 24),
+      decoration: MixBuildTheme.surfacePanel(radius: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.04),
+              color: MixBuildPalette.surfaceHighest,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(24),
               ),
               border: Border(
-                bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                bottom: BorderSide(color: Colors.black.withValues(alpha: 0.08)),
               ),
             ),
             child: Column(
@@ -498,7 +497,7 @@ class ProjectOverviewCard extends StatelessWidget {
                       icon: const Icon(Icons.edit_outlined, size: 18),
                       label: Text(strings.btnEdit),
                       style: FilledButton.styleFrom(
-                        foregroundColor: Colors.white,
+                        foregroundColor: MixBuildPalette.primary,
                         backgroundColor: MixBuildPalette.primary.withValues(
                           alpha: 0.14,
                         ),
@@ -557,9 +556,8 @@ class _ScenarioPreviewTile extends StatelessWidget {
     final isActive = scenario.status.isPipelineActive;
     final canStop = scenario.status.canStop;
     final actionLabel = canStop ? strings.btnStop : strings.btnView;
-    final actionColor = canStop
-        ? MixBuildPalette.error
-        : MixBuildPalette.primary;
+    final actionColor =
+        canStop ? MixBuildPalette.error : MixBuildPalette.primary;
 
     return InkWell(
       onTap: onTap,
@@ -570,70 +568,70 @@ class _ScenarioPreviewTile extends StatelessWidget {
           color: isActive
               ? scenario.status.color.withValues(alpha: 0.05)
               : selected
-              ? scenario.status.color.withValues(alpha: 0.1)
-              : Colors.white.withValues(alpha: 0.03),
+                  ? scenario.status.color.withValues(alpha: 0.1)
+                  : Colors.white.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isActive
                 ? scenario.status.color.withValues(alpha: 0.32)
                 : selected
-                ? scenario.status.color.withValues(alpha: 0.24)
-                : Colors.white.withValues(alpha: 0.06),
+                    ? scenario.status.color.withValues(alpha: 0.24)
+                    : Colors.white.withValues(alpha: 0.06),
             width: isActive ? 1.5 : 1,
           ),
         ),
         child: Column(
           children: [
             Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          scenario.name,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        scenario.name,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          scenario.subtitle,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: isActive
-                                ? scenario.status.color.withValues(
-                                    alpha: 0.6,
-                                  )
-                                : null,
-                          ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        scenario.subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: isActive
+                              ? scenario.status.color.withValues(
+                                  alpha: 0.6,
+                                )
+                              : null,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Flexible(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: StatusChip(status: scenario.status),
-                    ),
+                ),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: StatusChip(status: scenario.status),
                   ),
-                  const SizedBox(width: 12),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: ScenarioActionButton(
-                      color: actionColor,
-                      enabled: true,
-                      label: actionLabel,
-                      icon: canStop
-                          ? Icons.stop_circle_outlined
-                          : Icons.rocket_launch_outlined,
-                      filled: canStop,
-                      onPressed: onTap,
-                    ),
+                ),
+                const SizedBox(width: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ScenarioActionButton(
+                    color: actionColor,
+                    enabled: true,
+                    label: actionLabel,
+                    icon: canStop
+                        ? Icons.stop_circle_outlined
+                        : Icons.rocket_launch_outlined,
+                    filled: canStop,
+                    onPressed: onTap,
                   ),
-                ],
-              ),
+                ),
+              ],
+            ),
             // Active scenario: terminal log panel + progress bar
             if (isActive) ...[
               const SizedBox(height: 14),
@@ -684,34 +682,15 @@ class _ScenarioPreviewTile extends StatelessWidget {
                     const SizedBox(height: 6),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(999),
-                      child: Stack(
-                        children: [
-                          LinearProgressIndicator(
-                            value: scenario.progress,
-                            minHeight: 3,
-                            backgroundColor: Colors.white.withValues(
-                              alpha: 0.08,
-                            ),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              scenario.status.color,
-                            ),
-                          ),
-                          Positioned.fill(
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: scenario.status.color.withValues(
-                                      alpha: 0.4,
-                                    ),
-                                    blurRadius: 8,
-                                    spreadRadius: -1,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
+                      child: LinearProgressIndicator(
+                        value: scenario.progress,
+                        minHeight: 3,
+                        backgroundColor: Colors.white.withValues(
+                          alpha: 0.08,
+                        ),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          scenario.status.color,
+                        ),
                       ),
                     ),
                   ],

@@ -67,20 +67,20 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(24),
                     child: Container(
-                      decoration: MixBuildTheme.glassPanel(radius: 24),
+                      decoration: MixBuildTheme.surfacePanel(radius: 24),
                       child: Column(
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 20, vertical: 16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.03),
+                              color: MixBuildPalette.surfaceHighest,
                               borderRadius: const BorderRadius.vertical(
                                   top: Radius.circular(24)),
                               border: Border(
                                 bottom: BorderSide(
                                     color:
-                                        Colors.white.withValues(alpha: 0.08)),
+                                        Colors.black.withValues(alpha: 0.08)),
                               ),
                             ),
                             child: Row(
@@ -116,7 +116,7 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                           ),
                           Expanded(
                             child: Container(
-                              color: Colors.black.withValues(alpha: 0.18),
+                              color: MixBuildPalette.surfaceLow,
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
@@ -125,12 +125,11 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                                     padding: const EdgeInsets.only(
                                         top: 16, right: 10),
                                     decoration: BoxDecoration(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.12),
+                                      color: MixBuildPalette.surfaceHighest,
                                       border: Border(
                                         right: BorderSide(
-                                          color: Colors.white
-                                              .withValues(alpha: 0.04),
+                                          color: Colors.black
+                                              .withValues(alpha: 0.08),
                                         ),
                                       ),
                                     ),
@@ -145,8 +144,8 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                                             textAlign: TextAlign.right,
                                             style: MixBuildTheme.monoTextStyle(
                                               fontSize: 12,
-                                              color: Colors.white
-                                                  .withValues(alpha: 0.28),
+                                              color: MixBuildPalette.muted
+                                                  .withValues(alpha: 0.7),
                                             ),
                                           ),
                                         );
@@ -163,12 +162,11 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                                           padding: const EdgeInsets.fromLTRB(
                                               16, 10, 16, 10),
                                           decoration: BoxDecoration(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.03),
+                                            color: MixBuildPalette.surface,
                                             border: Border(
                                               bottom: BorderSide(
-                                                color: Colors.white
-                                                    .withValues(alpha: 0.05),
+                                                color: Colors.black
+                                                    .withValues(alpha: 0.06),
                                               ),
                                             ),
                                           ),
@@ -202,7 +200,7 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                                                 TextInputType.multiline,
                                             style: MixBuildTheme.monoTextStyle(
                                               fontSize: 13,
-                                              color: Colors.white,
+                                              color: MixBuildPalette.foreground,
                                               height: 1.6,
                                             ),
                                             decoration: const InputDecoration(
@@ -223,11 +221,11 @@ class _YamlEditorPageState extends State<YamlEditorPage> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 20, vertical: 16),
                             decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.12),
+                              color: MixBuildPalette.surfaceHighest,
                               border: Border(
                                 top: BorderSide(
                                     color:
-                                        Colors.white.withValues(alpha: 0.08)),
+                                        Colors.black.withValues(alpha: 0.08)),
                               ),
                             ),
                             child: Row(

@@ -160,7 +160,7 @@ class _BuildLogsHeader extends StatelessWidget {
     final strings = AppStrings.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: MixBuildTheme.glassPanel(radius: 20),
+      decoration: MixBuildTheme.surfacePanel(radius: 20),
       child: Row(
         children: [
           IconButton(
@@ -203,7 +203,7 @@ class _BuildExecutionHistoryList extends StatelessWidget {
     final strings = AppStrings.of(context);
     if (records.isEmpty) {
       return Container(
-        decoration: MixBuildTheme.glassPanel(radius: 24),
+        decoration: MixBuildTheme.surfacePanel(radius: 24),
         alignment: Alignment.center,
         child: Text(
           strings.buildLogsEmpty,
@@ -212,7 +212,7 @@ class _BuildExecutionHistoryList extends StatelessWidget {
       );
     }
     return Container(
-      decoration: MixBuildTheme.glassPanel(radius: 24),
+      decoration: MixBuildTheme.surfacePanel(radius: 24),
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: records.length,
@@ -228,12 +228,12 @@ class _BuildExecutionHistoryList extends StatelessWidget {
               decoration: BoxDecoration(
                 color: selected
                     ? MixBuildPalette.primary.withValues(alpha: 0.12)
-                    : Colors.white.withValues(alpha: 0.04),
+                    : MixBuildPalette.surfaceHighest,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: selected
                       ? MixBuildPalette.primary.withValues(alpha: 0.28)
-                      : Colors.white.withValues(alpha: 0.06),
+                      : Colors.black.withValues(alpha: 0.06),
                 ),
               ),
               child: Column(
@@ -309,7 +309,7 @@ class _BuildExecutionLogDetail extends StatelessWidget {
     final strings = AppStrings.of(context);
     if (record == null) {
       return Container(
-        decoration: MixBuildTheme.glassPanel(radius: 24),
+        decoration: MixBuildTheme.surfacePanel(radius: 24),
         alignment: Alignment.center,
         child: Text(
           strings.buildLogsSelectRecord,
@@ -318,17 +318,17 @@ class _BuildExecutionLogDetail extends StatelessWidget {
       );
     }
     return Container(
-      decoration: MixBuildTheme.glassPanel(radius: 24),
+      decoration: MixBuildTheme.surfacePanel(radius: 24),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.03),
+              color: MixBuildPalette.surfaceHighest,
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(24)),
               border: Border(
-                bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                bottom: BorderSide(color: Colors.black.withValues(alpha: 0.08)),
               ),
             ),
             child: Column(
@@ -370,7 +370,7 @@ class _BuildExecutionLogDetail extends StatelessWidget {
               onChanged: onSearchChanged,
               style: MixBuildTheme.monoTextStyle(
                 fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.82),
+                color: MixBuildPalette.foreground,
               ),
               decoration: InputDecoration(
                 isDense: true,
@@ -439,7 +439,8 @@ class _BuildExecutionLogDetail extends StatelessWidget {
                                   softWrap: false,
                                   style: MixBuildTheme.monoTextStyle(
                                     fontSize: 12,
-                                    color: Colors.white.withValues(alpha: 0.3),
+                                    color: MixBuildPalette.muted
+                                        .withValues(alpha: 0.7),
                                   ),
                                 ),
                               ),
@@ -460,7 +461,7 @@ class _BuildExecutionLogDetail extends StatelessWidget {
                                   log.message,
                                   style: MixBuildTheme.monoTextStyle(
                                     fontSize: 12,
-                                    color: Colors.white.withValues(alpha: 0.82),
+                                    color: MixBuildPalette.foreground,
                                   ),
                                 ),
                               ),

@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:mixbuild_dashboard/app/responsive_layout.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
@@ -142,30 +140,23 @@ class DashboardTopBar extends StatelessWidget {
           ],
         );
 
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: Container(
-              padding: EdgeInsets.fromLTRB(
-                compact ? 12 : 18,
-                12,
-                compact ? 12 : 18,
-                12,
-              ),
-              decoration: BoxDecoration(
-                color: MixBuildPalette.surface.withValues(alpha: 0.72),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(child: titleRow),
-                  const SizedBox(width: 12),
-                  actions,
-                ],
-              ),
-            ),
+        return Container(
+          padding: EdgeInsets.fromLTRB(
+            compact ? 12 : 18,
+            12,
+            compact ? 12 : 18,
+            12,
+          ),
+          decoration: MixBuildTheme.surfacePanel(
+            radius: 18,
+            color: MixBuildPalette.surface,
+          ),
+          child: Row(
+            children: [
+              Expanded(child: titleRow),
+              const SizedBox(width: 12),
+              actions,
+            ],
           ),
         );
       },
@@ -196,9 +187,9 @@ class DashboardSideBar extends StatelessWidget {
   final ValueChanged<String> onBranchChanged;
   final ValueChanged<String> onScenarioChanged;
   final void Function(String dependencyName, String branch)
-  onDependencyBranchChanged;
+      onDependencyBranchChanged;
   final List<String> Function(DependencyBranch dependency)
-  dependencyBranchOptions;
+      dependencyBranchOptions;
   final ValueChanged<bool> onCleanChanged;
   final VoidCallback onTrigger;
   final VoidCallback onStop;
@@ -210,9 +201,9 @@ class DashboardSideBar extends StatelessWidget {
     return Container(
       width: 332,
       decoration: BoxDecoration(
-        color: MixBuildPalette.surfaceLow.withValues(alpha: 0.88),
+        color: MixBuildPalette.surfaceLow,
         border: Border(
-          right: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+          right: BorderSide(color: Colors.black.withValues(alpha: 0.08)),
         ),
       ),
       child: SingleChildScrollView(
@@ -234,7 +225,7 @@ class DashboardSideBar extends StatelessWidget {
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: MixBuildTheme.glassPanel(
+              decoration: MixBuildTheme.surfacePanel(
                 radius: 20,
                 color: MixBuildPalette.surface,
               ),
@@ -338,17 +329,15 @@ class DashboardSideBar extends StatelessWidget {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color:
-                                    (dependency.highlight ??
-                                            MixBuildPalette.primary)
-                                        .withValues(alpha: 0.12),
+                                color: (dependency.highlight ??
+                                        MixBuildPalette.primary)
+                                    .withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(999),
                               ),
                               child: Text(
                                 strings.dependencyOverride,
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color:
-                                      dependency.highlight ??
+                                  color: dependency.highlight ??
                                       MixBuildPalette.primary,
                                 ),
                               ),
@@ -490,7 +479,7 @@ class ScenarioInspectorPanel extends StatelessWidget {
     final theme = Theme.of(context);
     final strings = AppStrings.of(context);
     return DecoratedBox(
-      decoration: MixBuildTheme.glassPanel(),
+      decoration: MixBuildTheme.surfacePanel(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -530,14 +519,16 @@ class ScenarioInspectorPanel extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: active
-                        ? Colors.white.withValues(alpha: 0.1)
+                        ? MixBuildPalette.primary.withValues(alpha: 0.1)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     status.labelWithContext(context),
                     style: theme.textTheme.labelLarge?.copyWith(
-                      color: active ? Colors.white : MixBuildPalette.muted,
+                      color: active
+                          ? MixBuildPalette.primary
+                          : MixBuildPalette.muted,
                     ),
                   ),
                 );
@@ -569,10 +560,10 @@ class ScenarioInspectorPanel extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.24),
+                  color: MixBuildPalette.surfaceLow,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.08),
+                    color: Colors.black.withValues(alpha: 0.08),
                   ),
                 ),
                 child: Column(
@@ -581,13 +572,13 @@ class ScenarioInspectorPanel extends StatelessWidget {
                       height: 44,
                       padding: const EdgeInsets.symmetric(horizontal: 18),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.03),
+                        color: MixBuildPalette.surfaceHighest,
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(24),
                         ),
                         border: Border(
                           bottom: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.08),
+                            color: Colors.black.withValues(alpha: 0.08),
                           ),
                         ),
                       ),
@@ -605,7 +596,8 @@ class ScenarioInspectorPanel extends StatelessWidget {
                           const SizedBox(width: 16),
                           Expanded(
                             child: Text(
-                              strings.terminalTitle(scenario.command, project.name),
+                              strings.terminalTitle(
+                                  scenario.command, project.name),
                               overflow: TextOverflow.ellipsis,
                               style: MixBuildTheme.monoTextStyle(
                                 fontSize: 11,
@@ -644,7 +636,8 @@ class ScenarioInspectorPanel extends StatelessWidget {
                                   '[${log.time}]',
                                   style: MixBuildTheme.monoTextStyle(
                                     fontSize: 12,
-                                    color: Colors.white.withValues(alpha: 0.36),
+                                    color: MixBuildPalette.muted
+                                        .withValues(alpha: 0.7),
                                   ),
                                 ),
                               ),
@@ -663,7 +656,7 @@ class ScenarioInspectorPanel extends StatelessWidget {
                                   log.message,
                                   style: MixBuildTheme.monoTextStyle(
                                     fontSize: 12,
-                                    color: Colors.white.withValues(alpha: 0.82),
+                                    color: MixBuildPalette.foreground,
                                   ),
                                 ),
                               ),
@@ -679,7 +672,8 @@ class ScenarioInspectorPanel extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              Text(strings.outputDir, style: theme.textTheme.bodySmall),
+                              Text(strings.outputDir,
+                                  style: theme.textTheme.bodySmall),
                               const Spacer(),
                               Text(
                                 '${(scenario.progress * 100).toStringAsFixed(1)}%',
@@ -696,9 +690,8 @@ class ScenarioInspectorPanel extends StatelessWidget {
                                 : scenario.progress,
                             minHeight: 6,
                             borderRadius: BorderRadius.circular(999),
-                            backgroundColor: Colors.white.withValues(
-                              alpha: 0.05,
-                            ),
+                            backgroundColor:
+                                Colors.black.withValues(alpha: 0.06),
                             valueColor: AlwaysStoppedAnimation<Color>(
                               scenario.status.color,
                             ),
@@ -734,7 +727,8 @@ class ScenarioInspectorPanel extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(strings.dependencyBranchOverride, style: theme.textTheme.labelLarge),
+                    Text(strings.dependencyBranchOverride,
+                        style: theme.textTheme.labelLarge),
                     const SizedBox(height: 12),
                     for (final dependency in scenario.dependencies)
                       Padding(
@@ -760,23 +754,20 @@ class ScenarioInspectorPanel extends StatelessWidget {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color:
-                                    (dependency.highlight ??
-                                            MixBuildPalette.surfaceHighest)
-                                        .withValues(alpha: 0.12),
+                                color: (dependency.highlight ??
+                                        MixBuildPalette.surfaceHighest)
+                                    .withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(999),
                                 border: Border.all(
-                                  color:
-                                      (dependency.highlight ??
-                                              MixBuildPalette.muted)
-                                          .withValues(alpha: 0.18),
+                                  color: (dependency.highlight ??
+                                          MixBuildPalette.muted)
+                                      .withValues(alpha: 0.18),
                                 ),
                               ),
                               child: Text(
                                 dependency.branch,
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color:
-                                      dependency.highlight ??
+                                  color: dependency.highlight ??
                                       MixBuildPalette.muted,
                                 ),
                               ),
@@ -810,16 +801,17 @@ class DashboardFooterBar extends StatelessWidget {
     final theme = Theme.of(context);
     final strings = AppStrings.of(context);
     final scenarios = projects.expand((project) => project.scenarios).toList();
-    final running = scenarios
-        .where((scenario) => scenario.status.isPipelineActive)
-        .length;
+    final running =
+        scenarios.where((scenario) => scenario.status.isPipelineActive).length;
     final failed = scenarios
         .where((scenario) => scenario.status == BuildStatus.failed)
         .length;
     _SystemRuntimeStatus systemStatus;
     if (running > 0) {
       systemStatus = _SystemRuntimeStatus(
-        label: running == 1 ? strings.runningStatus : strings.runningCount(running),
+        label: running == 1
+            ? strings.runningStatus
+            : strings.runningCount(running),
         color: MixBuildPalette.warning,
       );
     } else if (failed > 0) {
@@ -828,50 +820,44 @@ class DashboardFooterBar extends StatelessWidget {
         color: MixBuildPalette.error,
       );
     } else {
-      systemStatus = _SystemRuntimeStatus(label: strings.readyStatus, color: MixBuildPalette.primary);
+      systemStatus = _SystemRuntimeStatus(
+          label: strings.readyStatus, color: MixBuildPalette.primary);
     }
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-          decoration: BoxDecoration(
-            color: MixBuildPalette.surfaceLow.withValues(alpha: 0.54),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-          ),
-          child: Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 18,
-            runSpacing: 10,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+      decoration: MixBuildTheme.surfacePanel(
+        radius: 18,
+        color: MixBuildPalette.surfaceLow,
+      ),
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 18,
+        runSpacing: 10,
+        children: [
+          Text(strings.copyright, style: theme.textTheme.bodySmall),
+          for (final metric in metrics) DashboardMetricBar(metric: metric),
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(strings.copyright, style: theme.textTheme.bodySmall),
-              for (final metric in metrics) DashboardMetricBar(metric: metric),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: systemStatus.color,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    systemStatus.label,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: systemStatus.color,
-                    ),
-                  ),
-                ],
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: systemStatus.color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                systemStatus.label,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: systemStatus.color,
+                ),
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
@@ -1095,7 +1081,7 @@ class ScenarioActionButton extends StatelessWidget {
         onPressed: enabled ? onPressed : null,
         icon: Icon(icon, size: 18),
         style: FilledButton.styleFrom(
-          foregroundColor: Colors.white,
+          foregroundColor: MixBuildPalette.foreground,
           backgroundColor: color.withValues(alpha: 0.5),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           shape: RoundedRectangleBorder(

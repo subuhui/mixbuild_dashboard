@@ -1,27 +1,27 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-/// 暗黑主题调色板，所有颜色均为固定值，不跟随系统亮度。
+/// 亮色主题调色板，所有颜色均为固定值。
 class MixBuildPalette {
-  static const background = Color(0xFF0C0C0C);
-  static const surface = Color(0xFF131313);
-  static const surfaceLow = Color(0xFF1B1B1C);
-  static const surfaceHigh = Color(0xFF2A2A2A);
-  static const surfaceHighest = Color(0xFF353535);
-  static const foreground = Color(0xFFE5E2E1);
-  static const muted = Color(0xFFC0C6D6);
-  static const primary = Color(0xFFAAC7FF);
-  static const primarySoft = Color(0x33AAC7FF);
-  static const tertiary = Color(0xFFEB6A12);
-  static const success = Color(0xFF45D483);
-  static const warning = Color(0xFFFFB55E);
-  static const error = Color(0xFFFF6B6B);
+  static const background = Color(0xFFF6F8FB);
+  static const surface = Color(0xFFFFFFFF);
+  static const surfaceLow = Color(0xFFF1F4F9);
+  static const surfaceHigh = Color(0xFFE8EDF5);
+  static const surfaceHighest = Color(0xFFDDE5F0);
+  static const foreground = Color(0xFF1A1F2B);
+  static const muted = Color(0xFF607080);
+  static const primary = Color(0xFF0B57D0);
+  static const primarySoft = Color(0x1F0B57D0);
+  static const tertiary = Color(0xFFB35A00);
+  static const success = Color(0xFF1E8E3E);
+  static const warning = Color(0xFFB06000);
+  static const error = Color(0xFFC5221F);
 }
 
-/// Material 3 暗黑主题构建器。
+/// Material 3 亮色主题构建器。
 class MixBuildTheme {
-  static ThemeData get darkTheme {
-    final base = ThemeData.dark(useMaterial3: true);
+  static ThemeData get lightTheme {
+    final base = ThemeData.light(useMaterial3: true);
     final textTheme = base.textTheme.copyWith(
       headlineLarge: base.textTheme.headlineLarge?.copyWith(
         fontSize: 34,
@@ -65,25 +65,25 @@ class MixBuildTheme {
 
     return base.copyWith(
       scaffoldBackgroundColor: MixBuildPalette.background,
-      colorScheme: const ColorScheme.dark(
+      colorScheme: const ColorScheme.light(
         primary: MixBuildPalette.primary,
         secondary: MixBuildPalette.tertiary,
         surface: MixBuildPalette.surface,
         error: MixBuildPalette.error,
       ),
       textTheme: textTheme,
-      dividerColor: Colors.white.withValues(alpha: 0.08),
-      cardColor: MixBuildPalette.surface.withValues(alpha: 0.76),
+      dividerColor: Colors.black.withValues(alpha: 0.08),
+      cardColor: MixBuildPalette.surfaceHigh,
       canvasColor: MixBuildPalette.surface,
       splashFactory: NoSplash.splashFactory,
       dialogTheme: DialogThemeData(
-        backgroundColor: Colors.transparent,
-        barrierColor: Colors.black.withValues(alpha: 0.65),
+        backgroundColor: MixBuildPalette.surface,
+        barrierColor: Colors.black.withValues(alpha: 0.24),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.black.withValues(alpha: 0.24),
+        fillColor: MixBuildPalette.surfaceLow,
         hintStyle: textTheme.bodyMedium?.copyWith(
           color: MixBuildPalette.muted.withValues(alpha: 0.35),
         ),
@@ -92,13 +92,13 @@ class MixBuildTheme {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: Colors.black.withValues(alpha: 0.12),
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: Colors.black.withValues(alpha: 0.12),
           ),
         ),
         focusedBorder: OutlineInputBorder(
@@ -109,25 +109,17 @@ class MixBuildTheme {
     );
   }
 
-/// 玻璃拟态面板装饰：半透明背景 + 圆角 + 微边框 + 阴影。
-  static BoxDecoration glassPanel({double radius = 24, Color? color}) {
+  static BoxDecoration surfacePanel({double radius = 24, Color? color}) {
     return BoxDecoration(
-      color: (color ?? MixBuildPalette.surfaceHigh).withValues(alpha: 0.72),
+      color: color ?? MixBuildPalette.surfaceHigh,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Colors.black.withValues(alpha: 0.08),
       ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.32),
-          blurRadius: 32,
-          offset: const Offset(0, 12),
-        ),
-      ],
     );
   }
 
-/// 平台等宽字体样式：macOS 用 Menlo，Windows 用 Consolas，Linux 用 DejaVu Sans Mono。
+  /// 平台等宽字体样式：macOS 用 Menlo，Windows 用 Consolas，Linux 用 DejaVu Sans Mono。
   static TextStyle monoTextStyle({
     double? fontSize,
     FontWeight? fontWeight,

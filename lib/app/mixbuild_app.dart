@@ -15,8 +15,8 @@ class MixBuildApp extends StatelessWidget {
       child: MaterialApp(
         title: 'MixBuild Dashboard',
         debugShowCheckedModeBanner: false,
-        themeMode: ThemeMode.dark,
-        theme: MixBuildTheme.darkTheme,
+        themeMode: ThemeMode.light,
+        theme: MixBuildTheme.lightTheme,
         localizationsDelegates: const [
           AppLocalizationsDelegate(),
           GlobalMaterialLocalizations.delegate,
