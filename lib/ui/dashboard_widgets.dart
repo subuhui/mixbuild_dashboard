@@ -835,7 +835,6 @@ class DashboardFooterBar extends StatelessWidget {
         spacing: 18,
         runSpacing: 10,
         children: [
-          Text(strings.copyright, style: theme.textTheme.bodySmall),
           for (final metric in metrics) DashboardMetricBar(metric: metric),
           TinyBadge(
             label: systemStatus.label,

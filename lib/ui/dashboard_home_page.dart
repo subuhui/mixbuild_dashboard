@@ -585,52 +585,50 @@ class _ScenarioPreviewTile extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
               children: [
-                Text(
-                  scenario.name,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  scenario.subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: isActive
-                        ? scenario.status.color.withValues(
-                            alpha: 0.6,
-                          )
-                        : null,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
+                Column(
                   children: [
-                    Flexible(
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: StatusChip(status: scenario.status),
+                    Text(
+                      scenario.name,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: ScenarioActionButton(
-                        color: actionColor,
-                        enabled: true,
-                        label: actionLabel,
-                        icon: canStop
-                            ? Icons.stop_circle_outlined
-                            : Icons.rocket_launch_outlined,
-                        filled: canStop,
-                        onPressed: onTap,
+                    const SizedBox(height: 4),
+                    Text(
+                      scenario.subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: isActive
+                            ? scenario.status.color.withValues(
+                          alpha: 0.6,
+                        )
+                            : null,
                       ),
                     ),
                   ],
+                ),
+                Flexible(
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: StatusChip(status: scenario.status),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ScenarioActionButton(
+                    color: actionColor,
+                    enabled: true,
+                    label: actionLabel,
+                    icon: canStop
+                        ? Icons.stop_circle_outlined
+                        : Icons.rocket_launch_outlined,
+                    filled: canStop,
+                    onPressed: onTap,
+                  ),
                 ),
               ],
             ),
