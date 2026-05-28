@@ -12,6 +12,13 @@ class AppStringsEn extends AppStrings {
   String get appVersion => 'v1.0.0-stable';
   @override
   String get appVersionSubtitle => 'v1.0.0-stable · Flutter Desktop / macOS';
+  @override
+  String appVersionWith(String v) => 'v$v-stable';
+  @override
+  String appTitleWithVersionWith(String v) =>
+      'MixBuild Dashboard v${v.split('.').take(2).join('.')}';
+  @override
+  String appVersionSubtitleWith(String v) => 'v$v-stable · Flutter Desktop / macOS';
 
   // Navigation
   @override

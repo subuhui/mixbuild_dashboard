@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixbuild_dashboard/app/responsive_layout.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
+import 'package:mixbuild_dashboard/state/app_info_provider.dart';
 import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
 import 'package:mixbuild_dashboard/state/dashboard_state.dart';
 import 'package:mixbuild_dashboard/ui/build_logs_page.dart';
@@ -144,6 +145,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
     final selectedProject = dashboardState.selectedProject;
     final selectedScenario = dashboardState.selectedScenario;
     final responsive = ResponsiveLayout.of(context);
+    final appVersion = ref.watch(appVersionProvider).valueOrNull ?? '';
     final logViewport = buildLogViewport(
       logs: selectedScenario.logs,
       query: _logSearchQuery,
@@ -168,6 +170,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
       onBack: () => Navigator.of(context).pop(),
       stacked: !responsive.isWide,
       width: responsive.detailSidebarWidth,
+      version: appVersion,
     );
 
     final terminalSection = Column(
@@ -293,6 +296,7 @@ class _SidebarPanel extends StatelessWidget {
     required this.onBack,
     required this.stacked,
     required this.width,
+    required this.version,
   });
 
   final ProjectBuild project;
@@ -312,6 +316,7 @@ class _SidebarPanel extends StatelessWidget {
   final VoidCallback onBack;
   final bool stacked;
   final double width;
+  final String version;
 
   @override
   Widget build(BuildContext context) {
@@ -384,7 +389,7 @@ class _SidebarPanel extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _SidebarHeader(onBack: onBack, onOpenSettings: onOpenSettings),
+          _SidebarHeader(onBack: onBack, onOpenSettings: onOpenSettings, version: version),
           if (stacked)
             content
           else
@@ -403,10 +408,11 @@ class _SidebarPanel extends StatelessWidget {
 }
 
 class _SidebarHeader extends StatelessWidget {
-  const _SidebarHeader({required this.onBack, required this.onOpenSettings});
+  const _SidebarHeader({required this.onBack, required this.onOpenSettings, required this.version});
 
   final VoidCallback onBack;
   final VoidCallback onOpenSettings;
+  final String version;
 
   @override
   Widget build(BuildContext context) {
@@ -455,7 +461,7 @@ class _SidebarHeader extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 Text(
-                  strings.appVersion,
+                  strings.appVersionWith(version),
                   style: MixBuildTheme.monoTextStyle(
                     fontSize: 10,
                     color: MixBuildPalette.muted,

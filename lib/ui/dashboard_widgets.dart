@@ -62,11 +62,13 @@ class DashboardTopBar extends StatelessWidget {
     this.leading,
     required this.runningCount,
     required this.onReloadTopology,
+    required this.version,
   });
 
   final Widget? leading;
   final int runningCount;
   final VoidCallback onReloadTopology;
+  final String version;
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +83,7 @@ class DashboardTopBar extends StatelessWidget {
             if (leading != null) ...[leading!, const SizedBox(width: 8)],
             Expanded(
               child: Text(
-                strings.appTitleWithVersion,
+                strings.appTitleWithVersionWith(version),
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.titleLarge,
               ),
@@ -173,6 +175,7 @@ class DashboardSideBar extends StatelessWidget {
     required this.onCleanChanged,
     required this.onTrigger,
     required this.onStop,
+    required this.version,
   });
 
   final ProjectBuild project;
@@ -188,6 +191,7 @@ class DashboardSideBar extends StatelessWidget {
   final ValueChanged<bool> onCleanChanged;
   final VoidCallback onTrigger;
   final VoidCallback onStop;
+  final String version;
 
   @override
   Widget build(BuildContext context) {
@@ -216,7 +220,7 @@ class DashboardSideBar extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              strings.appVersionSubtitle,
+              strings.appVersionSubtitleWith(version),
               style: theme.textTheme.bodySmall,
             ),
             const SizedBox(height: 20),
@@ -790,10 +794,12 @@ class DashboardFooterBar extends StatelessWidget {
     super.key,
     required this.metrics,
     required this.projects,
+    required this.version,
   });
 
   final List<ResourceMetric> metrics;
   final List<ProjectBuild> projects;
+  final String version;
 
   @override
   Widget build(BuildContext context) {

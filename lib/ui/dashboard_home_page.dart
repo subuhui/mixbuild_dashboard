@@ -4,6 +4,7 @@ import 'package:mixbuild_dashboard/app/responsive_layout.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/l10n/app_strings.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
+import 'package:mixbuild_dashboard/state/app_info_provider.dart';
 import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
 import 'package:mixbuild_dashboard/ui/build_logs_page.dart';
 import 'package:mixbuild_dashboard/ui/dashboard_widgets.dart';
@@ -21,6 +22,7 @@ class DashboardHomePage extends ConsumerWidget {
     final controller = ref.read(dashboardControllerProvider.notifier);
     final responsive = ResponsiveLayout.of(context);
     final strings = AppStrings.of(context);
+    final appVersion = ref.watch(appVersionProvider).valueOrNull ?? '';
 
     Future<void> openYamlPage() async {
       final result = await YamlEditorPage.show(
@@ -180,6 +182,7 @@ class DashboardHomePage extends ConsumerWidget {
                   leading: leading,
                   runningCount: dashboardState.runningCount,
                   onReloadTopology: controller.reloadTopology,
+                  version: appVersion,
                 ),
                 Expanded(
                   child: Padding(
@@ -214,6 +217,7 @@ class DashboardHomePage extends ConsumerWidget {
                 DashboardFooterBar(
                   metrics: dashboardState.metrics,
                   projects: dashboardState.projects,
+                  version: appVersion,
                 ),
               ],
             ),
@@ -233,6 +237,7 @@ class DashboardHomePage extends ConsumerWidget {
                   closeDrawer: true,
                 ),
                 compact: true,
+                version: appVersion,
               ),
             ),
           )
@@ -259,6 +264,7 @@ class DashboardHomePage extends ConsumerWidget {
                       _DashboardNavigationMenu(
                         onCreateProject: handleCreateProject,
                         onDestinationSelected: handleNavigationSelection,
+                        version: appVersion,
                       ),
                       Expanded(child: buildMainContent()),
                     ],
@@ -275,11 +281,13 @@ class _DashboardNavigationMenu extends StatelessWidget {
     required this.onCreateProject,
     required this.onDestinationSelected,
     this.compact = false,
+    required this.version,
   });
 
   final VoidCallback onCreateProject;
   final ValueChanged<int> onDestinationSelected;
   final bool compact;
+  final String version;
 
   @override
   Widget build(BuildContext context) {
@@ -336,7 +344,7 @@ class _DashboardNavigationMenu extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            strings.appVersion,
+            strings.appVersionWith(version),
             style: theme.textTheme.bodySmall?.copyWith(
               letterSpacing: 1.1,
               color: colorScheme.onSurfaceVariant,

@@ -13,6 +13,9 @@ abstract class AppStrings {
   String get appBrand;
   String get appVersion;
   String get appVersionSubtitle;
+  String appVersionWith(String v);
+  String appTitleWithVersionWith(String v);
+  String appVersionSubtitleWith(String v);
 
   // Navigation
   String get navDashboard;
