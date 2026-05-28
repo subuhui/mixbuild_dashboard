@@ -9,19 +9,25 @@ class DashboardBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     return Stack(
       children: [
-        Container(color: MixBuildPalette.background),
+        Container(color: theme.scaffoldBackgroundColor),
         Positioned(
           top: -120,
           left: -80,
           child: Container(
             width: 420,
             height: 420,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: RadialGradient(
-                colors: [Color(0x330A84FF), Colors.transparent],
+                colors: [
+                  colorScheme.primary.withValues(alpha: isDark ? 0.22 : 0.12),
+                  Colors.transparent,
+                ],
               ),
             ),
           ),
@@ -32,10 +38,15 @@ class DashboardBackground extends StatelessWidget {
           child: Container(
             width: 520,
             height: 520,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: RadialGradient(
-                colors: [Color(0x26EB6A12), Colors.transparent],
+                colors: [
+                  colorScheme.tertiary.withValues(
+                    alpha: isDark ? 0.18 : 0.08,
+                  ),
+                  Colors.transparent,
+                ],
               ),
             ),
           ),
