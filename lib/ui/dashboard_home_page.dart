@@ -22,7 +22,7 @@ class DashboardHomePage extends ConsumerWidget {
     final controller = ref.read(dashboardControllerProvider.notifier);
     final responsive = ResponsiveLayout.of(context);
     final strings = AppStrings.of(context);
-    final appVersion = ref.watch(appVersionProvider).valueOrNull ?? '';
+    final appVersion = ref.watch(appVersionProvider).value ?? '';
 
     Future<void> openYamlPage() async {
       final result = await YamlEditorPage.show(

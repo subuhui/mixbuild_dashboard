@@ -145,7 +145,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
     final selectedProject = dashboardState.selectedProject;
     final selectedScenario = dashboardState.selectedScenario;
     final responsive = ResponsiveLayout.of(context);
-    final appVersion = ref.watch(appVersionProvider).valueOrNull ?? '';
+    final appVersion = ref.watch(appVersionProvider).value ?? '';
     final logViewport = buildLogViewport(
       logs: selectedScenario.logs,
       query: _logSearchQuery,
