@@ -367,6 +367,32 @@ class AppStringsZh extends AppStrings {
   @override
   String get zshTerminalTitle => 'zsh';
 
+  // Import / Export
+  @override
+  String get settingsDataTitle => '数据管理';
+  @override
+  String get settingsDataSubtitle => '导出或导入所有工作区配置，方便备份与迁移';
+  @override
+  String get settingsExport => '导出配置';
+  @override
+  String get settingsExportDesc => '将所有工作区配置打包为 ZIP 文件';
+  @override
+  String get settingsImport => '导入配置';
+  @override
+  String get settingsImportDesc => '从 ZIP 文件恢复工作区配置';
+  @override
+  String get settingsImportConfirmTitle => '确认导入';
+  @override
+  String get settingsImportConfirmMessage => '导入将会添加 ZIP 中的工作区配置，现有配置不会被覆盖。是否继续？';
+  @override
+  String exportSuccess(int count) => '已导出 $count 个工作区配置';
+  @override
+  String exportError(String error) => '导出失败: $error';
+  @override
+  String importSuccess(int count) => '已导入 $count 个工作区配置';
+  @override
+  String importError(String error) => '导入失败: $error';
+
   // Error messages
   @override
   String yamlSaveError(String error) => 'YAML 保存失败: $error';

@@ -384,6 +384,32 @@ class AppStringsEn extends AppStrings {
   @override
   String get zshTerminalTitle => 'zsh';
 
+  // Import / Export
+  @override
+  String get settingsDataTitle => 'Data Management';
+  @override
+  String get settingsDataSubtitle => 'Export or import all workspace configurations for backup and migration';
+  @override
+  String get settingsExport => 'Export Config';
+  @override
+  String get settingsExportDesc => 'Pack all workspace configs into a ZIP file';
+  @override
+  String get settingsImport => 'Import Config';
+  @override
+  String get settingsImportDesc => 'Restore workspace configs from a ZIP file';
+  @override
+  String get settingsImportConfirmTitle => 'Confirm Import';
+  @override
+  String get settingsImportConfirmMessage => 'Importing will add workspace configs from the ZIP. Existing configs will not be overwritten. Continue?';
+  @override
+  String exportSuccess(int count) => 'Exported $count workspace config(s)';
+  @override
+  String exportError(String error) => 'Export failed: $error';
+  @override
+  String importSuccess(int count) => 'Imported $count workspace config(s)';
+  @override
+  String importError(String error) => 'Import failed: $error';
+
   // Error messages
   @override
   String yamlSaveError(String error) => 'YAML save failed: $error';

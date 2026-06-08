@@ -208,6 +208,20 @@ abstract class AppStrings {
   String get nodesLabel;
   String get zshTerminalTitle;
 
+  // Import / Export
+  String get settingsDataTitle;
+  String get settingsDataSubtitle;
+  String get settingsExport;
+  String get settingsExportDesc;
+  String get settingsImport;
+  String get settingsImportDesc;
+  String get settingsImportConfirmTitle;
+  String get settingsImportConfirmMessage;
+  String exportSuccess(int count);
+  String exportError(String error);
+  String importSuccess(int count);
+  String importError(String error);
+
   // Error messages
   String yamlSaveError(String error);
   String dirAccessError(String error);

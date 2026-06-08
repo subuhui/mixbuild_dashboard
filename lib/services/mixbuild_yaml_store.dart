@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:archive/archive.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:path/path.dart' as p;
 
@@ -274,5 +276,53 @@ class MixbuildYamlStore {
     if (oldFile.existsSync()) {
       oldFile.deleteSync();
     }
+  }
+
+  /// 将所有工作区 YAML 配置导出为 ZIP 字节流。
+  ///
+  /// ZIP 内部结构：
+  /// - `config/mixbuild.yaml` — 全局配置
+  /// - `config/workspaces/<slug>.yaml` — 各工作区配置
+  Uint8List exportAllToZipBytes() {
+    final archive = Archive();
+
+    // 全局配置
+    final legacyFile = File(legacyYamlPath);
+    if (legacyFile.existsSync()) {
+      final content = legacyFile.readAsBytesSync();
+      archive.addFile(ArchiveFile('config/mixbuild.yaml', content.length, content));
+    }
+
+    // 工作区配置
+    for (final file in discoverWorkspaceYamlFilesSync()) {
+      final slug = p.basenameWithoutExtension(file.path);
+      final content = file.readAsBytesSync();
+      archive.addFile(ArchiveFile('config/workspaces/$slug.yaml', content.length, content));
+    }
+
+    return Uint8List.fromList(ZipEncoder().encode(archive));
+  }
+
+  /// 从 ZIP 字节流导入工作区 YAML 配置。
+  ///
+  /// 解析 ZIP 内 `config/workspaces/` 下的所有 YAML 文件，
+  /// 写入本地工作区目录并返回导入的配置列表。
+  List<MixbuildConfig> importFromZipBytes(Uint8List zipBytes) {
+    final archive = ZipDecoder().decodeBytes(zipBytes);
+    final importedConfigs = <MixbuildConfig>[];
+
+    for (final file in archive) {
+      if (file.isFile && file.name.endsWith('.yaml')) {
+        final content = String.fromCharCodes(file.content as List<int>);
+        try {
+          final savedConfig = saveRawYamlSync(content);
+          importedConfigs.add(savedConfig);
+        } catch (_) {
+          // 跳过无法解析的文件
+        }
+      }
+    }
+
+    return importedConfigs;
   }
 }

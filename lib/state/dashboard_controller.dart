@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
@@ -1259,6 +1260,59 @@ class DashboardController extends Notifier<DashboardState> {
             .toList(growable: false),
       ),
     );
+  }
+
+  /// 将所有工作区配置导出为 ZIP 文件，通过系统文件选择器保存。
+  Future<int> exportConfigToZip() async {
+    final store = ref.read(mixbuildYamlStoreProvider);
+    final zipBytes = store.exportAllToZipBytes();
+    final workspaceCount = store.discoverWorkspaceYamlFilesSync().length;
+
+    final saveLocation = await getSaveLocation(
+      acceptedTypeGroups: [
+        const XTypeGroup(label: 'ZIP', extensions: ['zip']),
+      ],
+      suggestedName: 'mixbuild_config.zip',
+    );
+    if (saveLocation == null) {
+      return 0; // 用户取消
+    }
+
+    File(saveLocation.path).writeAsBytesSync(zipBytes);
+    return workspaceCount;
+  }
+
+  /// 从 ZIP 文件导入工作区配置，通过系统文件选择器选择文件。
+  Future<int> importConfigFromZip() async {
+    final typeGroup = XTypeGroup(
+      label: 'ZIP',
+      extensions: ['zip'],
+    );
+    final file = await openFile(acceptedTypeGroups: [typeGroup]);
+    if (file == null) {
+      return 0; // 用户取消
+    }
+
+    final zipBytes = File(file.path).readAsBytesSync();
+    final store = ref.read(mixbuildYamlStoreProvider);
+    final importedConfigs = store.importFromZipBytes(zipBytes);
+
+    if (importedConfigs.isNotEmpty) {
+      // 重新加载所有配置
+      final yamlFiles = store.discoverWorkspaceYamlFilesSync();
+      final configs = <MixbuildConfig>[];
+      for (final yamlFile in yamlFiles) {
+        try {
+          configs.add(MixbuildConfig.fromFileSync(yamlFile.path));
+        } catch (_) {}
+      }
+      if (configs.isNotEmpty) {
+        final activeConfig = configs.last;
+        _applyConfig(activeConfig, preserveError: false);
+      }
+    }
+
+    return importedConfigs.length;
   }
 }
 
