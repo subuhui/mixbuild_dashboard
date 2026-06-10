@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:intl/intl.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 import 'package:path/path.dart' as p;
 
@@ -13,12 +14,19 @@ class BuildExecutionHistoryStore {
 
   String get appConfigDirectoryPath =>
       p.join(_configHomePath, 'mixbuild_dashboard');
-  String get historyFilePath =>
-      p.join(appConfigDirectoryPath, 'execution_history.json');
+
+  String get logsDirectoryPath =>
+      p.join(appConfigDirectoryPath, 'execution_logs');
+
+  String getDailyLogFilePath([DateTime? date]) {
+    final targetDate = date ?? DateTime.now();
+    final dateStr = DateFormat('yyyy-MM-dd').format(targetDate);
+    return p.join(logsDirectoryPath, '$dateStr.json');
+  }
 
   List<BuildExecutionRecord> loadHistorySync() {
     try {
-      final file = File(historyFilePath);
+      final file = File(getDailyLogFilePath());
       if (!file.existsSync()) {
         return const <BuildExecutionRecord>[];
       }
@@ -41,7 +49,7 @@ class BuildExecutionHistoryStore {
 
   void saveHistorySync(List<BuildExecutionRecord> history) {
     try {
-      final file = File(historyFilePath);
+      final file = File(getDailyLogFilePath());
       file.parent.createSync(recursive: true);
       file.writeAsStringSync(
         jsonEncode(
@@ -54,10 +62,31 @@ class BuildExecutionHistoryStore {
   Future<void> saveHistory(List<BuildExecutionRecord> history) async {
     final payload =
         history.map((record) => record.toJson()).toList(growable: false);
-    final filePath = historyFilePath;
+    final filePath = getDailyLogFilePath();
     try {
       await Isolate.run<void>(() => _writeHistoryPayload(filePath, payload));
     } catch (_) {}
+  }
+
+  /// 清除所有历史日志文件
+  Future<int> clearAllLogs() async {
+    try {
+      final dir = Directory(logsDirectoryPath);
+      if (!dir.existsSync()) {
+        return 0;
+      }
+      final files = dir
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.json'))
+          .toList();
+      for (final file in files) {
+        file.deleteSync();
+      }
+      return files.length;
+    } catch (_) {
+      return 0;
+    }
   }
 
   String get _configHomePath {

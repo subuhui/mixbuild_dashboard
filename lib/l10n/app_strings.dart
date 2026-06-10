@@ -222,6 +222,14 @@ abstract class AppStrings {
   String importSuccess(int count);
   String importError(String error);
 
+  // Clear Logs
+  String get settingsClearLogs;
+  String get settingsClearLogsDesc;
+  String get settingsClearLogsConfirmTitle;
+  String get settingsClearLogsConfirmMessage;
+  String settingsClearLogsSuccess(int count);
+  String settingsClearLogsError(String error);
+
   // Error messages
   String yamlSaveError(String error);
   String dirAccessError(String error);

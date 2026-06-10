@@ -1314,6 +1314,14 @@ class DashboardController extends Notifier<DashboardState> {
 
     return importedConfigs.length;
   }
+
+  /// 清除所有历史构建日志
+  Future<int> clearAllExecutionLogs() async {
+    final store = ref.read(buildExecutionHistoryStoreProvider);
+    final count = await store.clearAllLogs();
+    state = state.copyWith(executionHistory: []);
+    return count;
+  }
 }
 
 class _ActiveExecutionContext {

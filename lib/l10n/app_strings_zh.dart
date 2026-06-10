@@ -393,6 +393,20 @@ class AppStringsZh extends AppStrings {
   @override
   String importError(String error) => '导入失败: $error';
 
+  // Clear Logs
+  @override
+  String get settingsClearLogs => '清除日志';
+  @override
+  String get settingsClearLogsDesc => '删除所有历史构建日志文件';
+  @override
+  String get settingsClearLogsConfirmTitle => '确认清除日志';
+  @override
+  String get settingsClearLogsConfirmMessage => '此操作将永久删除所有历史构建日志文件，且无法恢复。是否继续？';
+  @override
+  String settingsClearLogsSuccess(int count) => '已清除 $count 个日志文件';
+  @override
+  String settingsClearLogsError(String error) => '清除日志失败: $error';
+
   // Error messages
   @override
   String yamlSaveError(String error) => 'YAML 保存失败: $error';

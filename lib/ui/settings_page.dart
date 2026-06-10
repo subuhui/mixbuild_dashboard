@@ -216,6 +216,15 @@ class _DataManagementPanel extends ConsumerWidget {
                   onTap: () => _handleImport(context, ref),
                 ),
               ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _DataActionCard(
+                  icon: Icons.delete_sweep_outlined,
+                  title: strings.settingsClearLogs,
+                  subtitle: strings.settingsClearLogsDesc,
+                  onTap: () => _handleClearLogs(context, ref),
+                ),
+              ),
             ],
           ),
         ],
@@ -277,6 +286,45 @@ class _DataManagementPanel extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(strings.importError('$e'))),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleClearLogs(BuildContext context, WidgetRef ref) async {
+    final strings = AppStrings.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(strings.settingsClearLogsConfirmTitle),
+        content: Text(strings.settingsClearLogsConfirmMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(strings.btnCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(strings.btnConfirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      final count = await ref
+          .read(dashboardControllerProvider.notifier)
+          .clearAllExecutionLogs();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(strings.settingsClearLogsSuccess(count))),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(strings.settingsClearLogsError('$e'))),
         );
       }
     }

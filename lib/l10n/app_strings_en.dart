@@ -410,6 +410,20 @@ class AppStringsEn extends AppStrings {
   @override
   String importError(String error) => 'Import failed: $error';
 
+  // Clear Logs
+  @override
+  String get settingsClearLogs => 'Clear Logs';
+  @override
+  String get settingsClearLogsDesc => 'Delete all historical build log files';
+  @override
+  String get settingsClearLogsConfirmTitle => 'Confirm Clear Logs';
+  @override
+  String get settingsClearLogsConfirmMessage => 'This will permanently delete all historical build log files. This action cannot be undone. Continue?';
+  @override
+  String settingsClearLogsSuccess(int count) => 'Cleared $count log file(s)';
+  @override
+  String settingsClearLogsError(String error) => 'Clear logs failed: $error';
+
   // Error messages
   @override
   String yamlSaveError(String error) => 'YAML save failed: $error';
