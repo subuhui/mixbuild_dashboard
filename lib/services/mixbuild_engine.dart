@@ -727,7 +727,13 @@ class MixbuildEngine {
 
   void _cleanStaleIndexLock(String repoPath) {
     final lockFile = File('$repoPath/.git/index.lock');
-    if (lockFile.existsSync()) {
+    if (!lockFile.existsSync()) {
+      return;
+    }
+    // 检查文件修改时间，超过 5 秒认为是残留锁
+    final lastModified = lockFile.lastModifiedSync();
+    final elapsed = DateTime.now().difference(lastModified);
+    if (elapsed.inSeconds >= 5) {
       try {
         lockFile.deleteSync();
       } catch (_) {}
