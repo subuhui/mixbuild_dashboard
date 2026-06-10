@@ -370,6 +370,8 @@ class MixbuildEngine {
     required bool recreateLocalBranch,
     required void Function(LogEntry entry) onLog,
   }) async {
+    // 清理可能残留的 index.lock 文件（进程异常退出时可能遗留）
+    _cleanStaleIndexLock(repoPath);
     await _runGitCommandOrThrow(
       repoPath: repoPath,
       arguments: const <String>['fetch', '--all', '--prune'],
@@ -721,6 +723,15 @@ class MixbuildEngine {
       }
     }
     return 'git';
+  }
+
+  void _cleanStaleIndexLock(String repoPath) {
+    final lockFile = File('$repoPath/.git/index.lock');
+    if (lockFile.existsSync()) {
+      try {
+        lockFile.deleteSync();
+      } catch (_) {}
+    }
   }
 
   bool _isPermissionDeniedMessage(String message) {
