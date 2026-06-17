@@ -32,6 +32,8 @@ class ProjectEditorPage extends StatefulWidget {
     required this.baseDependencies,
     this.title = '',
     this.primaryActionLabel = '',
+    this.gitBranchDiscovery,
+    this.gitProjectDiscovery,
   });
 
   final GlobalConfig config;
@@ -39,6 +41,8 @@ class ProjectEditorPage extends StatefulWidget {
   final List<DependencyBranch> baseDependencies;
   final String title;
   final String primaryActionLabel;
+  final GitBranchDiscovery? gitBranchDiscovery;
+  final GitProjectDiscovery? gitProjectDiscovery;
 
   static Future<ProjectEditorResult?> show(
     BuildContext context, {
@@ -98,8 +102,9 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   @override
   void initState() {
     super.initState();
-    _gitBranchDiscovery = GitBranchDiscovery();
-    _gitProjectDiscovery = const GitProjectDiscovery();
+    _gitBranchDiscovery = widget.gitBranchDiscovery ?? GitBranchDiscovery();
+    _gitProjectDiscovery =
+        widget.gitProjectDiscovery ?? const GitProjectDiscovery();
     _workspaceController = TextEditingController(
       text: widget.config.workspaceRoot,
     );
@@ -577,11 +582,11 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
       builder: (context) => AddScenarioDialog(
         mainProject: ScenarioBranchDraft(
           projectName: _mainBindingDraft.projectName,
-          initialBranch: initialScenario?.mainBranch.trim().isNotEmpty == true
-              ? initialScenario!.mainBranch
-              : (_mainBindingDraft.defaultBranchController.text.trim().isEmpty
-                  ? 'develop'
-                  : _mainBindingDraft.defaultBranchController.text.trim()),
+          initialBranch: _mainBindingDraft.defaultBranchController.text
+                  .trim()
+                  .isEmpty
+              ? 'develop'
+              : _mainBindingDraft.defaultBranchController.text.trim(),
           icon: _dependencyIconForDraft(
             _mainBindingDraft.type,
             _mainBindingDraft.projectName,
@@ -1332,13 +1337,6 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                         children: [
                           Expanded(
                             child: _ScenarioMetaItem(
-                              label: strings.mainBranchLabel,
-                              value: draft.mainBranch,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _ScenarioMetaItem(
                               label: strings.outputDir,
                               value: draft.outputController.text.trim().isEmpty
                                   ? '未配置'
@@ -1363,11 +1361,6 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          TinyBadge(
-                            label:
-                                strings.mainProjectBranchInfo(draft.mainBranch),
-                            color: MixBuildPalette.tertiary,
-                          ),
                           ...draft.dependencies.map((dependency) {
                             return TinyBadge(
                               label: '${dependency.name}: ${dependency.branch}',
@@ -1451,7 +1444,6 @@ class _ScenarioDraft {
     required this.outputController,
     required this.tagController,
     required this.autoTag,
-    required this.mainBranch,
     required this.dependencies,
   });
 
@@ -1463,7 +1455,6 @@ class _ScenarioDraft {
       outputController: TextEditingController(text: scenario.outputPath),
       tagController: TextEditingController(text: scenario.tagPrefix),
       autoTag: scenario.autoTag,
-      mainBranch: scenario.mainBranch,
       dependencies: List<DependencyBranch>.from(scenario.dependencies),
     );
   }
@@ -1474,7 +1465,6 @@ class _ScenarioDraft {
   final TextEditingController outputController;
   final TextEditingController tagController;
   bool autoTag;
-  String mainBranch;
   List<DependencyBranch> dependencies;
 
   String get subtitle => original.subtitle;
@@ -1519,8 +1509,6 @@ class _ScenarioDraft {
       name: nameController.text.trim().isEmpty
           ? original.name
           : nameController.text.trim(),
-      mainBranch:
-          mainBranch.trim().isEmpty ? original.mainBranch : mainBranch.trim(),
       command: commandController.text.trim(),
       dependencies: dependencies,
       outputPath: outputController.text.trim(),
@@ -1892,10 +1880,6 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
     );
     _autoTag = widget.initialScenario?.autoTag ?? true;
     _branches = {
-      widget.mainProject.projectName:
-          widget.initialScenario?.mainBranch.trim().isNotEmpty == true
-              ? widget.initialScenario!.mainBranch
-              : widget.mainProject.initialBranch,
       for (final item in widget.dependencyDrafts)
         item.projectName:
             _scenarioDependencyBranch(item.projectName) ?? item.initialBranch,
@@ -1994,60 +1978,6 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    _ConfigSectionCard(
-                      title: strings.scenarioMainBranch,
-                      subtitle: strings.scenarioMainBranchSubtitle,
-                      child: Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: MixBuildPalette.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: MixBuildPalette.foreground
-                                .withValues(alpha: 0.06),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              widget.mainProject.icon,
-                              color: widget.mainProject.highlight ??
-                                  MixBuildPalette.tertiary,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                widget.mainProject.projectName,
-                                style: theme.textTheme.bodyMedium,
-                              ),
-                            ),
-                            DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value:
-                                    _branches[widget.mainProject.projectName],
-                                dropdownColor: MixBuildPalette.surfaceHighest,
-                                items: widget.mainProject.options.map((item) {
-                                  return DropdownMenuItem<String>(
-                                    value: item,
-                                    child: Text(item),
-                                  );
-                                }).toList(growable: false),
-                                onChanged: (value) {
-                                  if (value == null) {
-                                    return;
-                                  }
-                                  setState(() {
-                                    _branches[widget.mainProject.projectName] =
-                                        value;
-                                  });
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -2210,9 +2140,6 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                 strings.scenarioDefaultSubtitle,
                             environment:
                                 widget.initialScenario?.environment ?? 'custom',
-                            mainBranch:
-                                _branches[widget.mainProject.projectName] ??
-                                    widget.mainProject.initialBranch,
                             command: _commandController.text.trim(),
                             status: widget.initialScenario?.status ??
                                 BuildStatus.idle,

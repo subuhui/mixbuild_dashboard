@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -65,7 +64,7 @@ void main() {
       expect(dependency.highlight, MixBuildPalette.primary);
     });
 
-    test('updateProjectConfiguration persists scenario main branch', () async {
+    test('updateProjectConfiguration persists scenario command', () async {
       final controller = container.read(dashboardControllerProvider.notifier);
       final currentState = container.read(dashboardControllerProvider);
 
@@ -95,7 +94,6 @@ void main() {
             name: 'Release Build',
             subtitle: '由 YAML 场景驱动',
             environment: 'workspace-demo',
-            mainBranch: 'release/main-project',
             command: 'fvm flutter build macos --release',
             status: BuildStatus.idle,
             progress: 0,
@@ -120,8 +118,8 @@ void main() {
 
       expect(savedConfig.mainProject.defaultBranch, 'develop');
       expect(savedConfig.buildScenarios, hasLength(1));
-      expect(
-          savedConfig.buildScenarios.single.mainBranch, 'release/main-project');
+      expect(savedConfig.buildScenarios.single.command,
+          'fvm flutter build macos --release');
     });
 
     test('metrics use dynamic hardware snapshot for CPU and MEM', () async {
@@ -145,6 +143,7 @@ void main() {
           required config,
           required project,
           required scenario,
+          required projectBranch,
           required cleanBeforeBuild,
           required dependencyOverrides,
           required onProgress,
@@ -220,7 +219,7 @@ void main() {
             status: BuildStatus.failed,
             startedAt: DateTime(2026, 5, 23, 11, 30),
             finishedAt: DateTime(2026, 5, 23, 11, 31),
-            logs: const <LogEntry>[
+            logs: <LogEntry>[
               LogEntry(
                 time: '11:30:00',
                 level: 'ERROR',
@@ -258,6 +257,7 @@ void main() {
           required config,
           required project,
           required scenario,
+          required projectBranch,
           required cleanBeforeBuild,
           required dependencyOverrides,
           required onProgress,
@@ -290,7 +290,7 @@ void main() {
       var stateChanges = 0;
       final subscription = localContainer.listen<DashboardState>(
         dashboardControllerProvider,
-        (_, __) => stateChanges++,
+        (_, _) => stateChanges++,
       );
       addTearDown(subscription.close);
 
@@ -308,6 +308,52 @@ void main() {
       expect(lineLogs, hasLength(40));
       expect(stateChanges, lessThan(18));
       expect(historySpy.saveCalls, lessThan(18));
+    });
+
+    test(
+        'triggerBuildFromRequest matches scenario name and passes requested branch',
+        () async {
+      store.saveConfigSync(_triggerSeedConfig());
+      String? capturedProjectBranch;
+      String? capturedScenarioName;
+      final fakeEngine = _FakeMixbuildEngine(
+        onRunPipelineImpl: ({
+          required config,
+          required project,
+          required scenario,
+          required projectBranch,
+          required cleanBeforeBuild,
+          required dependencyOverrides,
+          required onProgress,
+          required onLog,
+        }) async {
+          capturedProjectBranch = projectBranch;
+          capturedScenarioName = scenario.name;
+          onProgress(BuildStatus.success, 1.0);
+        },
+      );
+      final localContainer = ProviderContainer(
+        overrides: [
+          mixbuildYamlStoreProvider.overrideWithValue(store),
+          buildExecutionHistoryStoreProvider.overrideWithValue(historyStore),
+          systemResourceMonitorProvider.overrideWithValue(resourceMonitor),
+          mixbuildEngineProvider.overrideWithValue(fakeEngine),
+        ],
+      );
+      addTearDown(localContainer.dispose);
+
+      final controller =
+          localContainer.read(dashboardControllerProvider.notifier);
+      final result = await controller.triggerBuildFromRequest(
+        projectName: 'main_project',
+        branch: 'release/v1.2',
+      );
+
+      expect(result.accepted, isTrue);
+      expect(result.scenarioName, 'Release Build');
+      expect(result.branch, 'release/v1.2');
+      expect(capturedScenarioName, 'Release Build');
+      expect(capturedProjectBranch, 'release/v1.2');
     });
   });
 }
@@ -339,9 +385,38 @@ MixbuildConfig _seedConfig() {
       MixbuildScenarioConfig(
         id: 'release-build',
         name: 'Release Build',
-        mainBranch: 'develop',
         command: 'fvm flutter build macos --release',
         outputDir: 'build/macos/Build/Products/Release',
+      ),
+    ],
+  );
+}
+
+MixbuildConfig _triggerSeedConfig() {
+  return const MixbuildConfig(
+    filePath: 'trigger-seed.yaml',
+    workspace: MixbuildWorkspaceConfig(
+      name: 'workspace-demo',
+      rootPath: '/tmp/workspace-demo',
+    ),
+    mainProject: MixbuildRepoConfig(
+      name: 'main_project',
+      path: '.',
+      type: MixbuildProjectType.flutter,
+      defaultBranch: 'develop',
+      restoreCommand: 'fvm flutter pub get',
+    ),
+    dependencies: <MixbuildRepoConfig>[],
+    buildScenarios: <MixbuildScenarioConfig>[
+      MixbuildScenarioConfig(
+        id: 'debug-build',
+        name: 'Debug Build',
+        command: 'fvm flutter build macos --debug',
+      ),
+      MixbuildScenarioConfig(
+        id: 'release-build',
+        name: 'Release Build',
+        command: 'fvm flutter build macos --release',
       ),
     ],
   );
@@ -376,6 +451,7 @@ class _FakeMixbuildEngine extends MixbuildEngine {
     required MixbuildConfig config,
     required ProjectBuild project,
     required BuildScenario scenario,
+    required String projectBranch,
     required bool cleanBeforeBuild,
     required Map<String, String> dependencyOverrides,
     required void Function(BuildStatus status, double progress) onProgress,
@@ -387,6 +463,7 @@ class _FakeMixbuildEngine extends MixbuildEngine {
     required MixbuildConfig config,
     required ProjectBuild project,
     required BuildScenario scenario,
+    required String projectBranch,
     required bool cleanBeforeBuild,
     required Map<String, String> dependencyOverrides,
     required void Function(BuildStatus status, double progress) onProgress,
@@ -396,6 +473,7 @@ class _FakeMixbuildEngine extends MixbuildEngine {
       config: config,
       project: project,
       scenario: scenario,
+      projectBranch: projectBranch,
       cleanBeforeBuild: cleanBeforeBuild,
       dependencyOverrides: dependencyOverrides,
       onProgress: onProgress,

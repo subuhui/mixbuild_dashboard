@@ -96,14 +96,12 @@ dependencies:
     restore_command: "fvm flutter pub get"
 build_scenarios:
   - name: "Debug Build"
-    main_branch: "develop"
     command: "fvm flutter build macos --debug"
     output_dir: "build/macos/Build/Products/Debug"
     auto_tag: false
     dependency_overrides:
       shared_ui: "feature/new-components"
   - name: "Release Build"
-    main_branch: "main"
     command: "fvm flutter build macos --release"
     output_dir: "build/macos/Build/Products/Release"
     auto_tag: true

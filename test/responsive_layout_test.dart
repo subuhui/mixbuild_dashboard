@@ -8,6 +8,7 @@ import 'package:mixbuild_dashboard/app/mixbuild_app.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 import 'package:mixbuild_dashboard/l10n/app_strings.dart';
+import 'package:mixbuild_dashboard/services/build_trigger_server.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_yaml_store.dart';
 import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
 import 'package:mixbuild_dashboard/ui/project_detail_page.dart';
@@ -20,7 +21,23 @@ void main() {
     ) async {
       _setSurfaceSize(tester, const Size(780, 1100));
 
-      await tester.pumpWidget(const MixBuildApp());
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            buildTriggerServerProvider.overrideWithValue(
+              BuildTriggerServer(
+                port: 0,
+                onTrigger: (_) async =>
+                    const RemoteBuildTriggerResult.rejected(
+                  statusCode: 503,
+                  message: 'disabled in widget test',
+                ),
+              ),
+            ),
+          ],
+          child: const MixBuildApp(),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
@@ -151,7 +168,6 @@ void main() {
                 name: 'Release Build',
                 subtitle: '由 YAML 场景驱动',
                 environment: 'workspace-demo',
-                mainBranch: 'main',
                 command: 'fvm flutter build macos --release',
                 status: BuildStatus.idle,
                 progress: 0,
@@ -237,7 +253,6 @@ MixbuildConfig _seedConfig() {
       MixbuildScenarioConfig(
         id: 'release-build',
         name: 'Release Build',
-        mainBranch: 'develop',
         command: 'fvm flutter build macos --release',
         outputDir: 'build/macos/Build/Products/Release',
       ),

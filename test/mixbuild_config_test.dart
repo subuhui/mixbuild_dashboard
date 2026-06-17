@@ -17,7 +17,6 @@ main_project:
   default_branch: "main"
 build_scenarios:
   - name: "Debug Build"
-    main_branch: "release/main"
     command: "fvm flutter build macos --debug"
 ''';
 
@@ -29,7 +28,7 @@ build_scenarios:
     expect(config.dependencies, isEmpty);
     expect(config.buildScenarios, hasLength(1));
     expect(config.workspace.name, 'Sample Workspace');
-    expect(config.buildScenarios.single.mainBranch, 'release/main');
+    expect(config.toYamlString(), isNot(contains('main_branch')));
   });
 
   test('loadInitialConfigSync prefers non-sample workspace and remembers last opened', () {

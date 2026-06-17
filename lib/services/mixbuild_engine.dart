@@ -38,6 +38,7 @@ class MixbuildEngine {
     required MixbuildConfig config,
     required ProjectBuild project,
     required BuildScenario scenario,
+    required String projectBranch,
     required bool cleanBeforeBuild,
     required Map<String, String> dependencyOverrides,
     required void Function(BuildStatus status, double progress) onProgress,
@@ -67,9 +68,7 @@ class MixbuildEngine {
     );
     await _runSync(
       config: config,
-      projectBranch: scenario.mainBranch.trim().isEmpty
-          ? project.branch
-          : scenario.mainBranch,
+      projectBranch: projectBranch.trim().isEmpty ? project.branch : projectBranch,
       recreateLocalBranches: cleanBeforeBuild,
       dependencyOverrides: dependencyOverrides,
       onLog: onLog,

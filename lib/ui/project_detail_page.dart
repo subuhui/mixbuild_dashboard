@@ -351,7 +351,7 @@ class _SidebarPanel extends StatelessWidget {
               ),
             ),
             child: Text(
-              scenario.mainBranch,
+              project.branch,
               style: MixBuildTheme.monoTextStyle(
                 fontSize: 13,
                 color: MixBuildPalette.foreground,

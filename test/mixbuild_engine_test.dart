@@ -53,7 +53,6 @@ void main() {
           MixbuildScenarioConfig(
             id: 'release-build',
             name: 'Release Build',
-            mainBranch: 'main',
             command: 'fvm flutter build macos --release',
           ),
         ],
@@ -71,7 +70,6 @@ void main() {
         name: 'Release Build',
         subtitle: 'demo',
         environment: 'test',
-        mainBranch: 'main',
         command: 'fvm flutter build macos --release',
         status: BuildStatus.idle,
         progress: 0,
@@ -81,6 +79,7 @@ void main() {
         autoTag: false,
         tagPrefix: '',
       ),
+      projectBranch: 'main',
       cleanBeforeBuild: false,
       dependencyOverrides: const <String, String>{},
       onProgress: (_, progress) {},
@@ -131,7 +130,6 @@ void main() {
           MixbuildScenarioConfig(
             id: 'release-build',
             name: 'Release Build',
-            mainBranch: targetBranch,
             command: 'fvm flutter build macos --release',
           ),
         ],
@@ -149,7 +147,6 @@ void main() {
         name: 'Release Build',
         subtitle: 'demo',
         environment: 'test',
-        mainBranch: targetBranch,
         command: 'fvm flutter build macos --release',
         status: BuildStatus.idle,
         progress: 0,
@@ -159,6 +156,7 @@ void main() {
         autoTag: false,
         tagPrefix: '',
       ),
+      projectBranch: targetBranch,
       cleanBeforeBuild: false,
       dependencyOverrides: const <String, String>{},
       onProgress: (_, progress) {},
@@ -358,7 +356,6 @@ Future<void> _runBranchPipeline({
         MixbuildScenarioConfig(
           id: 'release-build',
           name: 'Release Build',
-          mainBranch: targetBranch,
           command: 'fvm flutter build macos --release',
         ),
       ],
@@ -376,7 +373,6 @@ Future<void> _runBranchPipeline({
       name: 'Release Build',
       subtitle: 'demo',
       environment: 'test',
-      mainBranch: targetBranch,
       command: 'fvm flutter build macos --release',
       status: BuildStatus.idle,
       progress: 0,
@@ -386,9 +382,10 @@ Future<void> _runBranchPipeline({
       autoTag: false,
       tagPrefix: '',
     ),
+    projectBranch: targetBranch,
     cleanBeforeBuild: cleanBeforeBuild,
     dependencyOverrides: const <String, String>{},
-    onProgress: (_, __) {},
+    onProgress: (_, _) {},
     onLog: (_) {},
   );
 }
@@ -437,6 +434,19 @@ class _FakeCommandRunner implements MixbuildCommandRunner {
     void Function(String line)? onStdout,
     void Function(String line)? onStderr,
   }) async {
+    if (arguments.length >= 6 &&
+        arguments[2] == 'branch' &&
+        arguments[3] == '-r' &&
+        arguments[4] == '--list') {
+      final branchName = arguments[5].replaceFirst('*/', '');
+      return CommandRunResult(
+        command: [executable, ...arguments].join(' '),
+        workingDirectory: workingDirectory,
+        exitCode: 0,
+        stdout: '  origin/$branchName\n',
+        stderr: '',
+      );
+    }
     return CommandRunResult(
       command: [executable, ...arguments].join(' '),
       workingDirectory: workingDirectory,

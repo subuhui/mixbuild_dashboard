@@ -803,7 +803,6 @@ class DashboardFooterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final strings = AppStrings.of(context);
     final scenarios = projects.expand((project) => project.scenarios).toList();
     final running =

@@ -370,7 +370,6 @@ class BuildScenario {
     required this.name,
     required this.subtitle,
     required this.environment,
-    required this.mainBranch,
     required this.command,
     required this.status,
     required this.progress,
@@ -386,7 +385,6 @@ class BuildScenario {
   final String name;
   final String subtitle;
   final String environment;
-  final String mainBranch;
   final String command;
   final BuildStatus status;
   final double progress;
@@ -402,7 +400,6 @@ class BuildScenario {
     String? name,
     String? subtitle,
     String? environment,
-    String? mainBranch,
     String? command,
     BuildStatus? status,
     double? progress,
@@ -418,7 +415,6 @@ class BuildScenario {
       name: name ?? this.name,
       subtitle: subtitle ?? this.subtitle,
       environment: environment ?? this.environment,
-      mainBranch: mainBranch ?? this.mainBranch,
       command: command ?? this.command,
       status: status ?? this.status,
       progress: progress ?? this.progress,

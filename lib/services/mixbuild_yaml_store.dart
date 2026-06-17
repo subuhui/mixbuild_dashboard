@@ -175,7 +175,6 @@ class MixbuildYamlStore {
         MixbuildScenarioConfig(
           id: 'default-debug-build',
           name: 'Debug Build',
-          mainBranch: 'main',
           command: 'fvm flutter build macos --debug',
           outputDir: 'build/macos/Build/Products/Debug',
         ),

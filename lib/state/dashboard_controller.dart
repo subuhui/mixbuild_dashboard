@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
+import 'package:mixbuild_dashboard/services/build_trigger_server.dart';
 import 'package:mixbuild_dashboard/services/build_execution_history_store.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_command_runner.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_engine.dart';
@@ -41,6 +42,25 @@ final buildExecutionHistoryStoreProvider =
 final dashboardControllerProvider =
     NotifierProvider<DashboardController, DashboardState>(
         DashboardController.new);
+
+final buildTriggerServerProvider = Provider<BuildTriggerServer>((ref) {
+  final controller = ref.read(dashboardControllerProvider.notifier);
+  final server = BuildTriggerServer(
+    onTrigger: (request) => controller.triggerBuildFromRequest(
+      projectName: request.project,
+      branch: request.branch,
+    ),
+  );
+  unawaited(
+    server.start().catchError((Object error, StackTrace stackTrace) {
+      controller.setBuildTriggerServerError(error);
+    }),
+  );
+  ref.onDispose(() {
+    unawaited(server.stop());
+  });
+  return server;
+});
 
 /// 仪表盘核心业务控制器，职责包括：
 ///
@@ -365,9 +385,6 @@ class DashboardController extends Notifier<DashboardState> {
       return MixbuildScenarioConfig(
         id: scenario.id,
         name: scenario.name,
-        mainBranch: scenario.mainBranch.trim().isEmpty
-            ? mainBinding.defaultBranch
-            : scenario.mainBranch.trim(),
         command: scenario.command,
         outputDir: scenario.outputPath.trim().isEmpty
             ? null
@@ -437,9 +454,6 @@ class DashboardController extends Notifier<DashboardState> {
       return MixbuildScenarioConfig(
         id: scenario.id,
         name: scenario.name,
-        mainBranch: scenario.mainBranch.trim().isEmpty
-            ? mainBinding.defaultBranch
-            : scenario.mainBranch.trim(),
         command: scenario.command,
         outputDir: scenario.outputPath.trim().isEmpty
             ? null
@@ -552,15 +566,89 @@ class DashboardController extends Notifier<DashboardState> {
       return;
     }
 
+    await _runScenarioPipeline(
+      config: state.config,
+      project: project,
+      scenario: scenario,
+      projectBranch: project.branch,
+      cleanBeforeBuild: state.cleanBeforeBuild[scenario.id] ?? false,
+    );
+  }
+
+  Future<RemoteBuildTriggerResult> triggerBuildFromRequest({
+    required String projectName,
+    required String branch,
+  }) async {
+    final normalizedBranch = branch.trim();
+    if (projectName.trim().isEmpty || normalizedBranch.isEmpty) {
+      return const RemoteBuildTriggerResult.rejected(
+        statusCode: HttpStatus.badRequest,
+        message: 'Project and branch are required',
+      );
+    }
+    if (state.runningCount > 0) {
+      return const RemoteBuildTriggerResult.rejected(
+        statusCode: HttpStatus.conflict,
+        message: 'A build is already running',
+      );
+    }
+
+    final project = _findProjectByName(projectName);
+    if (project == null) {
+      return RemoteBuildTriggerResult.rejected(
+        statusCode: HttpStatus.notFound,
+        message: 'Project not found: ${projectName.trim()}',
+      );
+    }
+    final match = _bestScenarioMatch(project.scenarios, normalizedBranch);
+    if (match == null) {
+      return RemoteBuildTriggerResult.rejected(
+        statusCode: HttpStatus.notFound,
+        message: 'No build scenarios found for project: ${project.name}',
+      );
+    }
+
+    unawaited(
+      _runScenarioPipeline(
+        config: configForProject(project),
+        project: project,
+        scenario: match.scenario,
+        projectBranch: normalizedBranch,
+        cleanBeforeBuild: state.cleanBeforeBuild[match.scenario.id] ?? false,
+      ),
+    );
+    return RemoteBuildTriggerResult.accepted(
+      projectName: project.name,
+      scenarioName: match.scenario.name,
+      branch: normalizedBranch,
+      score: match.score,
+    );
+  }
+
+  void setBuildTriggerServerError(Object error) {
+    if (_isDisposed) {
+      return;
+    }
+    state = state.copyWith(lastError: 'Build trigger server failed: $error');
+  }
+
+  Future<void> _runScenarioPipeline({
+    required MixbuildConfig config,
+    required ProjectBuild project,
+    required BuildScenario scenario,
+    required String projectBranch,
+    required bool cleanBeforeBuild,
+  }) async {
     _stopRequested = false;
-    _startExecution(project, scenario);
+    _startExecution(project, scenario, projectBranch: projectBranch);
     final queuedLogs = <LogEntry>[
       _log(
         level: 'INFO',
-        message: 'Queued pipeline for ${project.name} / ${scenario.name}',
+        message:
+            'Queued pipeline for ${project.name} / ${scenario.name} on $projectBranch',
         accent: MixBuildPalette.warning,
       ),
-      if (state.cleanBeforeBuild[scenario.id] ?? false)
+      if (cleanBeforeBuild)
         _log(
           level: 'INFO',
           message: 'Clean flag enabled. Build command will append --clean.',
@@ -587,12 +675,13 @@ class DashboardController extends Notifier<DashboardState> {
 
     try {
       await ref.read(mixbuildEngineProvider).runPipeline(
-            config: state.config,
-            project: state.selectedProject,
-            scenario: state.selectedScenario,
-            cleanBeforeBuild: state.cleanBeforeBuild[scenario.id] ?? false,
+            config: config,
+            project: project,
+            scenario: scenario,
+            projectBranch: projectBranch,
+            cleanBeforeBuild: cleanBeforeBuild,
             dependencyOverrides: {
-              for (final dependency in state.selectedScenario.dependencies)
+              for (final dependency in scenario.dependencies)
                 if (dependency.isOverride) dependency.name: dependency.branch,
             },
             onProgress: (status, progress) {
@@ -633,7 +722,6 @@ class DashboardController extends Notifier<DashboardState> {
         transform: (current) => current.copyWith(
           status: BuildStatus.failed,
           progress: 0,
-          mainBranch: project.branch,
           logs: [
             errorLog,
             ...current.logs,
@@ -750,7 +838,6 @@ class DashboardController extends Notifier<DashboardState> {
               name: 'Default Build',
               subtitle: 'YAML 中未定义构建场景',
               environment: config.workspace.name,
-              mainBranch: config.mainProject.defaultBranch,
               command: '',
               status: BuildStatus.idle,
               progress: 0,
@@ -774,7 +861,6 @@ class DashboardController extends Notifier<DashboardState> {
               name: scenarioConfig.name,
               subtitle: '由 YAML 场景驱动',
               environment: config.workspace.name,
-              mainBranch: scenarioConfig.mainBranch,
               command: scenarioConfig.command,
               status: BuildStatus.idle,
               progress: 0,
@@ -916,7 +1002,7 @@ class DashboardController extends Notifier<DashboardState> {
       final branch = overrideBranch ?? dependency.defaultBranch;
       return '  ${dependency.name}:\n    branch: $branch';
     }).join('\n');
-    return 'workspace:\n  root_path: ${config.workspace.rootPath}\nscenario:\n  name: ${scenarioConfig.name}\n  main_branch: ${scenarioConfig.mainBranch}\ndependencies:\n$dependencyLines\n';
+    return 'workspace:\n  root_path: ${config.workspace.rootPath}\nscenario:\n  name: ${scenarioConfig.name}\ndependencies:\n$dependencyLines\n';
   }
 
   IconData _dependencyIcon(MixbuildProjectType type, String dependencyName) {
@@ -1023,12 +1109,17 @@ class DashboardController extends Notifier<DashboardState> {
     });
   }
 
-  void _startExecution(ProjectBuild project, BuildScenario scenario) {
+  void _startExecution(
+    ProjectBuild project,
+    BuildScenario scenario, {
+    required String projectBranch,
+  }) {
     final taskId =
         '${DateTime.now().microsecondsSinceEpoch}-${project.id.hashCode}-${scenario.id}';
     final executionKey = _executionKey(project.id, scenario.id);
     _activeExecutions[executionKey] = _ActiveExecutionContext(
       executionId: taskId,
+      projectBranch: projectBranch,
     );
     state = state.copyWith(
       executionHistory: <BuildExecutionRecord>[
@@ -1039,9 +1130,7 @@ class DashboardController extends Notifier<DashboardState> {
           scenarioId: scenario.id,
           scenarioName: scenario.name,
           command: scenario.command,
-          branch: scenario.mainBranch.trim().isEmpty
-              ? project.branch
-              : scenario.mainBranch,
+          branch: projectBranch,
           status: BuildStatus.validating,
           startedAt: DateTime.now(),
         ),
@@ -1151,6 +1240,123 @@ class DashboardController extends Notifier<DashboardState> {
     return null;
   }
 
+  ProjectBuild? _findProjectByName(String projectName) {
+    final target = _normalizeMatchText(projectName);
+    for (final project in state.projects) {
+      final config = configForProject(project);
+      final names = <String>[
+        project.name,
+        config.workspace.name,
+        config.mainProject.name,
+      ];
+      if (names.any((name) => _normalizeMatchText(name) == target)) {
+        return project;
+      }
+    }
+    return null;
+  }
+
+  _ScenarioMatch? _bestScenarioMatch(
+    List<BuildScenario> scenarios,
+    String branch,
+  ) {
+    if (scenarios.isEmpty) {
+      return null;
+    }
+    final matches = scenarios.asMap().entries.map((entry) {
+      return _ScenarioMatch(
+        scenario: entry.value,
+        score: _scenarioNameSimilarity(entry.value.name, branch),
+        originalIndex: entry.key,
+      );
+    }).toList(growable: false)
+      ..sort((left, right) {
+        final scoreCompare = right.score.compareTo(left.score);
+        if (scoreCompare != 0) {
+          return scoreCompare;
+        }
+        return left.originalIndex.compareTo(right.originalIndex);
+      });
+    return matches.first;
+  }
+
+  double _scenarioNameSimilarity(String scenarioName, String branch) {
+    final scenarioTokens = _matchTokens(scenarioName);
+    final branchTokens = _matchTokens(branch);
+    if (scenarioTokens.isEmpty || branchTokens.isEmpty) {
+      return 0;
+    }
+    final scenarioJoined = scenarioTokens.join();
+    final branchJoined = branchTokens.join();
+    if (scenarioJoined == branchJoined) {
+      return 1;
+    }
+    if (scenarioJoined.contains(branchJoined) ||
+        branchJoined.contains(scenarioJoined)) {
+      return 0.9;
+    }
+
+    final scenarioSet = scenarioTokens.toSet();
+    final branchSet = branchTokens.toSet();
+    final overlap = branchSet.where(scenarioSet.contains).length;
+    final tokenScore = overlap / branchSet.length;
+    final diceScore = _diceCoefficient(scenarioJoined, branchJoined);
+    return tokenScore > diceScore ? tokenScore : diceScore;
+  }
+
+  List<String> _matchTokens(String value) {
+    return value
+        .toLowerCase()
+        .split(RegExp(r'[^a-z0-9]+'))
+        .where((token) => token.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  String _normalizeMatchText(String value) {
+    final tokens = _matchTokens(value);
+    return tokens.isEmpty ? value.trim().toLowerCase() : tokens.join();
+  }
+
+  double _diceCoefficient(String left, String right) {
+    if (left.isEmpty || right.isEmpty) {
+      return 0;
+    }
+    if (left == right) {
+      return 1;
+    }
+    final leftBigrams = _bigrams(left);
+    final rightBigrams = _bigrams(right);
+    if (leftBigrams.isEmpty || rightBigrams.isEmpty) {
+      return 0;
+    }
+    var matches = 0;
+    final remaining = Map<String, int>.from(rightBigrams);
+    for (final entry in leftBigrams.entries) {
+      final count = remaining[entry.key] ?? 0;
+      if (count == 0) {
+        continue;
+      }
+      final matched = entry.value < count ? entry.value : count;
+      matches += matched;
+      remaining[entry.key] = count - matched;
+    }
+    final totalLeft = leftBigrams.values.fold<int>(0, (sum, n) => sum + n);
+    final totalRight = rightBigrams.values.fold<int>(0, (sum, n) => sum + n);
+    return (2 * matches) / (totalLeft + totalRight);
+  }
+
+  Map<String, int> _bigrams(String value) {
+    if (value.length < 2) {
+      return <String, int>{value: 1};
+    }
+    final result = <String, int>{};
+    for (var i = 0; i < value.length - 1; i++) {
+      final bigram = value.substring(i, i + 2);
+      result[bigram] = (result[bigram] ?? 0) + 1;
+    }
+    return result;
+  }
+
   List<BuildExecutionRecord> _syncExecutionHistory({
     required List<BuildExecutionRecord> history,
     required String projectId,
@@ -1167,7 +1373,7 @@ class DashboardController extends Notifier<DashboardState> {
       }
       return record.copyWith(
         status: scenario.status,
-        branch: scenario.mainBranch,
+        branch: context.projectBranch,
         logs: List<LogEntry>.from(context.executionLogs, growable: false),
       );
     }).toList(growable: false);
@@ -1325,10 +1531,26 @@ class DashboardController extends Notifier<DashboardState> {
 }
 
 class _ActiveExecutionContext {
-  _ActiveExecutionContext({required this.executionId});
+  _ActiveExecutionContext({
+    required this.executionId,
+    required this.projectBranch,
+  });
 
   final String executionId;
+  final String projectBranch;
   final List<LogEntry> executionLogs = <LogEntry>[];
   final List<LogEntry> pendingLogs = <LogEntry>[];
   Timer? flushTimer;
+}
+
+class _ScenarioMatch {
+  const _ScenarioMatch({
+    required this.scenario,
+    required this.score,
+    required this.originalIndex,
+  });
+
+  final BuildScenario scenario;
+  final double score;
+  final int originalIndex;
 }
