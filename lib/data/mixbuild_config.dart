@@ -155,12 +155,9 @@ class MixbuildConfig {
         name: _asString(mainProjectMap['name'], field: 'main_project.name'),
         path: _asString(mainProjectMap['path'], field: 'main_project.path'),
         type: _parseProjectType(
-          _asString(mainProjectMap['type'], field: 'main_project.type'),
+          _asOptionalString(mainProjectMap['type']) ?? 'flutter',
         ),
-        defaultBranch: _asString(
-          mainProjectMap['default_branch'],
-          field: 'main_project.default_branch',
-        ),
+        defaultBranch: _asOptionalString(mainProjectMap['default_branch']) ?? 'main',
       ),
       dependencies: dependencyList.map((entry) {
         final item = _asMap(entry, field: 'dependencies[]');
@@ -168,12 +165,9 @@ class MixbuildConfig {
           name: _asString(item['name'], field: 'dependencies[].name'),
           path: _asString(item['path'], field: 'dependencies[].path'),
           type: _parseProjectType(
-            _asString(item['type'], field: 'dependencies[].type'),
+            _asOptionalString(item['type']) ?? 'android',
           ),
-          defaultBranch: _asString(
-            item['default_branch'],
-            field: 'dependencies[].default_branch',
-          ),
+          defaultBranch: _asOptionalString(item['default_branch']) ?? 'main',
           restoreCommand: _asOptionalString(item['restore_command']),
         );
       }).toList(growable: false),

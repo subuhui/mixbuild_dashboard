@@ -86,4 +86,32 @@ build_scenarios:
     final reopened = store.loadInitialConfigSync();
     expect(reopened.filePath, actualFile.path);
   });
+
+  test('parses yaml when default_branch and type are omitted in main_project and dependencies', () {
+    const yaml = '''
+workspace:
+  name: "Sample Workspace"
+  root_path: "/tmp/workspace"
+main_project:
+  name: "SampleApp"
+  path: "."
+dependencies:
+  - name: "dep1"
+    path: "modules/dep1"
+build_scenarios:
+  - name: "Debug Build"
+    command: "fvm flutter build macos --debug"
+''';
+
+    final config = MixbuildConfig.fromYaml(
+      filePath: '/tmp/sample.yaml',
+      content: yaml,
+    );
+
+    expect(config.mainProject.defaultBranch, 'main');
+    expect(config.mainProject.type, MixbuildProjectType.flutter);
+    expect(config.dependencies, hasLength(1));
+    expect(config.dependencies.first.defaultBranch, 'main');
+    expect(config.dependencies.first.type, MixbuildProjectType.android);
+  });
 }
