@@ -1946,25 +1946,39 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                       ),
                                     ),
                                     DropdownButtonHideUnderline(
-                                      child: DropdownButton<String>(
-                                        value:
-                                            _branches[dependency.projectName],
-                                        dropdownColor:
-                                            MixBuildPalette.surfaceHighest,
-                                        items: dependency.options.map((item) {
-                                          return DropdownMenuItem<String>(
-                                            value: item,
-                                            child: Text(item),
+                                      child: Builder(
+                                        builder: (context) {
+                                          final normalizedValue =
+                                              (_branches[dependency.projectName] ?? '').trim();
+                                          final normalizedOptions = <String>{
+                                            if (normalizedValue.isNotEmpty)
+                                              normalizedValue,
+                                            ...dependency.options.where(
+                                              (item) => item.trim().isNotEmpty,
+                                            ),
+                                          }.toList(growable: false);
+                                          return DropdownButton<String>(
+                                            value: normalizedValue.isEmpty
+                                                ? null
+                                                : normalizedValue,
+                                            dropdownColor:
+                                                MixBuildPalette.surfaceHighest,
+                                            items: normalizedOptions.map((item) {
+                                              return DropdownMenuItem<String>(
+                                                value: item,
+                                                child: Text(item),
+                                              );
+                                            }).toList(growable: false),
+                                            onChanged: (value) {
+                                              if (value == null) {
+                                                return;
+                                              }
+                                              setState(() {
+                                                _branches[dependency.projectName] =
+                                                    value;
+                                              });
+                                            },
                                           );
-                                        }).toList(growable: false),
-                                        onChanged: (value) {
-                                          if (value == null) {
-                                            return;
-                                          }
-                                          setState(() {
-                                            _branches[dependency.projectName] =
-                                                value;
-                                          });
                                         },
                                       ),
                                     ),
