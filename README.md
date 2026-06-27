@@ -86,22 +86,22 @@ main_project:
   name: "my_app"
   path: "./my_app"
   type: "flutter"
-  default_branch: "main"
   restore_command: "fvm flutter pub get"
 dependencies:
   - name: "shared_ui"
     path: "./shared_ui"
     type: "flutter"
-    default_branch: "develop"
     restore_command: "fvm flutter pub get"
 build_scenarios:
   - name: "Debug Build"
+    main_branch: "develop"
     command: "fvm flutter build macos --debug"
     output_dir: "build/macos/Build/Products/Debug"
     auto_tag: false
     dependency_overrides:
       shared_ui: "feature/new-components"
   - name: "Release Build"
+    main_branch: "main"
     command: "fvm flutter build macos --release"
     output_dir: "build/macos/Build/Products/Release"
     auto_tag: true
