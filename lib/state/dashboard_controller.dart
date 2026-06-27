@@ -377,6 +377,7 @@ class DashboardController extends Notifier<DashboardState> {
       return MixbuildScenarioConfig(
         id: scenario.id,
         name: scenario.name,
+        mainBranch: scenario.mainBranch,
         command: scenario.command,
         outputDir: scenario.outputPath.trim().isEmpty
             ? null
@@ -443,6 +444,7 @@ class DashboardController extends Notifier<DashboardState> {
       return MixbuildScenarioConfig(
         id: scenario.id,
         name: scenario.name,
+        mainBranch: scenario.mainBranch,
         command: scenario.command,
         outputDir: scenario.outputPath.trim().isEmpty
             ? null
@@ -829,6 +831,7 @@ class DashboardController extends Notifier<DashboardState> {
               outputPath: '',
               autoTag: false,
               tagPrefix: '',
+              mainBranch: '',
               yamlOverride: '',
               dependencies: const [],
               logs: [
@@ -852,6 +855,7 @@ class DashboardController extends Notifier<DashboardState> {
               outputPath: scenarioConfig.outputDir ?? '',
               autoTag: scenarioConfig.autoTag,
               tagPrefix: scenarioConfig.tagPrefix,
+              mainBranch: scenarioConfig.mainBranch,
               yamlOverride: _scenarioOverrideTemplate(config, scenarioConfig),
               dependencies: config.dependencies.map((dependency) {
                 final overrideBranch =

@@ -72,6 +72,7 @@ class MixbuildScenarioConfig {
   const MixbuildScenarioConfig({
     required this.id,
     required this.name,
+    required this.mainBranch,
     required this.command,
     this.outputDir,
     this.autoTag = false,
@@ -81,6 +82,7 @@ class MixbuildScenarioConfig {
 
   final String id;
   final String name;
+  final String mainBranch;
   final String command;
   final String? outputDir;
   final bool autoTag;
@@ -90,6 +92,7 @@ class MixbuildScenarioConfig {
   MixbuildScenarioConfig copyWith({
     String? id,
     String? name,
+    String? mainBranch,
     String? command,
     Object? outputDir = _sentinel,
     bool? autoTag,
@@ -99,6 +102,7 @@ class MixbuildScenarioConfig {
     return MixbuildScenarioConfig(
       id: id ?? this.id,
       name: name ?? this.name,
+      mainBranch: mainBranch ?? this.mainBranch,
       command: command ?? this.command,
       outputDir: outputDir == _sentinel ? this.outputDir : outputDir as String?,
       autoTag: autoTag ?? this.autoTag,
@@ -171,6 +175,7 @@ class MixbuildConfig {
         return MixbuildScenarioConfig(
           id: _slugify('${entry.key + 1}-$name'),
           name: name,
+          mainBranch: _asOptionalString(item['main_branch']) ?? '',
           command: _asOptionalString(item['command']) ?? '',
           outputDir: _asOptionalString(item['output_dir']),
           autoTag: item['auto_tag'] == true,
@@ -233,9 +238,11 @@ class MixbuildConfig {
 
     buffer.writeln('build_scenarios:');
     for (final scenario in buildScenarios) {
-      buffer
-        ..writeln('  - name: ${_quote(scenario.name)}')
-        ..writeln('    command: ${_quote(scenario.command)}');
+      buffer.writeln('  - name: ${_quote(scenario.name)}');
+      if (scenario.mainBranch.isNotEmpty) {
+        buffer.writeln('    main_branch: ${_quote(scenario.mainBranch)}');
+      }
+      buffer.writeln('    command: ${_quote(scenario.command)}');
       if (scenario.outputDir != null) {
         buffer.writeln('    output_dir: ${_quote(scenario.outputDir!)}');
       }

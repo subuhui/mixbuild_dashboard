@@ -52,6 +52,7 @@ void main() {
           MixbuildScenarioConfig(
             id: 'release-build',
             name: 'Release Build',
+            mainBranch: 'main',
             command: 'fvm flutter build macos --release',
           ),
         ],
@@ -77,6 +78,7 @@ void main() {
         outputPath: '',
         autoTag: false,
         tagPrefix: '',
+        mainBranch: 'main',
       ),
       projectBranch: 'main',
       cleanBeforeBuild: false,
@@ -128,6 +130,7 @@ void main() {
           MixbuildScenarioConfig(
             id: 'release-build',
             name: 'Release Build',
+            mainBranch: 'master',
             command: 'fvm flutter build macos --release',
           ),
         ],
@@ -153,6 +156,7 @@ void main() {
         outputPath: '',
         autoTag: false,
         tagPrefix: '',
+        mainBranch: 'master',
       ),
       projectBranch: targetBranch,
       cleanBeforeBuild: false,
@@ -353,6 +357,7 @@ Future<void> _runBranchPipeline({
         MixbuildScenarioConfig(
           id: 'release-build',
           name: 'Release Build',
+          mainBranch: 'master',
           command: 'fvm flutter build macos --release',
         ),
       ],
@@ -378,6 +383,7 @@ Future<void> _runBranchPipeline({
       outputPath: '',
       autoTag: false,
       tagPrefix: '',
+      mainBranch: 'master',
     ),
     projectBranch: targetBranch,
     cleanBeforeBuild: cleanBeforeBuild,

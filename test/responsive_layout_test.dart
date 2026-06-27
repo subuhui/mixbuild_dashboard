@@ -180,6 +180,7 @@ void main() {
                 outputPath: 'build/macos/Build/Products/Release',
                 autoTag: true,
                 tagPrefix: 'release_',
+                mainBranch: 'develop',
               ),
             ],
             baseDependencies: const <DependencyBranch>[
@@ -249,6 +250,7 @@ MixbuildConfig _seedConfig() {
       MixbuildScenarioConfig(
         id: 'release-build',
         name: 'Release Build',
+        mainBranch: 'develop',
         command: 'fvm flutter build macos --release',
         outputDir: 'build/macos/Build/Products/Release',
       ),

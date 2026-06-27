@@ -351,7 +351,7 @@ class _SidebarPanel extends StatelessWidget {
               ),
             ),
             child: Text(
-              project.branch,
+              scenario.mainBranch,
               style: MixBuildTheme.monoTextStyle(
                 fontSize: 13,
                 color: MixBuildPalette.foreground,
@@ -709,7 +709,7 @@ class _DependencyTree extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  project.branch,
+                  scenario.mainBranch,
                   style: MixBuildTheme.monoTextStyle(
                     fontSize: 10,
                     color: MixBuildPalette.muted,

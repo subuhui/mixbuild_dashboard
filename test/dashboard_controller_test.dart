@@ -106,6 +106,7 @@ void main() {
             outputPath: 'build/macos/Build/Products/Release',
             autoTag: true,
             tagPrefix: 'release_',
+            mainBranch: 'develop',
           ),
         ],
       );
@@ -380,6 +381,7 @@ MixbuildConfig _seedConfig() {
       MixbuildScenarioConfig(
         id: 'release-build',
         name: 'Release Build',
+        mainBranch: 'develop',
         command: 'fvm flutter build macos --release',
         outputDir: 'build/macos/Build/Products/Release',
       ),
@@ -405,11 +407,13 @@ MixbuildConfig _triggerSeedConfig() {
       MixbuildScenarioConfig(
         id: 'debug-build',
         name: 'Debug Build',
+        mainBranch: 'develop',
         command: 'fvm flutter build macos --debug',
       ),
       MixbuildScenarioConfig(
         id: 'release-build',
         name: 'Release Build',
+        mainBranch: 'develop',
         command: 'fvm flutter build macos --release',
       ),
     ],

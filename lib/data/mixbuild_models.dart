@@ -378,6 +378,7 @@ class BuildScenario {
     required this.outputPath,
     required this.autoTag,
     required this.tagPrefix,
+    required this.mainBranch,
     this.yamlOverride = '',
   });
 
@@ -393,6 +394,7 @@ class BuildScenario {
   final String outputPath;
   final bool autoTag;
   final String tagPrefix;
+  final String mainBranch;
   final String yamlOverride;
 
   BuildScenario copyWith({
@@ -408,6 +410,7 @@ class BuildScenario {
     String? outputPath,
     bool? autoTag,
     String? tagPrefix,
+    String? mainBranch,
     String? yamlOverride,
   }) {
     return BuildScenario(
@@ -423,6 +426,7 @@ class BuildScenario {
       outputPath: outputPath ?? this.outputPath,
       autoTag: autoTag ?? this.autoTag,
       tagPrefix: tagPrefix ?? this.tagPrefix,
+      mainBranch: mainBranch ?? this.mainBranch,
       yamlOverride: yamlOverride ?? this.yamlOverride,
     );
   }
