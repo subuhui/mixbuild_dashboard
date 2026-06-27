@@ -1776,7 +1776,7 @@ class AddScenarioDialog extends StatefulWidget {
 
 class _AddScenarioDialogState extends State<AddScenarioDialog> {
   late final TextEditingController _nameController;
-  late final TextEditingController _mainBranchController;
+  late String _mainBranch;
   late final TextEditingController _commandController;
   late final TextEditingController _outputController;
   late final TextEditingController _tagController;
@@ -1789,9 +1789,7 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
     _nameController = TextEditingController(
       text: widget.initialScenario?.name ?? 'Production_v1',
     );
-    _mainBranchController = TextEditingController(
-      text: widget.initialScenario?.mainBranch ?? '',
-    );
+    _mainBranch = widget.initialScenario?.mainBranch ?? '';
     _commandController = TextEditingController(
       text: widget.initialScenario?.command ?? './gradlew assembleRelease',
     );
@@ -1825,7 +1823,6 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
   @override
   void dispose() {
     _nameController.dispose();
-    _mainBranchController.dispose();
     _commandController.dispose();
     _outputController.dispose();
     _tagController.dispose();
@@ -1888,12 +1885,26 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                               labelText: strings.scenarioName,
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _mainBranchController,
+                          DropdownButtonFormField<String>(
+                            value: _mainBranch.isEmpty ? null : _mainBranch,
                             decoration: const InputDecoration(
                               labelText: '主项目分支 (main_branch)',
                             ),
+                            dropdownColor: MixBuildPalette.surfaceHighest,
+                            items: <String>{
+                              if (_mainBranch.isNotEmpty) _mainBranch,
+                              ...widget.mainProject.options,
+                            }.map((branch) {
+                              return DropdownMenuItem<String>(
+                                value: branch,
+                                child: Text(branch),
+                              );
+                            }).toList(growable: false),
+                            onChanged: (val) {
+                              setState(() {
+                                _mainBranch = val ?? '';
+                              });
+                            },
                           ),
                           const SizedBox(height: 12),
                           TextField(
@@ -2089,7 +2100,7 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                             status: widget.initialScenario?.status ??
                                 BuildStatus.idle,
                             progress: widget.initialScenario?.progress ?? 0,
-                            mainBranch: _mainBranchController.text.trim(),
+                            mainBranch: _mainBranch,
                             logs: widget.initialScenario?.logs ??
                                 [
                                   LogEntry(
