@@ -343,7 +343,7 @@ void main() {
       final controller =
           localContainer.read(dashboardControllerProvider.notifier);
       final result = await controller.triggerBuildFromRequest(
-        projectName: 'main_project',
+        scenarioName: 'Release Build',
         branch: 'release/v1.2',
       );
 
@@ -352,6 +352,178 @@ void main() {
       expect(result.branch, 'release/v1.2');
       expect(capturedScenarioName, 'Release Build');
       expect(capturedProjectBranch, 'release/v1.2');
+    });
+
+    test('triggerBuildFromRequest matches main project name and branch', () async {
+      store.saveConfigSync(_triggerSeedConfig());
+      String? capturedProjectBranch;
+      String? capturedScenarioName;
+      final fakeEngine = _FakeMixbuildEngine(
+        onRunPipelineImpl: ({
+          required config,
+          required project,
+          required scenario,
+          required projectBranch,
+          required cleanBeforeBuild,
+          required dependencyOverrides,
+          required onProgress,
+          required onLog,
+        }) async {
+          capturedProjectBranch = projectBranch;
+          capturedScenarioName = scenario.name;
+          onProgress(BuildStatus.success, 1.0);
+        },
+      );
+      final localContainer = ProviderContainer(
+        overrides: [
+          mixbuildYamlStoreProvider.overrideWithValue(store),
+          buildExecutionHistoryStoreProvider.overrideWithValue(historyStore),
+          systemResourceMonitorProvider.overrideWithValue(resourceMonitor),
+          mixbuildEngineProvider.overrideWithValue(fakeEngine),
+        ],
+      );
+      addTearDown(localContainer.dispose);
+
+      final controller = localContainer.read(dashboardControllerProvider.notifier);
+      final result = await controller.triggerBuildFromRequest(
+        projectName: 'main_project',
+        branch: 'develop',
+      );
+
+      expect(result.accepted, isTrue);
+      expect(result.scenarioName, 'Debug Build');
+      expect(result.branch, 'develop');
+      expect(capturedScenarioName, 'Debug Build');
+      expect(capturedProjectBranch, 'develop');
+    });
+
+    test('triggerBuildFromRequest matches dependency name and override branch', () async {
+      store.saveConfigSync(_dependencyTriggerSeedConfig());
+      String? capturedProjectBranch;
+      String? capturedScenarioName;
+      final fakeEngine = _FakeMixbuildEngine(
+        onRunPipelineImpl: ({
+          required config,
+          required project,
+          required scenario,
+          required projectBranch,
+          required cleanBeforeBuild,
+          required dependencyOverrides,
+          required onProgress,
+          required onLog,
+        }) async {
+          capturedProjectBranch = projectBranch;
+          capturedScenarioName = scenario.name;
+          onProgress(BuildStatus.success, 1.0);
+        },
+      );
+      final localContainer = ProviderContainer(
+        overrides: [
+          mixbuildYamlStoreProvider.overrideWithValue(store),
+          buildExecutionHistoryStoreProvider.overrideWithValue(historyStore),
+          systemResourceMonitorProvider.overrideWithValue(resourceMonitor),
+          mixbuildEngineProvider.overrideWithValue(fakeEngine),
+        ],
+      );
+      addTearDown(localContainer.dispose);
+
+      final controller = localContainer.read(dashboardControllerProvider.notifier);
+      final result = await controller.triggerBuildFromRequest(
+        projectName: 'common_ui',
+        branch: 'release/v1.0',
+      );
+
+      expect(result.accepted, isTrue);
+      expect(result.scenarioName, 'Release Build');
+      expect(result.branch, 'release/v1.0');
+      expect(capturedScenarioName, 'Release Build');
+      expect(capturedProjectBranch, 'release/v1.0');
+    });
+
+    test('triggerBuildFromRequest matches scenario name and dependency override branch', () async {
+      store.saveConfigSync(_dependencyTriggerSeedConfig());
+      String? capturedProjectBranch;
+      String? capturedScenarioName;
+      final fakeEngine = _FakeMixbuildEngine(
+        onRunPipelineImpl: ({
+          required config,
+          required project,
+          required scenario,
+          required projectBranch,
+          required cleanBeforeBuild,
+          required dependencyOverrides,
+          required onProgress,
+          required onLog,
+        }) async {
+          capturedProjectBranch = projectBranch;
+          capturedScenarioName = scenario.name;
+          onProgress(BuildStatus.success, 1.0);
+        },
+      );
+      final localContainer = ProviderContainer(
+        overrides: [
+          mixbuildYamlStoreProvider.overrideWithValue(store),
+          buildExecutionHistoryStoreProvider.overrideWithValue(historyStore),
+          systemResourceMonitorProvider.overrideWithValue(resourceMonitor),
+          mixbuildEngineProvider.overrideWithValue(fakeEngine),
+        ],
+      );
+      addTearDown(localContainer.dispose);
+
+      final controller = localContainer.read(dashboardControllerProvider.notifier);
+      final result = await controller.triggerBuildFromRequest(
+        scenarioName: 'Release Build',
+        branch: 'release/v1.0',
+      );
+
+      expect(result.accepted, isTrue);
+      expect(result.scenarioName, 'Release Build');
+      expect(result.branch, 'release/v1.0');
+      expect(capturedScenarioName, 'Release Build');
+      expect(capturedProjectBranch, 'release/v1.0');
+    });
+
+    test('triggerBuildFromRequest matches dependency name containing slashes by last segment', () async {
+      store.saveConfigSync(_slashDependencyTriggerSeedConfig());
+      String? capturedProjectBranch;
+      String? capturedScenarioName;
+      final fakeEngine = _FakeMixbuildEngine(
+        onRunPipelineImpl: ({
+          required config,
+          required project,
+          required scenario,
+          required projectBranch,
+          required cleanBeforeBuild,
+          required dependencyOverrides,
+          required onProgress,
+          required onLog,
+        }) async {
+          capturedProjectBranch = projectBranch;
+          capturedScenarioName = scenario.name;
+          onProgress(BuildStatus.success, 1.0);
+        },
+      );
+      final localContainer = ProviderContainer(
+        overrides: [
+          mixbuildYamlStoreProvider.overrideWithValue(store),
+          buildExecutionHistoryStoreProvider.overrideWithValue(historyStore),
+          systemResourceMonitorProvider.overrideWithValue(resourceMonitor),
+          mixbuildEngineProvider.overrideWithValue(fakeEngine),
+        ],
+      );
+      addTearDown(localContainer.dispose);
+
+      final controller = localContainer.read(dashboardControllerProvider.notifier);
+      final result = await controller.triggerBuildFromRequest(
+        projectName: 'common_ui',
+        branch: 'release/v1.0',
+      );
+
+      expect(result.accepted, isTrue);
+      expect(result.scenarioName, 'Release Build');
+      expect(result.branch, 'release/v1.0');
+      expect(capturedScenarioName, 'Release Build');
+      expect(capturedProjectBranch, 'release/v1.0');
     });
   });
 }
@@ -413,8 +585,48 @@ MixbuildConfig _triggerSeedConfig() {
       MixbuildScenarioConfig(
         id: 'release-build',
         name: 'Release Build',
+        mainBranch: 'release/v1.2',
+        command: 'fvm flutter build macos --release',
+      ),
+    ],
+  );
+}
+
+MixbuildConfig _dependencyTriggerSeedConfig() {
+  return const MixbuildConfig(
+    filePath: 'dep-trigger-seed.yaml',
+    workspace: MixbuildWorkspaceConfig(
+      name: 'workspace-demo',
+      rootPath: '/tmp/workspace-demo',
+    ),
+    mainProject: MixbuildRepoConfig(
+      name: 'main_project',
+      path: '.',
+      type: MixbuildProjectType.flutter,
+      restoreCommand: 'fvm flutter pub get',
+    ),
+    dependencies: <MixbuildRepoConfig>[
+      MixbuildRepoConfig(
+        name: 'common_ui',
+        path: 'modules/common_ui',
+        type: MixbuildProjectType.flutter,
+        restoreCommand: 'fvm flutter pub get',
+      ),
+    ],
+    buildScenarios: <MixbuildScenarioConfig>[
+      MixbuildScenarioConfig(
+        id: 'debug-build',
+        name: 'Debug Build',
+        mainBranch: 'develop',
+        command: 'fvm flutter build macos --debug',
+        dependencyOverrides: {'common_ui': 'feature/ui-new'},
+      ),
+      MixbuildScenarioConfig(
+        id: 'release-build',
+        name: 'Release Build',
         mainBranch: 'develop',
         command: 'fvm flutter build macos --release',
+        dependencyOverrides: {'common_ui': 'release/v1.0'},
       ),
     ],
   );
@@ -524,4 +736,37 @@ class _NoopCommandRunner implements MixbuildCommandRunner {
 
   @override
   String? which(String command) => '/mock/bin/$command';
+}
+
+MixbuildConfig _slashDependencyTriggerSeedConfig() {
+  return const MixbuildConfig(
+    filePath: 'slash-dep-trigger-seed.yaml',
+    workspace: MixbuildWorkspaceConfig(
+      name: 'workspace-demo',
+      rootPath: '/tmp/workspace-demo',
+    ),
+    mainProject: MixbuildRepoConfig(
+      name: 'main_project',
+      path: '.',
+      type: MixbuildProjectType.flutter,
+      restoreCommand: 'fvm flutter pub get',
+    ),
+    dependencies: <MixbuildRepoConfig>[
+      MixbuildRepoConfig(
+        name: 'code/common_ui',
+        path: 'modules/common_ui',
+        type: MixbuildProjectType.flutter,
+        restoreCommand: 'fvm flutter pub get',
+      ),
+    ],
+    buildScenarios: <MixbuildScenarioConfig>[
+      MixbuildScenarioConfig(
+        id: 'release-build',
+        name: 'Release Build',
+        mainBranch: 'develop',
+        command: 'fvm flutter build macos --release',
+        dependencyOverrides: {'code/common_ui': 'release/v1.0'},
+      ),
+    ],
+  );
 }

@@ -48,6 +48,7 @@ final buildTriggerServerProvider = Provider<BuildTriggerServer>((ref) {
   final server = BuildTriggerServer(
     onTrigger: (request) => controller.triggerBuildFromRequest(
       projectName: request.project,
+      scenarioName: request.scenario,
       branch: request.branch,
     ),
   );
@@ -566,14 +567,22 @@ class DashboardController extends Notifier<DashboardState> {
   }
 
   Future<RemoteBuildTriggerResult> triggerBuildFromRequest({
-    required String projectName,
+    String? projectName,
+    String? scenarioName,
     required String branch,
   }) async {
     final normalizedBranch = branch.trim();
-    if (projectName.trim().isEmpty || normalizedBranch.isEmpty) {
+    if ((projectName == null || projectName.trim().isEmpty) &&
+        (scenarioName == null || scenarioName.trim().isEmpty)) {
       return const RemoteBuildTriggerResult.rejected(
         statusCode: HttpStatus.badRequest,
-        message: 'Project and branch are required',
+        message: 'Scenario or project name is required',
+      );
+    }
+    if (normalizedBranch.isEmpty) {
+      return const RemoteBuildTriggerResult.rejected(
+        statusCode: HttpStatus.badRequest,
+        message: 'Branch is required',
       );
     }
     if (state.runningCount > 0) {
@@ -583,35 +592,52 @@ class DashboardController extends Notifier<DashboardState> {
       );
     }
 
-    final project = _findProjectByName(projectName);
-    if (project == null) {
-      return RemoteBuildTriggerResult.rejected(
-        statusCode: HttpStatus.notFound,
-        message: 'Project not found: ${projectName.trim()}',
+    _ScenarioAndProject? match;
+    if (scenarioName != null && scenarioName.trim().isNotEmpty) {
+      match = _findScenarioAndProjectByScenarioNameAndBranch(
+        scenarioName: scenarioName,
+        branch: normalizedBranch,
       );
+      if (match == null) {
+        return RemoteBuildTriggerResult.rejected(
+          statusCode: HttpStatus.notFound,
+          message: 'Scenario not found: ${scenarioName.trim()} with branch $normalizedBranch',
+        );
+      }
+    } else if (projectName != null && projectName.trim().isNotEmpty) {
+      match = _findScenarioAndProjectByProjectNameAndBranch(
+        projectName: projectName,
+        branch: normalizedBranch,
+      );
+      if (match == null) {
+        return RemoteBuildTriggerResult.rejected(
+          statusCode: HttpStatus.notFound,
+          message: 'No matching scenario found for project "${projectName.trim()}" and branch "$normalizedBranch"',
+        );
+      }
     }
-    final match = _bestScenarioMatch(project.scenarios, normalizedBranch);
+
     if (match == null) {
-      return RemoteBuildTriggerResult.rejected(
-        statusCode: HttpStatus.notFound,
-        message: 'No build scenarios found for project: ${project.name}',
+      return const RemoteBuildTriggerResult.rejected(
+        statusCode: HttpStatus.badRequest,
+        message: 'No match found',
       );
     }
 
     unawaited(
       _runScenarioPipeline(
-        config: configForProject(project),
-        project: project,
+        config: configForProject(match.project),
+        project: match.project,
         scenario: match.scenario,
         projectBranch: normalizedBranch,
         cleanBeforeBuild: state.cleanBeforeBuild[match.scenario.id] ?? false,
       ),
     );
     return RemoteBuildTriggerResult.accepted(
-      projectName: project.name,
+      projectName: match.project.name,
       scenarioName: match.scenario.name,
       branch: normalizedBranch,
-      score: match.score,
+      score: 1.0,
     );
   }
 
@@ -1225,8 +1251,19 @@ class DashboardController extends Notifier<DashboardState> {
     return null;
   }
 
+  String _lastSegment(String value) {
+    final trimmed = value.trim();
+    if (trimmed.contains('/')) {
+      final parts = trimmed.split('/').where((part) => part.isNotEmpty);
+      if (parts.isNotEmpty) {
+        return parts.last;
+      }
+    }
+    return trimmed;
+  }
+
   ProjectBuild? _findProjectByName(String projectName) {
-    final target = _normalizeMatchText(projectName);
+    final target = _normalizeMatchText(_lastSegment(projectName));
     for (final project in state.projects) {
       final config = configForProject(project);
       final names = <String>[
@@ -1234,10 +1271,79 @@ class DashboardController extends Notifier<DashboardState> {
         config.workspace.name,
         config.mainProject.name,
       ];
-      if (names.any((name) => _normalizeMatchText(name) == target)) {
+      if (names.any((name) => _normalizeMatchText(_lastSegment(name)) == target)) {
         return project;
       }
     }
+    return null;
+  }
+
+  _ScenarioAndProject? _findScenarioAndProjectByScenarioNameAndBranch({
+    required String scenarioName,
+    required String branch,
+  }) {
+    final target = _normalizeMatchText(scenarioName);
+    final targetBranch = _normalizeMatchText(branch);
+    for (final project in state.projects) {
+      for (final scenario in project.scenarios) {
+        if (_normalizeMatchText(scenario.name) == target) {
+          final matchesMainBranch = _normalizeMatchText(scenario.mainBranch) == targetBranch;
+          if (matchesMainBranch) {
+            return _ScenarioAndProject(scenario: scenario, project: project);
+          }
+
+          final matchesDependencyBranch = scenario.dependencies.any(
+            (dep) => _normalizeMatchText(dep.branch) == targetBranch,
+          );
+          if (matchesDependencyBranch) {
+            return _ScenarioAndProject(scenario: scenario, project: project);
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  _ScenarioAndProject? _findScenarioAndProjectByProjectNameAndBranch({
+    required String projectName,
+    required String branch,
+  }) {
+    final target = _normalizeMatchText(_lastSegment(projectName));
+    final targetBranch = _normalizeMatchText(branch);
+
+    for (final project in state.projects) {
+      final config = configForProject(project);
+
+      // Check if it's main project match
+      final isMainProjectMatch = _normalizeMatchText(_lastSegment(config.mainProject.name)) == target ||
+                                 _normalizeMatchText(_lastSegment(project.name)) == target ||
+                                 _normalizeMatchText(_lastSegment(config.workspace.name)) == target;
+
+      if (isMainProjectMatch) {
+        for (final scenario in project.scenarios) {
+          if (_normalizeMatchText(scenario.mainBranch) == targetBranch) {
+            return _ScenarioAndProject(scenario: scenario, project: project);
+          }
+        }
+      }
+
+      // Check if it's dependency match
+      final hasDependency = config.dependencies.any(
+        (dep) => _normalizeMatchText(_lastSegment(dep.name)) == target,
+      );
+
+      if (hasDependency) {
+        for (final scenario in project.scenarios) {
+          for (final dep in scenario.dependencies) {
+            if (_normalizeMatchText(_lastSegment(dep.name)) == target &&
+                _normalizeMatchText(dep.branch) == targetBranch) {
+              return _ScenarioAndProject(scenario: scenario, project: project);
+            }
+          }
+        }
+      }
+    }
+
     return null;
   }
 
@@ -1538,4 +1644,14 @@ class _ScenarioMatch {
   final BuildScenario scenario;
   final double score;
   final int originalIndex;
+}
+
+class _ScenarioAndProject {
+  const _ScenarioAndProject({
+    required this.scenario,
+    required this.project,
+  });
+
+  final BuildScenario scenario;
+  final ProjectBuild project;
 }

@@ -118,6 +118,45 @@ build_scenarios:
 | **BUILDING** | 执行场景的构建命令（可选 `--clean`） |
 | **POST_HOOK** | 自动打标签、打开输出目录、macOS 通知 |
 
+## 远程构建触发 (HTTP API)
+
+仪表盘内置了 HTTP 服务（默认监听 `8765` 端口），可以通过 `curl` 或 CI/CD 触发器远程拉起构建任务。
+
+### 通过 curl 触发构建
+
+你可以通过发送 `POST` 请求至 `/build` 端点，指定 **构建场景名称** 或 **项目名称** 来触发构建：
+
+```bash
+# 选项 A：通过特定的场景名称触发
+curl -X POST http://127.0.0.1:8765/build \
+  -H "Content-Type: application/json" \
+  -d '{"scenario": "Release Build", "branch": "release/v1.2"}'
+
+# 选项 B：通过项目/依赖项名称匹配触发
+curl -X POST http://127.0.0.1:8765/build \
+  -H "Content-Type: application/json" \
+  -d '{"project": "main_project", "branch": "develop"}'
+```
+
+#### 请求参数 (JSON)
+* `scenario` (可选*): 目标构建场景名称（例如 `"Release Build"`）。
+* `project` (可选*): 目标项目或依赖项名称。
+* `branch` (必填): 需要构建的 Git 分支。
+
+*\*注意：`scenario` 和 `project` 至少需要提供其中一个。*
+
+#### 匹配规则
+1. **若提供了 `scenario`**：服务端会依据场景名称在所有已加载的工作区配置中查找相匹配的场景，并验证该场景的 `main_branch` 是否与目标 `branch` 相同（以防止同名场景冲突）。
+2. **若提供了 `project`**：服务端会在所有工作区配置中匹配主项目名或任何依赖项名称（如果名字包含斜杠，例如 `code/module`，将只对比最后一段 `module`）：
+   * 若匹配到主项目，则在该配置下寻找 `main_branch` 与目标分支相匹配的构建场景执行。
+   * 若匹配到依赖项，则在该配置下寻找该依赖项的覆盖分支与目标分支相匹配的构建场景执行。
+
+#### 常见响应状态码
+* `202 Accepted`: 匹配成功并异步加入构建队列。
+* `400 Bad Request`: 请求的 JSON 格式不正确，或缺少 `scenario` / `project` / `branch` 字段。
+* `404 Not Found`: 找不到指定的构建场景或匹配的项目/分支配置。
+* `409 Conflict`: 当前已有构建流水线正在运行。
+
 ## 状态管理
 
 使用 [Riverpod](https://riverpod.dev/) 的 Notifier 模式：

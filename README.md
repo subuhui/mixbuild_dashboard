@@ -118,6 +118,45 @@ build_scenarios:
 | **BUILDING** | Executes the scenario's build command (with optional `--clean`) |
 | **POST_HOOK** | Auto-tag, open output directory, macOS notification |
 
+## Remote Build Trigger (HTTP API)
+
+The dashboard includes a built-in HTTP server (running on port `8765` by default) to trigger builds via external tools such as `curl` or CI/CD webhooks.
+
+### Triggering a Build via curl
+
+You can trigger a build scenario by sending a POST request to `/build` using either a specific **scenario name** or a **project name**:
+
+```bash
+# Option A: Trigger by specific Scenario Name
+curl -X POST http://127.0.0.1:8765/build \
+  -H "Content-Type: application/json" \
+  -d '{"scenario": "Release Build", "branch": "release/v1.2"}'
+
+# Option B: Trigger by Project Name
+curl -X POST http://127.0.0.1:8765/build \
+  -H "Content-Type: application/json" \
+  -d '{"project": "main_project", "branch": "develop"}'
+```
+
+#### Request Payload (JSON)
+* `scenario` (Optional*): Name of the build scenario to trigger (e.g. `"Release Build"`).
+* `project` (Optional*): Name of the project (can match the main project name or a dependency name).
+* `branch` (Required): The target Git branch to build.
+
+*\*Note: At least one of `scenario` or `project` must be provided.*
+
+#### Matching Behavior
+1. **If `scenario` is provided**: The server searches for the build scenario by name across all workspace configurations and ensures its `main_branch` matches the target `branch` (to prevent scenario name collisions).
+2. **If `project` is provided**: The server searches all loaded workspace configurations to see if the name matches the main project name or any dependency name (if a name contains slashes like `code/module`, only the last segment `module` is compared for matching):
+   * If it matches the main project, the server looks for a scenario where `main_branch` matches the target `branch`.
+   * If it matches a dependency, the server looks for a scenario where that dependency's overridden branch matches the target `branch`.
+
+#### HTTP Response Codes
+* `202 Accepted`: Build successfully matched and queued in the background.
+* `400 Bad Request`: Invalid JSON payload or missing parameters.
+* `404 Not Found`: Build scenario or matching project/branch configuration not found.
+* `409 Conflict`: Another build is already running.
+
 ## State Management
 
 Uses [Riverpod](https://riverpod.dev/) with the Notifier pattern:

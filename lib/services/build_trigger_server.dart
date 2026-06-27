@@ -8,11 +8,13 @@ typedef BuildTriggerHandler = Future<RemoteBuildTriggerResult> Function(
 
 class BuildTriggerRequest {
   const BuildTriggerRequest({
-    required this.project,
+    this.project,
+    this.scenario,
     required this.branch,
   });
 
-  final String project;
+  final String? project;
+  final String? scenario;
   final String branch;
 }
 
@@ -104,11 +106,22 @@ class BuildTriggerServer {
         return;
       }
       final project = decoded['project'];
+      final scenario = decoded['scenario'];
       final branch = decoded['branch'];
-      if (project is! String || project.trim().isEmpty) {
-        _writeBadRequest(request, 'Missing non-empty project');
+
+      if (project is! String? || scenario is! String?) {
+        _writeBadRequest(request, 'project and scenario must be string values');
         return;
       }
+
+      final hasProject = project != null && project.trim().isNotEmpty;
+      final hasScenario = scenario != null && scenario.trim().isNotEmpty;
+
+      if (!hasProject && !hasScenario) {
+        _writeBadRequest(request, 'Either scenario or project is required');
+        return;
+      }
+
       if (branch is! String || branch.trim().isEmpty) {
         _writeBadRequest(request, 'Missing non-empty branch');
         return;
@@ -116,7 +129,8 @@ class BuildTriggerServer {
 
       final result = await onTrigger(
         BuildTriggerRequest(
-          project: project.trim(),
+          project: hasProject ? project.trim() : null,
+          scenario: hasScenario ? scenario.trim() : null,
           branch: branch.trim(),
         ),
       );
