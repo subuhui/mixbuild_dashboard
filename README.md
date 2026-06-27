@@ -88,13 +88,11 @@ main_project:
   name: "my_app"
   path: "./my_app"
   type: "flutter"
-  default_branch: "main"
   restore_command: "fvm flutter pub get"
 dependencies:
   - name: "shared_ui"
     path: "./shared_ui"
     type: "flutter"
-    default_branch: "develop"
     restore_command: "fvm flutter pub get"
 build_scenarios:
   - name: "Debug Build"

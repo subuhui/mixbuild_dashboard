@@ -39,14 +39,12 @@ class MixbuildRepoConfig {
     required this.name,
     required this.path,
     required this.type,
-    required this.defaultBranch,
     this.restoreCommand,
   });
 
   final String name;
   final String path;
   final MixbuildProjectType type;
-  final String defaultBranch;
   final String? restoreCommand;
 
   String absolutePath(String workspaceRoot) {
@@ -57,14 +55,12 @@ class MixbuildRepoConfig {
     String? name,
     String? path,
     MixbuildProjectType? type,
-    String? defaultBranch,
     Object? restoreCommand = _sentinel,
   }) {
     return MixbuildRepoConfig(
       name: name ?? this.name,
       path: path ?? this.path,
       type: type ?? this.type,
-      defaultBranch: defaultBranch ?? this.defaultBranch,
       restoreCommand: restoreCommand == _sentinel
           ? this.restoreCommand
           : restoreCommand as String?,
@@ -170,10 +166,6 @@ class MixbuildConfig {
         type: _parseProjectType(
           _asString(mainProjectMap['type'], field: 'main_project.type'),
         ),
-        defaultBranch: _asString(
-          mainProjectMap['default_branch'],
-          field: 'main_project.default_branch',
-        ),
       ),
       dependencies: dependencyList
           .map((entry) {
@@ -183,10 +175,6 @@ class MixbuildConfig {
               path: _asString(item['path'], field: 'dependencies[].path'),
               type: _parseProjectType(
                 _asString(item['type'], field: 'dependencies[].type'),
-              ),
-              defaultBranch: _asString(
-                item['default_branch'],
-                field: 'dependencies[].default_branch',
               ),
               restoreCommand: _asOptionalString(item['restore_command']),
             );
@@ -204,12 +192,7 @@ class MixbuildConfig {
             return MixbuildScenarioConfig(
               id: _slugify('${entry.key + 1}-$name'),
               name: name,
-              mainBranch:
-                  _asOptionalString(item['main_branch']) ??
-                  _asString(
-                    mainProjectMap['default_branch'],
-                    field: 'main_project.default_branch',
-                  ),
+              mainBranch: _asOptionalString(item['main_branch']) ?? '',
               command: _asOptionalString(item['command']) ?? '',
               outputDir: _asOptionalString(item['output_dir']),
               autoTag: item['auto_tag'] == true,
@@ -265,15 +248,13 @@ class MixbuildConfig {
       ..writeln('  name: ${_quote(mainProject.name)}')
       ..writeln('  path: ${_quote(mainProject.path)}')
       ..writeln('  type: ${_quote(mainProject.type.name)}')
-      ..writeln('  default_branch: ${_quote(mainProject.defaultBranch)}')
       ..writeln('dependencies:');
 
     for (final dependency in dependencies) {
       buffer
         ..writeln('  - name: ${_quote(dependency.name)}')
         ..writeln('    path: ${_quote(dependency.path)}')
-        ..writeln('    type: ${_quote(dependency.type.name)}')
-        ..writeln('    default_branch: ${_quote(dependency.defaultBranch)}');
+        ..writeln('    type: ${_quote(dependency.type.name)}');
       if (dependency.restoreCommand != null) {
         buffer.writeln(
           '    restore_command: ${_quote(dependency.restoreCommand!)}',

@@ -105,7 +105,7 @@ class MixBuildRepository {
                 time: '17:51:11',
                 level: 'WARN',
                 message:
-                    'analytics_sdk missing same-name branch, fallback to default_branch',
+                    'analytics_sdk requested branch is unavailable remotely',
                 accent: MixBuildPalette.warning,
               ),
               LogEntry(
@@ -176,7 +176,7 @@ class MixBuildRepository {
                 time: '17:51:20',
                 level: 'WARN',
                 message:
-                    'webpack branch missing remotely, fallback to default_branch=main',
+                    'webpack requested branch is unavailable remotely',
                 accent: MixBuildPalette.warning,
               ),
             ],

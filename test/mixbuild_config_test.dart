@@ -14,7 +14,6 @@ main_project:
   name: "SampleApp"
   path: "."
   type: "flutter"
-  default_branch: "main"
 build_scenarios:
   - name: "Debug Build"
     main_branch: "release/main"
@@ -32,6 +31,38 @@ build_scenarios:
     expect(config.buildScenarios.single.mainBranch, 'release/main');
   });
 
+  test('parses and serializes yaml without removed branch fields', () {
+    const yaml = '''
+workspace:
+  name: "Driver"
+  root_path: "/tmp/workspace"
+main_project:
+  name: "android-driver"
+  path: "android-driver"
+  type: "android"
+dependencies:
+  - name: "driver-v2"
+    path: "driver-v2"
+    type: "android"
+build_scenarios:
+  - name: "Release"
+    main_branch: "release_26_07V1"
+    command: "./gradlew assembleRelease"
+    dependency_overrides:
+      driver-v2: "release_26_07V1"
+''';
+
+    final config = MixbuildConfig.fromYaml(
+      filePath: '/tmp/driver.yaml',
+      content: yaml,
+    );
+
+    expect(config.mainProject.name, 'android-driver');
+    expect(config.dependencies.single.name, 'driver-v2');
+    expect(config.buildScenarios.single.mainBranch, 'release_26_07V1');
+    expect(config.toYamlString(), isNot(contains('default_branch')));
+  });
+
   test('parses and serializes ios project type', () {
     const yaml = '''
 workspace:
@@ -41,12 +72,10 @@ main_project:
   name: "iOSApp"
   path: "./ios-app"
   type: "iOS"
-  default_branch: "main"
 dependencies:
   - name: "native_kit"
     path: "./native-kit"
     type: "ios"
-    default_branch: "develop"
     restore_command: "pod install"
 build_scenarios:
   - name: "Release Build"
@@ -72,7 +101,6 @@ main_project:
   name: "Mainé"
   path: "."
   type: "flutter"
-  default_branch: "main"
 build_scenarios:
   - name: "Scenario With Accents"
     command: "fvm flutter build macos --debug"
@@ -102,12 +130,10 @@ main_project:
   name: "SampleApp"
   path: "."
   type: "flutter"
-  default_branch: "main"
 dependencies:
   - name: "sharedé"
     path: "./shared"
     type: "flutter"
-    default_branch: "develop"
 build_scenarios:
   - name: "Scenario With Accents"
     command: "fvm flutter build macos --debug"
@@ -139,14 +165,12 @@ build_scenarios:
         name: 'SampleApp',
         path: '.',
         type: MixbuildProjectType.flutter,
-        defaultBranch: 'main',
       ),
       dependencies: const <MixbuildRepoConfig>[
         MixbuildRepoConfig(
           name: 'sharedé',
           path: './shared',
           type: MixbuildProjectType.flutter,
-          defaultBranch: 'develop',
         ),
       ],
       buildScenarios: const <MixbuildScenarioConfig>[
@@ -186,7 +210,6 @@ main_project:
   name: "SampleApp"
   path: "."
   type: "flutter"
-  default_branch: "main"
 build_scenarios:
   - name: "Debug Build"
     command: "fvm flutter build macos --debug"
@@ -200,12 +223,10 @@ main_project:
   name: "ActualApp"
   path: "ActualApp"
   type: "android"
-  default_branch: "develop"
 dependencies:
   - name: "common_ui"
     path: "modules/common_ui"
     type: "flutter"
-    default_branch: "main"
 build_scenarios:
   - name: "Release Build"
     command: "./gradlew assembleRelease"

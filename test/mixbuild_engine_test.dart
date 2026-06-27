@@ -47,7 +47,6 @@ void main() {
             name: 'app',
             path: 'app',
             type: MixbuildProjectType.flutter,
-            defaultBranch: 'main',
           ),
           dependencies: const <MixbuildRepoConfig>[],
           buildScenarios: const <MixbuildScenarioConfig>[
@@ -134,16 +133,14 @@ void main() {
           name: 'app',
           path: 'app',
           type: MixbuildProjectType.flutter,
-          defaultBranch: 'main',
         ),
         dependencies: const <MixbuildRepoConfig>[
           MixbuildRepoConfig(
             name: 'shared_ui',
             path: 'shared_ui',
             type: MixbuildProjectType.flutter,
-            defaultBranch: 'develop',
             restoreCommand:
-                r'echo {{dependency.name}} ${workspace.root_path} ${main_project.name} ${dependencies.shared_ui.default_branch}',
+                r'echo {{dependency.name}} ${workspace.root_path} ${main_project.name} ${dependency.branch}',
           ),
         ],
         buildScenarios: const <MixbuildScenarioConfig>[
@@ -191,7 +188,7 @@ void main() {
 
     expect(
       runner.shellCommands,
-      contains('echo shared_ui ${workspaceRoot.path} app develop'),
+      contains('echo shared_ui ${workspaceRoot.path} app feature/shared'),
     );
     expect(
       runner.shellCommands,
@@ -237,7 +234,6 @@ void main() {
               name: 'app',
               path: 'app',
               type: MixbuildProjectType.flutter,
-              defaultBranch: 'main',
             ),
             dependencies: const <MixbuildRepoConfig>[],
             buildScenarios: const <MixbuildScenarioConfig>[
@@ -322,7 +318,6 @@ void main() {
             name: 'app',
             path: 'app',
             type: MixbuildProjectType.flutter,
-            defaultBranch: 'master',
           ),
           dependencies: const <MixbuildRepoConfig>[],
           buildScenarios: const <MixbuildScenarioConfig>[
@@ -556,7 +551,6 @@ Future<void> _runBranchPipeline({
         name: 'app',
         path: 'app',
         type: MixbuildProjectType.flutter,
-        defaultBranch: 'master',
       ),
       dependencies: const <MixbuildRepoConfig>[],
       buildScenarios: <MixbuildScenarioConfig>[

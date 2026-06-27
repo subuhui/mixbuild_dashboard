@@ -497,14 +497,12 @@ class WorkspaceBinding {
     required this.projectName,
     required this.path,
     this.type,
-    this.defaultBranch,
     this.restoreCommand,
   });
 
   final String projectName;
   final String path;
   final MixbuildProjectType? type;
-  final String? defaultBranch;
   final String? restoreCommand;
 }
 
@@ -516,7 +514,6 @@ class ProjectBindingConfig {
     required this.projectName,
     required this.path,
     required this.type,
-    required this.defaultBranch,
     required this.restoreCommand,
     required this.isMainProject,
   });
@@ -524,7 +521,6 @@ class ProjectBindingConfig {
   final String projectName;
   final String path;
   final MixbuildProjectType type;
-  final String defaultBranch;
   final String? restoreCommand;
   final bool isMainProject;
 }
@@ -539,26 +535,21 @@ class GlobalConfig {
     required this.workspaceRoot,
     required this.activeProjectName,
     required this.bindings,
-    this.mainProjectDefaultBranch = 'main',
   });
 
   final String workspaceRoot;
   final String activeProjectName;
   final List<WorkspaceBinding> bindings;
-  final String mainProjectDefaultBranch;
 
   GlobalConfig copyWith({
     String? workspaceRoot,
     String? activeProjectName,
     List<WorkspaceBinding>? bindings,
-    String? mainProjectDefaultBranch,
   }) {
     return GlobalConfig(
       workspaceRoot: workspaceRoot ?? this.workspaceRoot,
       activeProjectName: activeProjectName ?? this.activeProjectName,
       bindings: bindings ?? this.bindings,
-      mainProjectDefaultBranch:
-          mainProjectDefaultBranch ?? this.mainProjectDefaultBranch,
     );
   }
 }

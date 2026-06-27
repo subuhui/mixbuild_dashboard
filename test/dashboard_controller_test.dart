@@ -76,7 +76,6 @@ void main() {
             projectName: 'main_project',
             path: '.',
             type: MixbuildProjectType.flutter,
-            defaultBranch: 'develop',
             restoreCommand: 'fvm flutter pub get',
             isMainProject: true,
           ),
@@ -84,7 +83,6 @@ void main() {
             projectName: 'common_ui',
             path: 'modules/common_ui',
             type: MixbuildProjectType.flutter,
-            defaultBranch: 'main',
             restoreCommand: 'fvm flutter pub get',
             isMainProject: false,
           ),
@@ -118,7 +116,6 @@ void main() {
         container.read(dashboardControllerProvider).config.filePath,
       );
 
-      expect(savedConfig.mainProject.defaultBranch, 'develop');
       expect(savedConfig.buildScenarios, hasLength(1));
       expect(
           savedConfig.buildScenarios.single.mainBranch, 'release/main-project');
@@ -323,7 +320,6 @@ MixbuildConfig _seedConfig() {
       name: 'main_project',
       path: '.',
       type: MixbuildProjectType.flutter,
-      defaultBranch: 'develop',
       restoreCommand: 'fvm flutter pub get',
     ),
     dependencies: <MixbuildRepoConfig>[
@@ -331,7 +327,6 @@ MixbuildConfig _seedConfig() {
         name: 'common_ui',
         path: 'modules/common_ui',
         type: MixbuildProjectType.flutter,
-        defaultBranch: 'main',
         restoreCommand: 'fvm flutter pub get',
       ),
     ],

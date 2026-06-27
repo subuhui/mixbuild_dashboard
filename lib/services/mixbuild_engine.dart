@@ -656,9 +656,7 @@ class MixbuildEngine {
     MixbuildRepoConfig? dependency,
     required Map<String, String> dependencyOverrides,
   }) {
-    final effectiveMainBranch = scenario.mainBranch.trim().isEmpty
-        ? config.mainProject.defaultBranch
-        : scenario.mainBranch;
+    final effectiveMainBranch = scenario.mainBranch;
     final values = <String, String>{
       'workspace.name': config.workspace.name,
       'workspace.root_path': config.workspace.rootPath,
@@ -668,7 +666,6 @@ class MixbuildEngine {
         config.workspace.rootPath,
       ),
       'main_project.type': config.mainProject.type.name,
-      'main_project.default_branch': config.mainProject.defaultBranch,
       'main_project.restore_command': config.mainProject.restoreCommand ?? '',
       'scenario.id': scenario.id,
       'scenario.name': scenario.name,
@@ -710,7 +707,6 @@ class MixbuildEngine {
     values['$prefix.path'] = repo.path;
     values['$prefix.absolute_path'] = repo.absolutePath(workspaceRoot);
     values['$prefix.type'] = repo.type.name;
-    values['$prefix.default_branch'] = repo.defaultBranch;
     values['$prefix.restore_command'] = repo.restoreCommand ?? '';
   }
 
