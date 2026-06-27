@@ -168,7 +168,6 @@ class MixbuildYamlStore {
         name: 'main_project',
         path: '.',
         type: MixbuildProjectType.flutter,
-        defaultBranch: 'main',
       ),
       dependencies: const [],
       buildScenarios: const [

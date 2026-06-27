@@ -144,7 +144,6 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   }
 
   List<_ProjectBindingDraft> _createBindingDrafts() {
-    final defaultBranch = widget.config.mainProjectDefaultBranch;
     if (widget.config.bindings.isEmpty) {
       return [
         _ProjectBindingDraft(
@@ -152,7 +151,6 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
           isMainProject: true,
           path: '.',
           type: MixbuildProjectType.flutter,
-          defaultBranch: defaultBranch,
           restoreCommand: null,
         ),
       ];
@@ -160,9 +158,6 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
     return widget.config.bindings.asMap().entries.map((entry) {
       final index = entry.key;
       final binding = entry.value;
-      final dependency = widget.baseDependencies.where(
-        (item) => item.name == binding.projectName,
-      );
       final isMainProject = index == 0;
       final inferredType =
           binding.type ?? _inferProjectType(binding.projectName, binding.path);
@@ -171,12 +166,6 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
         isMainProject: isMainProject,
         path: binding.path,
         type: inferredType,
-        defaultBranch: binding.defaultBranch ??
-            (isMainProject
-                ? defaultBranch
-                : (dependency.isNotEmpty
-                    ? dependency.first.branch
-                    : defaultBranch)),
         restoreCommand: isMainProject
             ? binding.restoreCommand
             : binding.restoreCommand ?? _defaultRestoreCommand(inferredType),
@@ -409,7 +398,6 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
         isMainProject: false,
         path: project.relativePath,
         type: _inferProjectType(project.name, project.relativePath),
-        defaultBranch: 'develop',
         restoreCommand: _defaultRestoreCommand(
           _inferProjectType(project.name, project.relativePath),
         ),
@@ -454,9 +442,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   DependencyBranch _dependencyBranchFromDraft(_ProjectBindingDraft draft) {
     return DependencyBranch(
       name: draft.projectName,
-      branch: draft.defaultBranchController.text.trim().isEmpty
-          ? 'develop'
-          : draft.defaultBranchController.text.trim(),
+      branch: 'main',
       icon: _dependencyIconForDraft(draft.type, draft.projectName),
     );
   }
@@ -492,7 +478,6 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
 
   Future<void> _refreshBranchOptionsForDraft(_ProjectBindingDraft draft) async {
     final absolutePath = _absolutePathForDraft(draft);
-    final preferredBranch = draft.defaultBranchController.text.trim();
     if (mounted) {
       setState(() {
         _loadingBranchDrafts.add(draft);
@@ -500,16 +485,11 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
     }
     final result = absolutePath == null
         ? GitBranchDiscoveryResult(
-            branches: <String>{
-              if (preferredBranch.isNotEmpty) preferredBranch,
-              'develop',
-              'main',
-              'master',
-            }.toList(growable: false),
+            branches: const <String>['develop', 'main', 'master'],
           )
         : await _gitBranchDiscovery.discoverBranches(
             absolutePath,
-            preferredBranch: preferredBranch,
+            preferredBranch: 'main',
           );
     if (!mounted) {
       return;
@@ -523,39 +503,18 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
       } else {
         _draftBranchWarnings[draft] = result.warningMessage!;
       }
-      if (draft.defaultBranchController.text.trim().isEmpty &&
-          result.branches.isNotEmpty) {
-        draft.defaultBranchController.text = result.branches.first;
-      }
     });
   }
 
   List<String> _branchOptionsForDraft(_ProjectBindingDraft draft) {
-    final currentBranch = draft.defaultBranchController.text.trim();
-    return <String>{
-      if (currentBranch.isNotEmpty) currentBranch,
-      ...?_draftBranchOptions[draft],
-    }.toList(growable: false);
-  }
-
-  void _setDraftDefaultBranch(_ProjectBindingDraft draft, String branch) {
-    setState(() {
-      draft.defaultBranchController.text = branch;
-      if (!draft.isMainProject) {
-        _replaceScenarioDependency(
-          previousName: draft.projectName,
-          nextDependency: _dependencyBranchFromDraft(draft),
-        );
-      }
-    });
+    return _draftBranchOptions[draft] ?? const <String>['develop', 'main', 'master'];
   }
 
   List<ScenarioBranchDraft> _scenarioDependencyDrafts({
     List<DependencyBranch>? scenarioDependencies,
   }) {
     return _dependencyDrafts.map((draft) {
-      final currentBranch = draft.defaultBranchController.text.trim();
-      var initialBranch = currentBranch.isEmpty ? 'develop' : currentBranch;
+      var initialBranch = 'main';
       if (scenarioDependencies != null) {
         for (final dependency in scenarioDependencies) {
           if (dependency.name == draft.projectName) {
@@ -582,11 +541,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
       builder: (context) => AddScenarioDialog(
         mainProject: ScenarioBranchDraft(
           projectName: _mainBindingDraft.projectName,
-          initialBranch: _mainBindingDraft.defaultBranchController.text
-                  .trim()
-                  .isEmpty
-              ? 'develop'
-              : _mainBindingDraft.defaultBranchController.text.trim(),
+          initialBranch: 'main',
           icon: _dependencyIconForDraft(
             _mainBindingDraft.type,
             _mainBindingDraft.projectName,
@@ -653,7 +608,6 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
               projectName: binding.projectName,
               path: binding.path,
               type: binding.type,
-              defaultBranch: binding.defaultBranch,
               restoreCommand: binding.restoreCommand,
             ),
           )
@@ -1008,21 +962,6 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
               ),
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _EditorFieldTile(
-              label: strings.mainBranchLabel,
-              child: _BranchSelectorField(
-                value: draft.defaultBranchController.text.trim(),
-                options: _branchOptionsForDraft(draft),
-                isLoading: _loadingBranchDrafts.contains(draft),
-                warningMessage: _draftBranchWarnings[draft],
-                onSelected: (value) => _setDraftDefaultBranch(draft, value),
-                onRefresh: () =>
-                    unawaited(_refreshBranchOptionsForDraft(draft)),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -1189,20 +1128,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                             },
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        SizedBox(
-                          width: 320,
-                          child: _BranchSelectorField(
-                            value: draft.defaultBranchController.text.trim(),
-                            options: _branchOptionsForDraft(draft),
-                            isLoading: _loadingBranchDrafts.contains(draft),
-                            warningMessage: _draftBranchWarnings[draft],
-                            onSelected: (value) =>
-                                _setDraftDefaultBranch(draft, value),
-                            onRefresh: () =>
-                                unawaited(_refreshBranchOptionsForDraft(draft)),
-                          ),
-                        ),
+
                         const SizedBox(width: 8),
                         IconButton(
                           tooltip: strings.dependencyRemoveTooltip,
@@ -1399,10 +1325,8 @@ class _ProjectBindingDraft {
     required this.isMainProject,
     required String path,
     required this.type,
-    required String defaultBranch,
     required String? restoreCommand,
   })  : pathController = TextEditingController(text: path),
-        defaultBranchController = TextEditingController(text: defaultBranch),
         restoreCommandController = TextEditingController(
           text: restoreCommand ?? '',
         );
@@ -1410,7 +1334,6 @@ class _ProjectBindingDraft {
   String projectName;
   final bool isMainProject;
   final TextEditingController pathController;
-  final TextEditingController defaultBranchController;
   final TextEditingController restoreCommandController;
   MixbuildProjectType type;
 
@@ -1419,9 +1342,6 @@ class _ProjectBindingDraft {
       projectName: projectName,
       path: pathController.text.trim(),
       type: type,
-      defaultBranch: defaultBranchController.text.trim().isEmpty
-          ? 'develop'
-          : defaultBranchController.text.trim(),
       restoreCommand: restoreCommandController.text.trim().isEmpty
           ? null
           : restoreCommandController.text.trim(),
@@ -1431,7 +1351,6 @@ class _ProjectBindingDraft {
 
   void dispose() {
     pathController.dispose();
-    defaultBranchController.dispose();
     restoreCommandController.dispose();
   }
 }

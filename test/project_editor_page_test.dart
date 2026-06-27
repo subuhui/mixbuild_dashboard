@@ -119,13 +119,11 @@ void main() {
                 projectName: 'app-main',
                 path: 'app-main',
                 type: MixbuildProjectType.android,
-                defaultBranch: 'main',
               ),
               WorkspaceBinding(
                 projectName: 'android-lib',
                 path: 'android-lib',
                 type: MixbuildProjectType.android,
-                defaultBranch: 'develop',
                 restoreCommand: './gradlew :lib:publishToMavenLocal',
               ),
             ],

@@ -46,7 +46,6 @@ void main() {
           name: 'app',
           path: 'app',
           type: MixbuildProjectType.flutter,
-          defaultBranch: 'main',
         ),
         dependencies: const <MixbuildRepoConfig>[],
         buildScenarios: const <MixbuildScenarioConfig>[
@@ -123,7 +122,6 @@ void main() {
           name: 'app',
           path: 'app',
           type: MixbuildProjectType.flutter,
-          defaultBranch: 'master',
         ),
         dependencies: const <MixbuildRepoConfig>[],
         buildScenarios: const <MixbuildScenarioConfig>[
@@ -349,7 +347,6 @@ Future<void> _runBranchPipeline({
         name: 'app',
         path: 'app',
         type: MixbuildProjectType.flutter,
-        defaultBranch: 'master',
       ),
       dependencies: const <MixbuildRepoConfig>[],
       buildScenarios: <MixbuildScenarioConfig>[

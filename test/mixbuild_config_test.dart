@@ -14,7 +14,6 @@ main_project:
   name: "SampleApp"
   path: "."
   type: "flutter"
-  default_branch: "main"
 build_scenarios:
   - name: "Debug Build"
     command: "fvm flutter build macos --debug"
@@ -50,7 +49,6 @@ main_project:
   name: "SampleApp"
   path: "."
   type: "flutter"
-  default_branch: "main"
 build_scenarios:
   - name: "Debug Build"
     command: "fvm flutter build macos --debug"
@@ -64,12 +62,10 @@ main_project:
   name: "ActualApp"
   path: "ActualApp"
   type: "android"
-  default_branch: "develop"
 dependencies:
   - name: "common_ui"
     path: "modules/common_ui"
     type: "flutter"
-    default_branch: "main"
 build_scenarios:
   - name: "Release Build"
     command: "./gradlew assembleRelease"
@@ -87,7 +83,7 @@ build_scenarios:
     expect(reopened.filePath, actualFile.path);
   });
 
-  test('parses yaml when default_branch and type are omitted in main_project and dependencies', () {
+  test('parses yaml when type is omitted in main_project and dependencies', () {
     const yaml = '''
 workspace:
   name: "Sample Workspace"
@@ -108,10 +104,8 @@ build_scenarios:
       content: yaml,
     );
 
-    expect(config.mainProject.defaultBranch, 'main');
     expect(config.mainProject.type, MixbuildProjectType.flutter);
     expect(config.dependencies, hasLength(1));
-    expect(config.dependencies.first.defaultBranch, 'main');
     expect(config.dependencies.first.type, MixbuildProjectType.android);
   });
 }

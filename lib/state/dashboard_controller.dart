@@ -128,7 +128,7 @@ class DashboardController extends Notifier<DashboardState> {
   List<String> branchOptions(ProjectBuild project) {
     return <String>{
       project.branch,
-      state.config.mainProject.defaultBranch,
+      'main',
       'master',
       'develop',
       'release/v1.0',
@@ -137,11 +137,8 @@ class DashboardController extends Notifier<DashboardState> {
   }
 
   List<String> dependencyBranchOptions(DependencyBranch dependency) {
-    final configDependency =
-        state.config.dependencies.where((item) => item.name == dependency.name);
     return <String>{
       dependency.branch,
-      if (configDependency.isNotEmpty) configDependency.first.defaultBranch,
       'master',
       'develop',
       'main',
@@ -165,7 +162,7 @@ class DashboardController extends Notifier<DashboardState> {
       final overrideBranch = scenarioOverrides[dependency.name];
       return DependencyBranch(
         name: dependency.name,
-        branch: selected?.branch ?? overrideBranch ?? dependency.defaultBranch,
+        branch: selected?.branch ?? overrideBranch ?? 'main',
         icon:
             selected?.icon ?? _dependencyIcon(dependency.type, dependency.name),
         highlight: selected?.highlight,
@@ -234,13 +231,11 @@ class DashboardController extends Notifier<DashboardState> {
       globalConfig: GlobalConfig(
         workspaceRoot: config.workspace.rootPath,
         activeProjectName: config.workspace.name,
-        mainProjectDefaultBranch: config.mainProject.defaultBranch,
         bindings: [
           WorkspaceBinding(
             projectName: config.mainProject.name,
             path: config.mainProject.path,
             type: config.mainProject.type,
-            defaultBranch: config.mainProject.defaultBranch,
             restoreCommand: config.mainProject.restoreCommand,
           ),
           ...config.dependencies.map(
@@ -248,7 +243,6 @@ class DashboardController extends Notifier<DashboardState> {
               projectName: d.name,
               path: d.path,
               type: d.type,
-              defaultBranch: d.defaultBranch,
               restoreCommand: d.restoreCommand,
             ),
           ),
@@ -356,7 +350,6 @@ class DashboardController extends Notifier<DashboardState> {
         projectName: baseConfig.mainProject.name,
         path: baseConfig.mainProject.path,
         type: baseConfig.mainProject.type,
-        defaultBranch: baseConfig.mainProject.defaultBranch,
         restoreCommand: baseConfig.mainProject.restoreCommand,
         isMainProject: true,
       ),
@@ -368,7 +361,6 @@ class DashboardController extends Notifier<DashboardState> {
         name: binding.projectName,
         path: binding.path,
         type: binding.type,
-        defaultBranch: binding.defaultBranch,
         restoreCommand: binding.restoreCommand,
       );
     }).toList(growable: false);
@@ -404,7 +396,6 @@ class DashboardController extends Notifier<DashboardState> {
         name: mainBinding.projectName,
         path: mainBinding.path,
         type: mainBinding.type,
-        defaultBranch: mainBinding.defaultBranch,
         restoreCommand: mainBinding.restoreCommand,
       ),
       dependencies: updatedDependencies,
@@ -429,11 +420,10 @@ class DashboardController extends Notifier<DashboardState> {
 
     final mainBinding = bindings.firstWhere(
       (binding) => binding.isMainProject,
-      orElse: () => ProjectBindingConfig(
+      orElse: () => const ProjectBindingConfig(
         projectName: 'new_project',
         path: '.',
         type: MixbuildProjectType.flutter,
-        defaultBranch: 'main',
         restoreCommand: null,
         isMainProject: true,
       ),
@@ -445,7 +435,6 @@ class DashboardController extends Notifier<DashboardState> {
         name: binding.projectName,
         path: binding.path,
         type: binding.type,
-        defaultBranch: binding.defaultBranch,
         restoreCommand: binding.restoreCommand,
       );
     }).toList(growable: false);
@@ -481,7 +470,6 @@ class DashboardController extends Notifier<DashboardState> {
         name: mainBinding.projectName,
         path: mainBinding.path,
         type: mainBinding.type,
-        defaultBranch: mainBinding.defaultBranch,
         restoreCommand: mainBinding.restoreCommand,
       ),
       dependencies: newDependencies,
@@ -800,13 +788,11 @@ class DashboardController extends Notifier<DashboardState> {
       globalConfig: GlobalConfig(
         workspaceRoot: activeConfig.workspace.rootPath,
         activeProjectName: activeConfig.workspace.name,
-        mainProjectDefaultBranch: activeConfig.mainProject.defaultBranch,
         bindings: [
           WorkspaceBinding(
             projectName: activeConfig.mainProject.name,
             path: activeConfig.mainProject.path,
             type: activeConfig.mainProject.type,
-            defaultBranch: activeConfig.mainProject.defaultBranch,
             restoreCommand: activeConfig.mainProject.restoreCommand,
           ),
           ...activeConfig.dependencies.map(
@@ -814,7 +800,6 @@ class DashboardController extends Notifier<DashboardState> {
               projectName: d.name,
               path: d.path,
               type: d.type,
-              defaultBranch: d.defaultBranch,
               restoreCommand: d.restoreCommand,
             ),
           ),
@@ -874,7 +859,7 @@ class DashboardController extends Notifier<DashboardState> {
                 final isOverride = overrideBranch != null;
                 return DependencyBranch(
                   name: dependency.name,
-                  branch: overrideBranch ?? dependency.defaultBranch,
+                  branch: overrideBranch ?? 'main',
                   icon: _dependencyIcon(dependency.type, dependency.name),
                   isOverride: isOverride,
                   highlight: isOverride ? MixBuildPalette.primary : null,
@@ -900,9 +885,8 @@ class DashboardController extends Notifier<DashboardState> {
       id: config.filePath,
       emoji: '📦',
       name: config.workspace.name,
-      description:
-          '${config.mainProject.type.name} / ${config.mainProject.defaultBranch}',
-      branch: config.mainProject.defaultBranch,
+      description: config.mainProject.type.name,
+      branch: 'main',
       scenarios: scenarios,
     );
   }
@@ -999,7 +983,7 @@ class DashboardController extends Notifier<DashboardState> {
     final dependencyLines = config.dependencies.map((dependency) {
       final overrideBranch =
           scenarioConfig.dependencyOverrides[dependency.name];
-      final branch = overrideBranch ?? dependency.defaultBranch;
+      final branch = overrideBranch ?? 'main';
       return '  ${dependency.name}:\n    branch: $branch';
     }).join('\n');
     return 'workspace:\n  root_path: ${config.workspace.rootPath}\nscenario:\n  name: ${scenarioConfig.name}\ndependencies:\n$dependencyLines\n';
@@ -1056,13 +1040,11 @@ class DashboardController extends Notifier<DashboardState> {
           GlobalConfig(
             workspaceRoot: config.workspace.rootPath,
             activeProjectName: config.workspace.name,
-            mainProjectDefaultBranch: config.mainProject.defaultBranch,
             bindings: [
               WorkspaceBinding(
                 projectName: config.mainProject.name,
                 path: config.mainProject.path,
                 type: config.mainProject.type,
-                defaultBranch: config.mainProject.defaultBranch,
                 restoreCommand: config.mainProject.restoreCommand,
               ),
               ...config.dependencies.map(
@@ -1070,7 +1052,6 @@ class DashboardController extends Notifier<DashboardState> {
                   projectName: d.name,
                   path: d.path,
                   type: d.type,
-                  defaultBranch: d.defaultBranch,
                   restoreCommand: d.restoreCommand,
                 ),
               ),

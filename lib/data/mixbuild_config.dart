@@ -36,14 +36,12 @@ class MixbuildRepoConfig {
     required this.name,
     required this.path,
     required this.type,
-    required this.defaultBranch,
     this.restoreCommand,
   });
 
   final String name;
   final String path;
   final MixbuildProjectType type;
-  final String defaultBranch;
   final String? restoreCommand;
 
   String absolutePath(String workspaceRoot) {
@@ -54,14 +52,12 @@ class MixbuildRepoConfig {
     String? name,
     String? path,
     MixbuildProjectType? type,
-    String? defaultBranch,
     Object? restoreCommand = _sentinel,
   }) {
     return MixbuildRepoConfig(
       name: name ?? this.name,
       path: path ?? this.path,
       type: type ?? this.type,
-      defaultBranch: defaultBranch ?? this.defaultBranch,
       restoreCommand: restoreCommand == _sentinel
           ? this.restoreCommand
           : restoreCommand as String?,
@@ -157,7 +153,6 @@ class MixbuildConfig {
         type: _parseProjectType(
           _asOptionalString(mainProjectMap['type']) ?? 'flutter',
         ),
-        defaultBranch: _asOptionalString(mainProjectMap['default_branch']) ?? 'main',
       ),
       dependencies: dependencyList.map((entry) {
         final item = _asMap(entry, field: 'dependencies[]');
@@ -167,7 +162,6 @@ class MixbuildConfig {
           type: _parseProjectType(
             _asOptionalString(item['type']) ?? 'android',
           ),
-          defaultBranch: _asOptionalString(item['default_branch']) ?? 'main',
           restoreCommand: _asOptionalString(item['restore_command']),
         );
       }).toList(growable: false),
@@ -223,15 +217,13 @@ class MixbuildConfig {
       ..writeln('  name: ${_quote(mainProject.name)}')
       ..writeln('  path: ${_quote(mainProject.path)}')
       ..writeln('  type: ${_quote(mainProject.type.name)}')
-      ..writeln('  default_branch: ${_quote(mainProject.defaultBranch)}')
       ..writeln('dependencies:');
 
     for (final dependency in dependencies) {
       buffer
         ..writeln('  - name: ${_quote(dependency.name)}')
         ..writeln('    path: ${_quote(dependency.path)}')
-        ..writeln('    type: ${_quote(dependency.type.name)}')
-        ..writeln('    default_branch: ${_quote(dependency.defaultBranch)}');
+        ..writeln('    type: ${_quote(dependency.type.name)}');
       if (dependency.restoreCommand != null) {
         buffer.writeln(
           '    restore_command: ${_quote(dependency.restoreCommand!)}',
