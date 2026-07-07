@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/l10n/app_strings.dart';
 import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
+import 'package:mixbuild_dashboard/state/server_config_controller.dart';
 import 'package:mixbuild_dashboard/state/theme_controller.dart';
 import 'package:mixbuild_dashboard/ui/dashboard_widgets.dart';
 
@@ -26,132 +28,139 @@ class SettingsPage extends ConsumerWidget {
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 880),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 16,
-                        ),
-                        decoration: MixBuildTheme.surfacePanel(
-                          context,
-                          radius: 20,
-                        ),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              icon: const Icon(Icons.arrow_back_ios_new),
-                              tooltip: strings.btnBack,
-                            ),
-                            const SizedBox(width: 8),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  strings.navSettings,
-                                  style: theme.textTheme.titleLarge,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  strings.settingsAppearanceSubtitle,
-                                  style: theme.textTheme.bodySmall,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(24),
-                        decoration: MixBuildTheme.surfacePanel(
-                          context,
-                          radius: 24,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              leading: Icon(
-                                Icons.palette_outlined,
-                                color: theme.colorScheme.primary,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
+                          decoration: MixBuildTheme.surfacePanel(
+                            context,
+                            radius: 20,
+                          ),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                icon: const Icon(Icons.arrow_back_ios_new),
+                                tooltip: strings.btnBack,
                               ),
-                              title: Text(
-                                strings.settingsAppearanceTitle,
-                                style: theme.textTheme.titleLarge,
-                              ),
-                              subtitle: Text(
-                                strings.settingsAppearanceSubtitle,
-                                style: theme.textTheme.bodySmall,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color:
-                                    MixBuildTheme.surfaceChromeColor(context),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Column(
+                              const SizedBox(width: 8),
+                              Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    strings.settingsAppearanceTitle,
-                                    style: theme.textTheme.titleMedium,
+                                    strings.navSettings,
+                                    style: theme.textTheme.titleLarge,
                                   ),
-                                  const SizedBox(height: 6),
+                                  const SizedBox(height: 2),
                                   Text(
-                                    strings.settingsThemeSectionNote,
+                                    strings.settingsAppearanceSubtitle,
                                     style: theme.textTheme.bodySmall,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  SegmentedButton<ThemeMode>(
-                                    showSelectedIcon: false,
-                                    segments: <ButtonSegment<ThemeMode>>[
-                                      ButtonSegment<ThemeMode>(
-                                        value: ThemeMode.system,
-                                        label:
-                                            Text(strings.settingsThemeSystem),
-                                        icon: const Icon(Icons.brightness_auto),
-                                      ),
-                                      ButtonSegment<ThemeMode>(
-                                        value: ThemeMode.light,
-                                        label: Text(strings.settingsThemeLight),
-                                        icon: const Icon(
-                                          Icons.light_mode_outlined,
-                                        ),
-                                      ),
-                                      ButtonSegment<ThemeMode>(
-                                        value: ThemeMode.dark,
-                                        label: Text(strings.settingsThemeDark),
-                                        icon: const Icon(
-                                          Icons.dark_mode_outlined,
-                                        ),
-                                      ),
-                                    ],
-                                    selected: <ThemeMode>{themeMode},
-                                    onSelectionChanged: (selection) {
-                                      if (selection.isNotEmpty) {
-                                        controller
-                                            .setThemeMode(selection.first);
-                                      }
-                                    },
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      _DataManagementPanel(),
-                    ],
+                        const SizedBox(height: 20),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(24),
+                          decoration: MixBuildTheme.surfacePanel(
+                            context,
+                            radius: 24,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: Icon(
+                                  Icons.palette_outlined,
+                                  color: theme.colorScheme.primary,
+                                ),
+                                title: Text(
+                                  strings.settingsAppearanceTitle,
+                                  style: theme.textTheme.titleLarge,
+                                ),
+                                subtitle: Text(
+                                  strings.settingsAppearanceSubtitle,
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color:
+                                      MixBuildTheme.surfaceChromeColor(context),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      strings.settingsAppearanceTitle,
+                                      style: theme.textTheme.titleMedium,
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      strings.settingsThemeSectionNote,
+                                      style: theme.textTheme.bodySmall,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    SegmentedButton<ThemeMode>(
+                                      showSelectedIcon: false,
+                                      segments: <ButtonSegment<ThemeMode>>[
+                                        ButtonSegment<ThemeMode>(
+                                          value: ThemeMode.system,
+                                          label:
+                                              Text(strings.settingsThemeSystem),
+                                          icon:
+                                              const Icon(Icons.brightness_auto),
+                                        ),
+                                        ButtonSegment<ThemeMode>(
+                                          value: ThemeMode.light,
+                                          label:
+                                              Text(strings.settingsThemeLight),
+                                          icon: const Icon(
+                                            Icons.light_mode_outlined,
+                                          ),
+                                        ),
+                                        ButtonSegment<ThemeMode>(
+                                          value: ThemeMode.dark,
+                                          label:
+                                              Text(strings.settingsThemeDark),
+                                          icon: const Icon(
+                                            Icons.dark_mode_outlined,
+                                          ),
+                                        ),
+                                      ],
+                                      selected: <ThemeMode>{themeMode},
+                                      onSelectionChanged: (selection) {
+                                        if (selection.isNotEmpty) {
+                                          controller
+                                              .setThemeMode(selection.first);
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const _BuildServerPanel(),
+                        const SizedBox(height: 16),
+                        _DataManagementPanel(),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -371,6 +380,269 @@ class _DataActionCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _BuildServerPanel extends ConsumerStatefulWidget {
+  const _BuildServerPanel();
+
+  @override
+  ConsumerState<_BuildServerPanel> createState() => _BuildServerPanelState();
+}
+
+class _BuildServerPanelState extends ConsumerState<_BuildServerPanel> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _portController;
+
+  @override
+  void initState() {
+    super.initState();
+    final currentPort = ref.read(buildTriggerPortControllerProvider);
+    _portController = TextEditingController(text: currentPort.toString());
+  }
+
+  @override
+  void dispose() {
+    _portController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppStrings.of(context);
+    final theme = Theme.of(context);
+    final dashboardState = ref.watch(dashboardControllerProvider);
+    final serverPort = ref.watch(buildTriggerPortControllerProvider);
+
+    final hasError = dashboardState.lastError != null &&
+        dashboardState.lastError!.startsWith('Build trigger server failed:');
+    final errorMessage = hasError ? dashboardState.lastError : null;
+
+    final curlProjectCmd =
+        'curl -X POST http://127.0.0.1:$serverPort/build \\\n'
+        '  -H "Content-Type: application/json" \\\n'
+        '  -d \'{"project": "mixbuild_dashboard", "branch": "main"}\'';
+
+    final curlScenarioCmd =
+        'curl -X POST http://127.0.0.1:$serverPort/build \\\n'
+        '  -H "Content-Type: application/json" \\\n'
+        '  -d \'{"scenario": "1-mixbuild-dashboard-release", "branch": "main"}\'';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: MixBuildTheme.surfacePanel(
+        context,
+        radius: 24,
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(
+                Icons.dns_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              title: Text(
+                strings.settingsServerTitle,
+                style: theme.textTheme.titleLarge,
+              ),
+              subtitle: Text(
+                strings.settingsServerSubtitle,
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: MixBuildTheme.surfaceChromeColor(context),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        strings.settingsServerStatus,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: hasError ? Colors.red : Colors.green,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          hasError
+                              ? strings.settingsServerStopped
+                              : '${strings.settingsServerRunning} (127.0.0.1:$serverPort)',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: hasError ? Colors.red : Colors.green,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (hasError && errorMessage != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      errorMessage,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.error,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _portController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: strings.settingsServerPortLabel,
+                            hintText: strings.settingsServerPortHint,
+                            border: const OutlineInputBorder(),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return strings.settingsServerPortInvalid;
+                            }
+                            final port = int.tryParse(value);
+                            if (port == null || port < 1024 || port > 65535) {
+                              return strings.settingsServerPortInvalid;
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: FilledButton.icon(
+                          onPressed: () {
+                            if (_formKey.currentState?.validate() ?? false) {
+                              final newPort = int.parse(_portController.text);
+                              ref
+                                  .read(buildTriggerPortControllerProvider
+                                      .notifier)
+                                  .setPort(newPort);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content:
+                                      Text(strings.settingsServerPortSuccess),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.restart_alt_outlined),
+                          label: Text(strings.settingsServerPortSave),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    strings.settingsServerCurlExample,
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    strings.settingsServerCurlProject,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  _CurlCodeBlock(curlCmd: curlProjectCmd),
+                  const SizedBox(height: 16),
+                  Text(
+                    strings.settingsServerCurlScenario,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  _CurlCodeBlock(curlCmd: curlScenarioCmd),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CurlCodeBlock extends StatelessWidget {
+  const _CurlCodeBlock({required this.curlCmd});
+
+  final String curlCmd;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 40),
+            child: SelectableText(
+              curlCmd,
+              style: const TextStyle(
+                fontFamily: 'Courier',
+                fontSize: 13,
+              ),
+            ),
+          ),
+          Positioned(
+            right: 0,
+            top: 0,
+            child: IconButton(
+              icon: const Icon(Icons.copy, size: 18),
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: curlCmd));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('已复制 Curl 命令示例'),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

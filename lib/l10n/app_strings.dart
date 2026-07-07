@@ -252,6 +252,21 @@ abstract class AppStrings {
   String buildLogsShowingLatest(int visible, int total);
   String buildLogsShowingMatches(int visible, int total);
   String buildLogsLoadOlder(int count);
+
+  // Build Server / Port Settings
+  String get settingsServerTitle;
+  String get settingsServerSubtitle;
+  String get settingsServerPortLabel;
+  String get settingsServerPortHint;
+  String get settingsServerPortInvalid;
+  String get settingsServerPortSave;
+  String get settingsServerPortSuccess;
+  String get settingsServerStatus;
+  String get settingsServerRunning;
+  String get settingsServerStopped;
+  String get settingsServerCurlExample;
+  String get settingsServerCurlProject;
+  String get settingsServerCurlScenario;
 }
 
 class AppLocalizationsDelegate extends LocalizationsDelegate<AppStrings> {

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
+import 'package:mixbuild_dashboard/services/build_notification_service.dart';
 import 'package:mixbuild_dashboard/services/build_trigger_server.dart';
 import 'package:mixbuild_dashboard/services/build_execution_history_store.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_command_runner.dart';
@@ -14,6 +15,7 @@ import 'package:mixbuild_dashboard/services/mixbuild_engine.dart';
 import 'package:mixbuild_dashboard/services/system_resource_monitor.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_yaml_store.dart';
 import 'package:mixbuild_dashboard/state/dashboard_state.dart';
+import 'package:mixbuild_dashboard/state/server_config_controller.dart';
 
 final mixbuildCommandRunnerProvider = Provider<MixbuildCommandRunner>((ref) {
   return ProcessRunCommandRunner();
@@ -38,6 +40,11 @@ final buildExecutionHistoryStoreProvider =
   return const BuildExecutionHistoryStore();
 });
 
+final buildNotificationServiceProvider =
+    Provider<BuildNotificationService>((ref) {
+  return const NativeBuildNotificationService();
+});
+
 /// 主状态控制器 provider，驱动整个仪表盘的业务逻辑。
 final dashboardControllerProvider =
     NotifierProvider<DashboardController, DashboardState>(
@@ -45,7 +52,9 @@ final dashboardControllerProvider =
 
 final buildTriggerServerProvider = Provider<BuildTriggerServer>((ref) {
   final controller = ref.read(dashboardControllerProvider.notifier);
+  final port = ref.watch(buildTriggerPortControllerProvider);
   final server = BuildTriggerServer(
+    port: port,
     onTrigger: (request) => controller.triggerBuildFromRequest(
       projectName: request.project,
       scenarioName: request.scenario,
@@ -53,7 +62,9 @@ final buildTriggerServerProvider = Provider<BuildTriggerServer>((ref) {
     ),
   );
   unawaited(
-    server.start().catchError((Object error, StackTrace stackTrace) {
+    server.start().then((_) {
+      controller.clearBuildTriggerServerError();
+    }).catchError((Object error, StackTrace stackTrace) {
       controller.setBuildTriggerServerError(error);
     }),
   );
@@ -557,11 +568,18 @@ class DashboardController extends Notifier<DashboardState> {
       return;
     }
 
+    final scenarioBranch = scenario.mainBranch.trim();
+    if (scenarioBranch.isEmpty) {
+      state = state.copyWith(
+        lastError: 'main_branch is required for scenario: ${scenario.name}',
+      );
+      return;
+    }
     await _runScenarioPipeline(
       config: state.config,
       project: project,
       scenario: scenario,
-      projectBranch: project.branch,
+      projectBranch: scenarioBranch,
       cleanBeforeBuild: state.cleanBeforeBuild[scenario.id] ?? false,
     );
   }
@@ -601,7 +619,8 @@ class DashboardController extends Notifier<DashboardState> {
       if (match == null) {
         return RemoteBuildTriggerResult.rejected(
           statusCode: HttpStatus.notFound,
-          message: 'Scenario not found: ${scenarioName.trim()} with branch $normalizedBranch',
+          message:
+              'Scenario not found: ${scenarioName.trim()} with branch $normalizedBranch',
         );
       }
     } else if (projectName != null && projectName.trim().isNotEmpty) {
@@ -612,7 +631,8 @@ class DashboardController extends Notifier<DashboardState> {
       if (match == null) {
         return RemoteBuildTriggerResult.rejected(
           statusCode: HttpStatus.notFound,
-          message: 'No matching scenario found for project "${projectName.trim()}" and branch "$normalizedBranch"',
+          message:
+              'No matching scenario found for project "${projectName.trim()}" and branch "$normalizedBranch"',
         );
       }
     }
@@ -648,6 +668,16 @@ class DashboardController extends Notifier<DashboardState> {
     state = state.copyWith(lastError: 'Build trigger server failed: $error');
   }
 
+  void clearBuildTriggerServerError() {
+    if (_isDisposed) {
+      return;
+    }
+    if (state.lastError != null &&
+        state.lastError!.startsWith('Build trigger server failed:')) {
+      state = state.copyWith(lastError: null);
+    }
+  }
+
   Future<void> _runScenarioPipeline({
     required MixbuildConfig config,
     required ProjectBuild project,
@@ -655,6 +685,7 @@ class DashboardController extends Notifier<DashboardState> {
     required String projectBranch,
     required bool cleanBeforeBuild,
   }) async {
+    final notificationService = ref.read(buildNotificationServiceProvider);
     _stopRequested = false;
     _startExecution(project, scenario, projectBranch: projectBranch);
     final queuedLogs = <LogEntry>[
@@ -749,12 +780,24 @@ class DashboardController extends Notifier<DashboardState> {
         scenarioId: scenario.id,
         status: BuildStatus.failed,
       );
+      await _notifyBuildFinished(
+        notificationService: notificationService,
+        projectName: project.name,
+        scenarioName: scenario.name,
+        status: BuildStatus.failed,
+      );
       state = state.copyWith(lastError: '$error');
       return;
     }
     await _finalizeExecution(
       projectId: project.id,
       scenarioId: scenario.id,
+      status: BuildStatus.success,
+    );
+    await _notifyBuildFinished(
+      notificationService: notificationService,
+      projectName: project.name,
+      scenarioName: scenario.name,
       status: BuildStatus.success,
     );
   }
@@ -765,6 +808,7 @@ class DashboardController extends Notifier<DashboardState> {
     ref.read(mixbuildEngineProvider).killActive();
     final project = state.selectedProject;
     final scenario = state.selectedScenario;
+    final notificationService = ref.read(buildNotificationServiceProvider);
     _flushExecutionLogs(project.id, scenario.id);
     final interruptionLog = _log(
       level: 'WARN',
@@ -793,7 +837,27 @@ class DashboardController extends Notifier<DashboardState> {
       projectId: project.id,
       scenarioId: scenario.id,
       status: BuildStatus.interrupted,
-    ));
+    ).then((_) {
+      return _notifyBuildFinished(
+        notificationService: notificationService,
+        projectName: project.name,
+        scenarioName: scenario.name,
+        status: BuildStatus.interrupted,
+      );
+    }));
+  }
+
+  Future<void> _notifyBuildFinished({
+    required BuildNotificationService notificationService,
+    required String projectName,
+    required String scenarioName,
+    required BuildStatus status,
+  }) {
+    return notificationService.notifyBuildFinished(
+      projectName: projectName,
+      scenarioName: scenarioName,
+      status: status,
+    );
   }
 
   DashboardState _stateFromConfigs(
@@ -1271,7 +1335,8 @@ class DashboardController extends Notifier<DashboardState> {
         config.workspace.name,
         config.mainProject.name,
       ];
-      if (names.any((name) => _normalizeMatchText(_lastSegment(name)) == target)) {
+      if (names
+          .any((name) => _normalizeMatchText(_lastSegment(name)) == target)) {
         return project;
       }
     }
@@ -1287,7 +1352,8 @@ class DashboardController extends Notifier<DashboardState> {
     for (final project in state.projects) {
       for (final scenario in project.scenarios) {
         if (_normalizeMatchText(scenario.name) == target) {
-          final matchesMainBranch = _normalizeMatchText(scenario.mainBranch) == targetBranch;
+          final matchesMainBranch =
+              _normalizeMatchText(scenario.mainBranch) == targetBranch;
           if (matchesMainBranch) {
             return _ScenarioAndProject(scenario: scenario, project: project);
           }
@@ -1315,9 +1381,12 @@ class DashboardController extends Notifier<DashboardState> {
       final config = configForProject(project);
 
       // Check if it's main project match
-      final isMainProjectMatch = _normalizeMatchText(_lastSegment(config.mainProject.name)) == target ||
-                                 _normalizeMatchText(_lastSegment(project.name)) == target ||
-                                 _normalizeMatchText(_lastSegment(config.workspace.name)) == target;
+      final isMainProjectMatch =
+          _normalizeMatchText(_lastSegment(config.mainProject.name)) ==
+                  target ||
+              _normalizeMatchText(_lastSegment(project.name)) == target ||
+              _normalizeMatchText(_lastSegment(config.workspace.name)) ==
+                  target;
 
       if (isMainProjectMatch) {
         for (final scenario in project.scenarios) {

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
+import 'package:mixbuild_dashboard/services/build_notification_service.dart';
 import 'package:mixbuild_dashboard/services/build_execution_history_store.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_command_runner.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_engine.dart';
@@ -15,6 +16,8 @@ import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
 import 'package:mixbuild_dashboard/state/dashboard_state.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('DashboardController', () {
     late Directory tempDir;
     late MixbuildYamlStore store;
@@ -136,6 +139,7 @@ void main() {
 
     test('triggerSelectedScenario stores execution history with task logs',
         () async {
+      final fakeNotificationService = _FakeBuildNotificationService();
       final fakeEngine = _FakeMixbuildEngine(
         onRunPipelineImpl: ({
           required config,
@@ -173,6 +177,8 @@ void main() {
           buildExecutionHistoryStoreProvider.overrideWithValue(historyStore),
           systemResourceMonitorProvider.overrideWithValue(resourceMonitor),
           mixbuildEngineProvider.overrideWithValue(fakeEngine),
+          buildNotificationServiceProvider
+              .overrideWithValue(fakeNotificationService),
         ],
       );
       addTearDown(localContainer.dispose);
@@ -201,6 +207,88 @@ void main() {
       final persistedHistory = historyStore.loadHistorySync();
       expect(persistedHistory, hasLength(1));
       expect(persistedHistory.first.status, BuildStatus.success);
+      expect(fakeNotificationService.notifications, hasLength(1));
+      expect(fakeNotificationService.notifications.single.projectName,
+          'workspace-demo');
+      expect(fakeNotificationService.notifications.single.scenarioName,
+          'Release Build');
+      expect(fakeNotificationService.notifications.single.status,
+          BuildStatus.success);
+    });
+
+    test('triggerSelectedScenario uses scenario main_branch for main project',
+        () async {
+      String? capturedProjectBranch;
+      final fakeEngine = _FakeMixbuildEngine(
+        onRunPipelineImpl: ({
+          required config,
+          required project,
+          required scenario,
+          required projectBranch,
+          required cleanBeforeBuild,
+          required dependencyOverrides,
+          required onProgress,
+          required onLog,
+        }) async {
+          capturedProjectBranch = projectBranch;
+          onProgress(BuildStatus.success, 1.0);
+        },
+      );
+      final localContainer = ProviderContainer(
+        overrides: [
+          mixbuildYamlStoreProvider.overrideWithValue(store),
+          buildExecutionHistoryStoreProvider.overrideWithValue(historyStore),
+          systemResourceMonitorProvider.overrideWithValue(resourceMonitor),
+          mixbuildEngineProvider.overrideWithValue(fakeEngine),
+        ],
+      );
+      addTearDown(localContainer.dispose);
+
+      final controller =
+          localContainer.read(dashboardControllerProvider.notifier);
+      await controller.triggerSelectedScenario();
+
+      expect(capturedProjectBranch, 'develop');
+    });
+
+    test('triggerSelectedScenario rejects missing scenario main_branch',
+        () async {
+      store.saveConfigSync(_emptyMainBranchSeedConfig());
+      var runPipelineCalled = false;
+      final fakeEngine = _FakeMixbuildEngine(
+        onRunPipelineImpl: ({
+          required config,
+          required project,
+          required scenario,
+          required projectBranch,
+          required cleanBeforeBuild,
+          required dependencyOverrides,
+          required onProgress,
+          required onLog,
+        }) async {
+          runPipelineCalled = true;
+        },
+      );
+      final localContainer = ProviderContainer(
+        overrides: [
+          mixbuildYamlStoreProvider.overrideWithValue(store),
+          buildExecutionHistoryStoreProvider.overrideWithValue(historyStore),
+          systemResourceMonitorProvider.overrideWithValue(resourceMonitor),
+          mixbuildEngineProvider.overrideWithValue(fakeEngine),
+        ],
+      );
+      addTearDown(localContainer.dispose);
+
+      final controller =
+          localContainer.read(dashboardControllerProvider.notifier);
+      await controller.triggerSelectedScenario();
+
+      final state = localContainer.read(dashboardControllerProvider);
+      expect(runPipelineCalled, isFalse);
+      expect(
+        state.lastError,
+        'main_branch is required for scenario: Release Build',
+      );
     });
 
     test('execution history is restored from local storage on startup', () {
@@ -354,7 +442,8 @@ void main() {
       expect(capturedProjectBranch, 'release/v1.2');
     });
 
-    test('triggerBuildFromRequest matches main project name and branch', () async {
+    test('triggerBuildFromRequest matches main project name and branch',
+        () async {
       store.saveConfigSync(_triggerSeedConfig());
       String? capturedProjectBranch;
       String? capturedScenarioName;
@@ -384,7 +473,8 @@ void main() {
       );
       addTearDown(localContainer.dispose);
 
-      final controller = localContainer.read(dashboardControllerProvider.notifier);
+      final controller =
+          localContainer.read(dashboardControllerProvider.notifier);
       final result = await controller.triggerBuildFromRequest(
         projectName: 'main_project',
         branch: 'develop',
@@ -397,7 +487,8 @@ void main() {
       expect(capturedProjectBranch, 'develop');
     });
 
-    test('triggerBuildFromRequest matches dependency name and override branch', () async {
+    test('triggerBuildFromRequest matches dependency name and override branch',
+        () async {
       store.saveConfigSync(_dependencyTriggerSeedConfig());
       String? capturedProjectBranch;
       String? capturedScenarioName;
@@ -427,7 +518,8 @@ void main() {
       );
       addTearDown(localContainer.dispose);
 
-      final controller = localContainer.read(dashboardControllerProvider.notifier);
+      final controller =
+          localContainer.read(dashboardControllerProvider.notifier);
       final result = await controller.triggerBuildFromRequest(
         projectName: 'common_ui',
         branch: 'release/v1.0',
@@ -440,7 +532,9 @@ void main() {
       expect(capturedProjectBranch, 'release/v1.0');
     });
 
-    test('triggerBuildFromRequest matches scenario name and dependency override branch', () async {
+    test(
+        'triggerBuildFromRequest matches scenario name and dependency override branch',
+        () async {
       store.saveConfigSync(_dependencyTriggerSeedConfig());
       String? capturedProjectBranch;
       String? capturedScenarioName;
@@ -470,7 +564,8 @@ void main() {
       );
       addTearDown(localContainer.dispose);
 
-      final controller = localContainer.read(dashboardControllerProvider.notifier);
+      final controller =
+          localContainer.read(dashboardControllerProvider.notifier);
       final result = await controller.triggerBuildFromRequest(
         scenarioName: 'Release Build',
         branch: 'release/v1.0',
@@ -483,7 +578,9 @@ void main() {
       expect(capturedProjectBranch, 'release/v1.0');
     });
 
-    test('triggerBuildFromRequest matches dependency name containing slashes by last segment', () async {
+    test(
+        'triggerBuildFromRequest matches dependency name containing slashes by last segment',
+        () async {
       store.saveConfigSync(_slashDependencyTriggerSeedConfig());
       String? capturedProjectBranch;
       String? capturedScenarioName;
@@ -513,7 +610,8 @@ void main() {
       );
       addTearDown(localContainer.dispose);
 
-      final controller = localContainer.read(dashboardControllerProvider.notifier);
+      final controller =
+          localContainer.read(dashboardControllerProvider.notifier);
       final result = await controller.triggerBuildFromRequest(
         projectName: 'common_ui',
         branch: 'release/v1.0',
@@ -586,6 +684,31 @@ MixbuildConfig _triggerSeedConfig() {
         id: 'release-build',
         name: 'Release Build',
         mainBranch: 'release/v1.2',
+        command: 'fvm flutter build macos --release',
+      ),
+    ],
+  );
+}
+
+MixbuildConfig _emptyMainBranchSeedConfig() {
+  return const MixbuildConfig(
+    filePath: 'empty-main-branch-seed.yaml',
+    workspace: MixbuildWorkspaceConfig(
+      name: 'workspace-demo',
+      rootPath: '/tmp/workspace-demo',
+    ),
+    mainProject: MixbuildRepoConfig(
+      name: 'main_project',
+      path: '.',
+      type: MixbuildProjectType.flutter,
+      restoreCommand: 'fvm flutter pub get',
+    ),
+    dependencies: <MixbuildRepoConfig>[],
+    buildScenarios: <MixbuildScenarioConfig>[
+      MixbuildScenarioConfig(
+        id: 'release-build',
+        name: 'Release Build',
+        mainBranch: '',
         command: 'fvm flutter build macos --release',
       ),
     ],
@@ -690,6 +813,35 @@ class _FakeMixbuildEngine extends MixbuildEngine {
       onLog: onLog,
     );
   }
+}
+
+class _FakeBuildNotificationService implements BuildNotificationService {
+  final notifications = <_BuildNotificationCall>[];
+
+  @override
+  Future<void> notifyBuildFinished({
+    required String projectName,
+    required String scenarioName,
+    required BuildStatus status,
+  }) async {
+    notifications.add(_BuildNotificationCall(
+      projectName: projectName,
+      scenarioName: scenarioName,
+      status: status,
+    ));
+  }
+}
+
+class _BuildNotificationCall {
+  const _BuildNotificationCall({
+    required this.projectName,
+    required this.scenarioName,
+    required this.status,
+  });
+
+  final String projectName;
+  final String scenarioName;
+  final BuildStatus status;
 }
 
 class _NoopCommandRunner implements MixbuildCommandRunner {

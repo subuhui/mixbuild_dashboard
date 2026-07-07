@@ -476,4 +476,32 @@ class AppStringsEn extends AppStrings {
       'Showing $visible of $total matching logs';
   @override
   String buildLogsLoadOlder(int count) => 'Load older ($count)';
+
+  // Build Server / Port Settings
+  @override
+  String get settingsServerTitle => 'Build Server';
+  @override
+  String get settingsServerSubtitle => 'Manage local build trigger server port and status.';
+  @override
+  String get settingsServerPortLabel => 'Server Port';
+  @override
+  String get settingsServerPortHint => 'Enter server port (1024-65535)';
+  @override
+  String get settingsServerPortInvalid => 'Please enter a valid port number (1024-65535)';
+  @override
+  String get settingsServerPortSave => 'Save & Restart';
+  @override
+  String get settingsServerPortSuccess => 'Build server port updated and restarted successfully!';
+  @override
+  String get settingsServerStatus => 'Service Status';
+  @override
+  String get settingsServerRunning => 'Running';
+  @override
+  String get settingsServerStopped => 'Stopped';
+  @override
+  String get settingsServerCurlExample => 'Curl Trigger Example';
+  @override
+  String get settingsServerCurlProject => 'A. Trigger by Project Name (Default):';
+  @override
+  String get settingsServerCurlScenario => 'B. Trigger by Build Scenario Name:';
 }

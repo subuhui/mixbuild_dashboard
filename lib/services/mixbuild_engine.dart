@@ -347,19 +347,6 @@ class MixbuildEngine {
       }
     }
 
-    if (Platform.isMacOS) {
-      await _runner.run(
-        "osascript -e 'display notification \"Build finished\" with title \"MixBuild Dashboard\"'",
-        workingDirectory: workingDirectory,
-      );
-      onLog(
-        _entry(
-          level: 'INFO',
-          message: 'macOS notification dispatched.',
-          accent: MixBuildPalette.success,
-        ),
-      );
-    }
   }
 
   Future<void> _runGitSync({

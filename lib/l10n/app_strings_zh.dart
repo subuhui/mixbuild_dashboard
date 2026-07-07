@@ -455,4 +455,32 @@ class AppStringsZh extends AppStrings {
       '显示匹配结果 $visible / $total 条';
   @override
   String buildLogsLoadOlder(int count) => '加载更早日志 ($count)';
+
+  // Build Server / Port Settings
+  @override
+  String get settingsServerTitle => '构建服务配置';
+  @override
+  String get settingsServerSubtitle => '管理本地构建触发服务的端口与运行状态。';
+  @override
+  String get settingsServerPortLabel => '构建服务端口';
+  @override
+  String get settingsServerPortHint => '请输入服务端口 (1024-65535)';
+  @override
+  String get settingsServerPortInvalid => '请输入合法的端口号 (1024-65535)';
+  @override
+  String get settingsServerPortSave => '保存并重启服务';
+  @override
+  String get settingsServerPortSuccess => '构建服务端口已成功修改并重启！';
+  @override
+  String get settingsServerStatus => '运行状态';
+  @override
+  String get settingsServerRunning => '运行中';
+  @override
+  String get settingsServerStopped => '已停止';
+  @override
+  String get settingsServerCurlExample => 'Curl 触发示例';
+  @override
+  String get settingsServerCurlProject => 'A. 通过项目名称触发（默认）：';
+  @override
+  String get settingsServerCurlScenario => 'B. 通过构建场景触发：';
 }
