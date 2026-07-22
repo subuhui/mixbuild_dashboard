@@ -216,7 +216,7 @@ class _BuildExecutionHistoryList extends StatelessWidget {
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: records.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 10),
+        separatorBuilder: (context, index) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
           final record = records[index];
           final selected = record.id == selectedExecutionId;
@@ -416,7 +416,7 @@ class _BuildExecutionLogDetail extends StatelessWidget {
                         padding: const EdgeInsets.all(18),
                         itemCount:
                             visibleLogs.length + (hiddenLogCount > 0 ? 1 : 0),
-                        separatorBuilder: (_, _) => const SizedBox(height: 6),
+                        separatorBuilder: (context, index) => const SizedBox(height: 6),
                         itemBuilder: (context, index) {
                           if (index == visibleLogs.length) {
                             return Align(

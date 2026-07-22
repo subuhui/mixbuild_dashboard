@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
+import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 
 /// 静态示例数据仓库，提供开发/演示用的项目、指标和全局配置。
@@ -14,6 +15,7 @@ class MixBuildRepository {
         name: '项目 A：物流核心平台',
         description: '隔离打包区',
         branch: 'release/v1.0',
+        type: MixbuildProjectType.flutter,
         scenarios: [
           BuildScenario(
             id: 'a-debug',
@@ -123,6 +125,7 @@ class MixBuildRepository {
         name: '项目 B：供应链管理系统',
         description: '依赖扫描中',
         branch: 'develop',
+        type: MixbuildProjectType.android,
         scenarios: [
           BuildScenario(
             id: 'b-auto-test',

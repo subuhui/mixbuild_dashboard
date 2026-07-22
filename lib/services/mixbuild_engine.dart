@@ -32,7 +32,35 @@ class MixbuildEngine {
 
   final MixbuildCommandRunner _runner;
 
-  bool killActive() => _runner.killActive();
+  bool killActive({MixbuildProjectType? projectType, String? workingDirectory}) {
+    final killed = _runner.killActive();
+    if (projectType == MixbuildProjectType.android && workingDirectory != null) {
+      _stopGradleDaemon(workingDirectory);
+    }
+    return killed;
+  }
+
+  void _stopGradleDaemon(String workingDirectory) {
+    try {
+      final isWindows = Platform.isWindows;
+      final gradlewExecutable = isWindows ? 'gradlew.bat' : './gradlew';
+      final gradlewFile = File(p.join(workingDirectory, gradlewExecutable));
+      final command = gradlewFile.existsSync()
+          ? (isWindows ? 'gradlew.bat --stop' : './gradlew --stop')
+          : 'gradle --stop';
+      _runner.run(command, workingDirectory: workingDirectory).catchError((_) {
+        return const CommandRunResult(
+          command: '',
+          workingDirectory: '',
+          exitCode: -1,
+          stdout: '',
+          stderr: '',
+        );
+      });
+    } catch (_) {
+      // Ignore background gradle stop failures
+    }
+  }
 
   /// Runs the full build pipeline through all phases.
   ///

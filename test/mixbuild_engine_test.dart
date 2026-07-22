@@ -66,6 +66,7 @@ void main() {
           description: 'demo',
           branch: 'main',
           scenarios: <BuildScenario>[],
+          type: MixbuildProjectType.flutter,
         ),
         scenario: const BuildScenario(
           id: 'release-build',
@@ -162,6 +163,7 @@ void main() {
         description: 'demo',
         branch: 'main',
         scenarios: <BuildScenario>[],
+        type: MixbuildProjectType.flutter,
       ),
       scenario: BuildScenario(
         id: 'release-build',
@@ -254,6 +256,7 @@ void main() {
             description: 'demo',
             branch: 'main',
             scenarios: <BuildScenario>[],
+            type: MixbuildProjectType.flutter,
           ),
           scenario: const BuildScenario(
             id: 'release-build',
@@ -338,6 +341,7 @@ void main() {
           description: 'demo',
           branch: 'master',
           scenarios: <BuildScenario>[],
+          type: MixbuildProjectType.flutter,
         ),
         scenario: const BuildScenario(
           id: 'release-build',
@@ -571,6 +575,7 @@ Future<void> _runBranchPipeline({
       description: 'demo',
       branch: 'master',
       scenarios: <BuildScenario>[],
+      type: MixbuildProjectType.flutter,
     ),
     scenario: BuildScenario(
       id: 'release-build',

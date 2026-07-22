@@ -442,6 +442,7 @@ class ProjectBuild {
     required this.description,
     required this.branch,
     required this.scenarios,
+    required this.type,
   });
 
   final String id;
@@ -450,6 +451,7 @@ class ProjectBuild {
   final String description;
   final String branch;
   final List<BuildScenario> scenarios;
+  final MixbuildProjectType type;
 
   ProjectBuild copyWith({
     String? id,
@@ -458,6 +460,7 @@ class ProjectBuild {
     String? description,
     String? branch,
     List<BuildScenario>? scenarios,
+    MixbuildProjectType? type,
   }) {
     return ProjectBuild(
       id: id ?? this.id,
@@ -466,6 +469,7 @@ class ProjectBuild {
       description: description ?? this.description,
       branch: branch ?? this.branch,
       scenarios: scenarios ?? this.scenarios,
+      type: type ?? this.type,
     );
   }
 }

@@ -658,21 +658,51 @@ class DashboardController extends Notifier<DashboardState> {
   /// Stops the active build pipeline and sends SIGKILL to child processes.
   void stopSelectedScenario() {
     _stopRequested = true;
-    ref.read(mixbuildEngineProvider).killActive();
     final project = state.selectedProject;
+    String? workingDirectory;
+    try {
+      final config = ref.read(mixbuildYamlStoreProvider).loadConfigSync(project.id);
+      workingDirectory = config.mainProject.absolutePath(config.workspace.rootPath);
+    } catch (_) {
+      // Ignore config loading errors in stop flow
+    }
+
+    ref.read(mixbuildEngineProvider).killActive(
+          projectType: project.type,
+          workingDirectory: workingDirectory,
+        );
+
     final scenario = state.selectedScenario;
     _flushExecutionLogs(project.id, scenario.id);
+
     final interruptionLog = _log(
       level: 'WARN',
       message:
           'Stop signal dispatched to the active build process tree. Background children may need a short moment to exit.',
       accent: MixBuildPalette.error,
     );
+
+    final isAndroid = project.type == MixbuildProjectType.android;
+    final gradleLog = isAndroid
+        ? _log(
+            level: 'INFO',
+            message:
+                'Android project detected. Triggering gradle daemon stop command in background.',
+            accent: MixBuildPalette.warning,
+          )
+        : null;
+
+    final logsToRecord = <LogEntry>[
+      interruptionLog,
+      ?gradleLog,
+    ];
+
     _recordImmediateExecutionLogs(
       projectId: project.id,
       scenarioId: scenario.id,
-      logs: <LogEntry>[interruptionLog],
+      logs: logsToRecord,
     );
+
     _updateScenario(
       projectId: project.id,
       scenarioId: scenario.id,
@@ -680,7 +710,7 @@ class DashboardController extends Notifier<DashboardState> {
         status: BuildStatus.interrupted,
         progress: 0,
         logs: [
-          interruptionLog,
+          ...logsToRecord,
           ...current.logs,
         ].toList(growable: false),
       ),
@@ -817,6 +847,7 @@ class DashboardController extends Notifier<DashboardState> {
       description:
           '${config.mainProject.type.name} / ${config.mainProject.defaultBranch}',
       branch: config.mainProject.defaultBranch,
+      type: config.mainProject.type,
       scenarios: scenarios,
     );
   }
