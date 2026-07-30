@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" rx="200" ry="200" fill="#FFFFFF"/>
+
+  <!-- Bottom layer — foundation / dependencies -->
+  <rect x="130" y="510" width="340" height="340" rx="50" ry="50" fill="#0D47A1"/>
+
+  <!-- Middle layer — main project -->
+  <rect x="340" y="330" width="340" height="340" rx="50" ry="50" fill="#1565C0"/>
+
+  <!-- Top layer — build output / orchestration -->
+  <rect x="550" y="155" width="340" height="340" rx="50" ry="50" fill="#42A5F5"/>
+</svg>

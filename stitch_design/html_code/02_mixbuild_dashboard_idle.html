@@ -1,0 +1,327 @@
+<!DOCTYPE html><html class="dark" lang="zh-CN" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>MixBuild Dashboard - IDLE</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0A84FF",
+                        "warning": "#FF9F0A",
+                        "error": "#FF453A",
+                        "background": "#1E1E1E",
+                        "surface": "rgba(40, 40, 40, 0.65)",
+                        "text-primary": "#FFFFFF",
+                        "text-muted": "#98989D",
+                    },
+                    fontFamily: {
+                        "display": ["SF Pro Display", "-apple-system", "sans-serif"],
+                        "body": ["SF Pro Text", "-apple-system", "sans-serif"],
+                        "mono": ["SF Mono", "JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "12px", "xl": "1.5rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #1E1E1E;
+            color: #FFFFFF;
+            font-family: 'SF Pro Text', -apple-system, sans-serif;
+            background-image: radial-gradient(circle at 15% 50%, rgba(10, 132, 255, 0.08), transparent 25%),
+                              radial-gradient(circle at 85% 30%, rgba(255, 69, 58, 0.05), transparent 25%);
+        }
+        .glass-morphism {
+            background: rgba(40, 40, 40, 0.65);
+            backdrop-filter: blur(24px) saturate(150%);
+            -webkit-backdrop-filter: blur(24px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-sidebar {
+            background: rgba(40, 40, 40, 0.65);
+            backdrop-filter: blur(24px) saturate(150%);
+            -webkit-backdrop-filter: blur(24px) saturate(150%);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .tree-line {
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .tree-line-horizontal {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            width: 10px;
+            height: 1px;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .terminal-container {
+            background: rgba(18, 18, 18, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body class="flex h-screen w-screen overflow-hidden antialiased">
+<!-- Left Control Panel (Sidebar) -->
+<aside class="w-[380px] h-full glass-sidebar flex flex-col z-20 shrink-0">
+<!-- Top App Bar -->
+<header class="px-6 py-5 border-b border-white/10 flex items-center justify-between shrink-0">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="terminal">terminal</span>
+</div>
+<div>
+<h1 class="text-[17px] font-semibold text-text-primary leading-tight">MixBuild Dashboard</h1>
+<p class="text-[10px] text-text-muted font-mono tracking-wider">VERSION v3.1</p>
+</div>
+</div>
+<button class="text-text-muted hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+</button>
+</header>
+<!-- Sidebar Content -->
+<div class="flex-1 overflow-y-auto px-6 py-6 space-y-6 no-scrollbar">
+<!-- Project Workspace -->
+<section class="space-y-2.5">
+<label class="text-[11px] font-bold uppercase tracking-wider text-text-muted px-1">项目工作区</label>
+<div class="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 flex items-center justify-between transition-colors opacity-60 pointer-events-none">
+<div class="flex items-center gap-3 overflow-hidden">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="account_tree">account_tree</span>
+<span class="text-sm font-medium truncate">物流核心平台</span>
+</div>
+
+</div>
+</section>
+<!-- Build Scenario Card -->
+<section class="space-y-2.5">
+<label class="text-[11px] font-bold uppercase tracking-wider text-text-muted px-1">构建场景</label>
+<div class="w-full p-4 bg-white/5 border border-white/10 rounded-xl space-y-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center text-warning">
+<span class="material-symbols-outlined" data-icon="rocket_launch">rocket_launch</span>
+</div>
+<div class="flex-1 overflow-hidden">
+<div class="text-[13px] font-medium text-text-primary truncate">FVM 生产发布包</div>
+<div class="text-[11px] text-text-muted truncate">Target: production • optimized</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Dependency Matrix (Tree Structure) -->
+<section class="space-y-2.5">
+<div class="flex items-center justify-between px-1">
+<label class="text-[11px] font-bold uppercase tracking-wider text-text-muted">依赖拓扑矩阵</label>
+<span class="text-[10px] font-mono text-text-muted">1,024 NODES</span>
+</div>
+<div class="w-full rounded-xl bg-black/20 border border-white/5 p-3 font-mono text-[12px] space-y-1">
+<!-- Root -->
+<div class="flex items-center gap-2 py-1 px-2 rounded hover:bg-white/5">
+<span class="material-symbols-outlined text-primary text-[16px]" data-icon="deployed_code">deployed_code</span>
+<span class="text-white">MixCore-Web</span>
+<span class="text-text-muted text-[10px]">v3.1.0</span>
+</div>
+<!-- Branch -->
+<div class="relative pl-5 space-y-1">
+<div class="tree-line"></div>
+<!-- Item 1: Follow -->
+<div class="relative flex items-center justify-between py-1 px-2 rounded hover:bg-white/5">
+<div class="tree-line-horizontal"></div>
+<div class="flex items-center gap-2 overflow-hidden">
+<span class="material-symbols-outlined text-text-muted text-[14px]" data-icon="extension">extension</span>
+<span class="truncate">@mix/ui-components</span>
+</div>
+<span class="text-[9px] text-text-muted border border-white/10 px-1 rounded bg-white/5 shrink-0">随<br></span>
+</div>
+<!-- Item 2: Degrade -->
+<div class="relative flex items-center justify-between py-1 px-2 rounded hover:bg-white/5">
+<div class="tree-line-horizontal"></div>
+<div class="flex items-center gap-2 overflow-hidden">
+<span class="material-symbols-outlined text-warning text-[14px]" data-icon="code_blocks">code_blocks</span>
+<span class="truncate text-warning">react</span>
+</div>
+<span class="text-[9px] text-text-muted border border-white/10 px-1 rounded bg-white/5 shrink-0" data-stitch-orig-opacity="0">feature/v18-support</span>
+</div>
+<!-- Item 3: Override -->
+<div class="relative flex items-center justify-between py-1 px-2 rounded bg-error/5 border border-error/10">
+<div class="tree-line-horizontal"></div>
+<div class="flex items-center gap-2 overflow-hidden">
+<span class="material-symbols-outlined text-error text-[14px]" data-icon="settings_applications">settings_applications</span>
+<span class="truncate text-error">webpack</span>
+</div>
+<span class="text-[9px] text-error border border-error/20 px-1 rounded bg-error/10 shrink-0">覆写</span>
+</div>
+<!-- Nested -->
+<div class="relative pl-5">
+<div class="tree-line"></div>
+<div class="relative flex items-center justify-between py-1 px-2 rounded hover:bg-white/5">
+<div class="tree-line-horizontal"></div>
+<div class="flex items-center gap-2 overflow-hidden">
+<span class="material-symbols-outlined text-text-muted text-[14px]" data-icon="compress">compress</span>
+<span class="text-text-muted truncate">terser-webpack</span>
+</div>
+<span class="text-[9px] text-text-muted shrink-0">跟随</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Bottom Action Bar -->
+<footer class="p-6 border-t border-white/10 shrink-0 bg-white/[0.02]">
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between text-[11px] px-1">
+<span class="text-text-muted">当前状态</span>
+<span class="flex items-center gap-1.5 font-medium text-text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-text-muted"></span>
+                        IDLE (空闲)
+                    </span>
+</div>
+<button class="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold text-[15px] flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined" data-icon="play_arrow">play_arrow</span>
+                    开始构建任务
+                </button>
+</div>
+</footer>
+</aside>
+<!-- Right Panel (Terminal) -->
+<main class="flex-1 h-full flex flex-col min-w-0">
+<!-- Header: State Machine Indicators -->
+<header class="h-[72px] px-8 flex items-center justify-between border-b border-white/5 shrink-0">
+<div class="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/10 backdrop-blur-md">
+<!-- IDLE -->
+<div class="px-3 py-1.5 rounded-lg bg-white/10 text-white text-[11px] font-bold tracking-wider">
+                    IDLE
+                </div>
+<span class="material-symbols-outlined text-white/20 text-[14px]" data-icon="chevron_right">chevron_right</span>
+<!-- VALIDATING -->
+<div class="px-3 py-1.5 rounded-lg text-text-muted text-[11px] font-bold tracking-wider">
+                    VALIDATING
+                </div>
+<span class="material-symbols-outlined text-white/20 text-[14px]" data-icon="chevron_right">chevron_right</span>
+<!-- SYNCING -->
+<div class="px-3 py-1.5 rounded-lg text-text-muted text-[11px] font-bold tracking-wider">
+                    SYNCING
+                </div>
+<span class="material-symbols-outlined text-white/20 text-[14px]" data-icon="chevron_right">chevron_right</span>
+<!-- BUILDING -->
+<div class="px-3 py-1.5 rounded-lg text-text-muted text-[11px] font-bold tracking-wider opacity-50">
+                    BUILDING
+                </div>
+<span class="material-symbols-outlined text-white/20 text-[14px]" data-icon="chevron_right">chevron_right</span>
+<!-- POST_HOOK -->
+<div class="px-3 py-1.5 rounded-lg text-text-muted text-[11px] font-bold tracking-wider opacity-50">
+                    POST_HOOK
+                </div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 text-[12px] text-text-muted">
+<span class="material-symbols-outlined text-[16px]" data-icon="schedule">schedule</span>
+<span class="">等待指令下达</span>
+</div>
+<div class="h-4 w-px bg-white/10"></div>
+<button class="h-9 px-4 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-medium transition-colors">
+                    任务历史
+                </button>
+</div>
+</header>
+<!-- Terminal Area -->
+<div class="flex-1 p-8 overflow-hidden flex flex-col relative">
+<section class="flex-1 terminal-container rounded-2xl flex flex-col overflow-hidden shadow-2xl">
+<!-- Terminal Header Bar -->
+<div class="h-11 border-b border-white/10 bg-white/[0.03] flex items-center justify-between px-5">
+<div class="flex items-center gap-6">
+<div class="flex gap-2">
+<div class="w-3 h-3 rounded-full bg-error/30"></div>
+<div class="w-3 h-3 rounded-full bg-warning/30"></div>
+<div class="w-3 h-3 rounded-full bg-primary/30"></div>
+</div>
+<div class="flex items-center gap-2 text-[11px] text-text-muted font-mono">
+<span class="material-symbols-outlined text-[14px]" data-icon="terminal">terminal</span>
+<span class="">zsh — build.sh — 物流核心平台</span>
+</div>
+</div>
+<div class="flex items-center gap-4 text-text-muted">
+<span class="material-symbols-outlined text-[18px] cursor-pointer hover:text-white" data-icon="search">search</span>
+<span class="material-symbols-outlined text-[18px] cursor-pointer hover:text-white" data-icon="content_copy">content_copy</span>
+<span class="material-symbols-outlined text-[18px] cursor-pointer hover:text-white" data-icon="download">download</span>
+</div>
+</div>
+<!-- Scrolling Logs Area -->
+<div class="flex-1 overflow-y-auto no-scrollbar p-6 font-mono text-[13px] leading-relaxed">
+<div class="space-y-1.5">
+<div class="flex gap-4">
+<span class="text-text-muted/50 w-20 shrink-0">[14:30:05]</span>
+<span class="text-primary w-14 shrink-0">[INIT]</span>
+<span class="text-text-muted italic">Ready to receive build command for project: 物流核心平台</span>
+</div>
+<div class="flex gap-4">
+<span class="text-text-muted/50 w-20 shrink-0">[14:30:05]</span>
+<span class="text-primary w-14 shrink-0">[INIT]</span>
+<span class="text-text-primary">Environment: production (release-v3.1)</span>
+</div>
+<div class="flex gap-4">
+<span class="text-text-muted/50 w-20 shrink-0">[14:30:06]</span>
+<span class="text-primary w-14 shrink-0">[INIT]</span>
+<span class="text-text-primary">Worker node affinity set to: cn-hangzhou-g1</span>
+</div>
+<div class="flex gap-4">
+<span class="text-text-muted/50 w-20 shrink-0">[14:30:06]</span>
+<span class="text-warning w-14 shrink-0">[WARN]</span>
+<span class="text-warning">Detected 12 non-critical security vulnerabilities in sub-dependencies.</span>
+</div>
+<div class="mt-4 flex items-center gap-2 text-text-primary">
+<span class="text-primary font-bold">mixbuild</span>
+<span class="text-text-muted">on</span>
+<span class="text-warning"> master</span>
+<span class="animate-pulse w-2 h-4 bg-primary/80 ml-1"></span>
+</div>
+</div>
+</div>
+<!-- Terminal HUD (Bottom Right) -->
+<div class="absolute bottom-12 right-12 flex flex-col gap-2 pointer-events-none">
+<div class="glass-morphism rounded-xl px-4 py-3 flex items-center gap-5 shadow-2xl border-white/5 pointer-events-auto">
+<div class="flex flex-col">
+<span class="text-[9px] text-text-muted uppercase font-bold tracking-tighter leading-none mb-1">CPU LOAD</span>
+<div class="flex items-center gap-1.5">
+<div class="w-12 h-1.5 bg-white/10 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[12%]"></div>
+</div>
+<span class="text-[10px] font-mono font-bold">12%</span>
+</div>
+</div>
+<div class="w-px h-6 bg-white/10"></div>
+<div class="flex flex-col">
+<span class="text-[9px] text-text-muted uppercase font-bold tracking-tighter leading-none mb-1">MEM USAGE</span>
+<div class="flex items-center gap-1.5">
+<div class="w-12 h-1.5 bg-white/10 rounded-full overflow-hidden">
+<div class="h-full bg-warning w-[45%]"></div>
+</div>
+<span class="text-[10px] font-mono font-bold">4.2G</span>
+</div>
+</div>
+<div class="w-px h-6 bg-white/10"></div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="cloud_done">cloud_done</span>
+<span class="text-[10px] font-mono font-bold">CONNECTED</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+
+
+</body></html>

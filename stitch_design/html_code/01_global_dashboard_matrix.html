@@ -1,0 +1,428 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>MixBuild Dashboard v3.1</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#aac7ff",
+                    "surface-container-lowest": "#0e0e0e",
+                    "tertiary": "#ffb691",
+                    "surface-container-high": "#2a2a2a",
+                    "on-background": "#e5e2e1",
+                    "inverse-on-surface": "#303030",
+                    "surface": "#131313",
+                    "surface-variant": "#353535",
+                    "tertiary-container": "#eb6a12",
+                    "on-primary": "#003064",
+                    "on-surface": "#e5e2e1",
+                    "on-error": "#690005",
+                    "secondary": "#c2c1ff",
+                    "secondary-container": "#3630bf",
+                    "on-secondary-container": "#b1b1ff",
+                    "surface-container": "#202020",
+                    "on-primary-container": "#002957",
+                    "primary-fixed-dim": "#aac7ff",
+                    "inverse-surface": "#e5e2e1",
+                    "on-secondary-fixed": "#0c006b",
+                    "surface-dim": "#131313",
+                    "secondary-fixed": "#e2dfff",
+                    "on-error-container": "#ffdad6",
+                    "on-primary-fixed-variant": "#00468d",
+                    "primary": "#aac7ff",
+                    "surface-bright": "#393939",
+                    "primary-fixed": "#d6e3ff",
+                    "surface-container-low": "#1b1b1c",
+                    "on-secondary-fixed-variant": "#332dbc",
+                    "on-tertiary-fixed-variant": "#793100",
+                    "on-primary-fixed": "#001b3e",
+                    "inverse-primary": "#005db8",
+                    "on-surface-variant": "#c0c6d6",
+                    "primary-container": "#3e90ff",
+                    "error-container": "#93000a",
+                    "secondary-fixed-dim": "#c2c1ff",
+                    "background": "#131313",
+                    "on-tertiary-fixed": "#341100",
+                    "outline": "#8b91a0",
+                    "outline-variant": "#414754",
+                    "tertiary-fixed-dim": "#ffb691",
+                    "on-tertiary-container": "#4a1b00",
+                    "on-secondary": "#1800a7",
+                    "on-tertiary": "#552000",
+                    "error": "#ffb4ab",
+                    "tertiary-fixed": "#ffdbcb",
+                    "surface-container-highest": "#353535"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "lg": "24px",
+                    "md": "16px",
+                    "xl": "32px",
+                    "gutter": "16px",
+                    "sm": "12px",
+                    "container-margin": "24px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "label-caps": ["inter"],
+                    "headline-md": ["metropolis"],
+                    "code-sm": ["jetbrainsMono"],
+                    "display-lg": ["metropolis"],
+                    "body-lg": ["inter"],
+                    "body-md": ["inter"]
+            },
+            "fontSize": {
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "30px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "code-sm": ["13px", {"lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "450"}],
+                    "display-lg": ["34px", {"lineHeight": "41px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["17px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "400"}],
+                    "body-md": ["15px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #0c0c0c;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(170, 199, 255, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(235, 106, 18, 0.03) 0px, transparent 50%);
+            min-height: 100vh;
+            color: #e5e2e1;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .glass-card {
+            background: rgba(32, 32, 32, 0.7);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .inner-glow {
+            box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .status-pulse-blue {
+            animation: pulse-blue 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse-blue {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.95); }
+        }
+
+        .status-pulse-orange {
+            animation: pulse-orange 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse-orange {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.95); }
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .terminal-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="antialiased overflow-x-hidden pb-12">
+<!-- Top Navigation Bar -->
+<header class="bg-surface/80 backdrop-blur-xl border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.1)] flex justify-between items-center w-full px-lg h-12 z-50 sticky top-0">
+<div class="flex items-center gap-md">
+<span class="text-body-lg font-headline-md text-on-surface tracking-tight">MixBuild Dashboard v3.1</span>
+<div class="h-4 w-[1px] bg-white/10 mx-xs"></div>
+<div class="flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-primary status-pulse-blue"></span>
+<span class="text-label-caps font-label-caps text-on-surface-variant">Parallel Running: 2</span>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<button class="flex items-center gap-xs px-sm py-1 rounded-lg hover:bg-white/5 transition-colors text-on-surface-variant hover:text-on-surface active:scale-[0.98]">
+<span class="material-symbols-outlined text-[20px]" data-icon="refresh">refresh</span>
+<span class="text-label-caps font-label-caps uppercase tracking-widest">Reload</span>
+</button>
+<button class="bg-primary/10 text-primary px-md py-1.5 rounded-lg border border-primary/20 hover:bg-primary/20 transition-all font-label-caps text-label-caps active:scale-[0.98] flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]" data-icon="settings">settings</span>
+                Global Config
+            </button>
+</div>
+</header>
+<div class="flex min-h-[calc(100vh-48px)]">
+<!-- Sidebar -->
+<aside class="bg-surface-container-low/90 backdrop-blur-2xl border-r border-white/10 shadow-[10px_0_30px_rgba(0,0,0,0.2)] flex flex-col h-[calc(100vh-48px)] w-64 fixed left-0 sticky top-12 hidden md:flex">
+<div class="p-lg space-y-md">
+<div class="mb-xl">
+<h1 class="text-headline-md font-headline-md text-primary">MixBuild</h1>
+<p class="text-body-md font-body-md text-on-surface-variant opacity-60">v3.1.0-stable</p>
+</div>
+<nav class="space-y-xs">
+<a class="text-primary bg-primary/10 border-r-2 border-primary flex items-center gap-md px-md py-sm rounded-l-lg translate-x-1 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-label-caps font-label-caps">Dashboard</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface hover:bg-white/5 flex items-center gap-md px-md py-sm rounded-l-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span class="text-label-caps font-label-caps">Projects</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface hover:bg-white/5 flex items-center gap-md px-md py-sm rounded-l-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="list_alt">list_alt</span>
+<span class="text-label-caps font-label-caps">Build Logs</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface hover:bg-white/5 flex items-center gap-md px-md py-sm rounded-l-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-label-caps font-label-caps">Settings</span>
+</a>
+</nav>
+<div class="pt-lg">
+<button class="w-full bg-primary text-on-primary py-md rounded-xl font-bold flex items-center justify-center gap-sm shadow-lg hover:brightness-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                        New Project
+                    </button>
+</div>
+</div>
+<div class="mt-auto p-lg border-t border-white/5">
+<div class="space-y-sm">
+<a class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-md text-label-caps font-label-caps" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+                        Support
+                    </a>
+<a class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-md text-label-caps font-label-caps" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+                        Docs
+                    </a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 p-lg max-w-7xl mx-auto w-full space-y-lg">
+<!-- Project Card A -->
+<section class="glass-card inner-glow rounded-xl overflow-hidden">
+<!-- Card Header -->
+<div class="px-lg py-md bg-white/5 flex justify-between items-center border-b border-white/10">
+<div class="flex items-center gap-md">
+<span class="text-[20px]">🚚</span>
+<h2 class="text-body-lg font-headline-md text-on-surface">项目 A：物流核心平台 (隔离打包区)</h2>
+</div>
+<div class="flex items-center gap-sm">
+
+<button class="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Scenario Rows -->
+<div class="divide-y divide-white/5">
+<!-- Row 1: Idle -->
+<div class="px-lg py-md flex items-center justify-between hover:bg-white/[0.02] transition-colors group">
+<div class="flex-1 grid grid-cols-12 items-center gap-md">
+<div class="col-span-3 flex flex-col">
+<span class="text-body-md font-semibold text-on-surface">🔨 常规测试包 (Debug)</span>
+<span class="text-code-sm font-code-sm text-on-surface-variant/60">Local build</span>
+</div>
+
+<div class="col-span-2 flex justify-center">
+<span class="px-sm py-0.5 rounded-full bg-white/5 text-on-surface-variant border border-white/10 text-label-caps font-label-caps flex items-center gap-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-on-surface-variant"></span>
+                                    🟢 IDLE
+                                </span>
+</div>
+<div class="col-span-7 flex justify-end">
+<button class="px-md py-1.5 rounded-lg bg-white/10 hover:bg-primary hover:text-on-primary transition-all text-label-caps font-label-caps flex items-center gap-sm active:scale-95">
+<span class="material-symbols-outlined text-[18px]" data-icon="rocket_launch">rocket_launch</span>
+                                    [🚀 开始]
+                                </button>
+</div>
+</div>
+</div>
+<!-- Row 2: Building -->
+<div class="bg-primary/5">
+<div class="px-lg py-md flex items-center justify-between border-l-2 border-primary">
+<div class="flex-1 grid grid-cols-12 items-center gap-md">
+<div class="col-span-3 flex flex-col">
+<span class="text-body-md font-semibold text-on-surface">🚀 FVM 生产发布包 (Release)</span>
+<span class="text-code-sm font-code-sm text-primary/60">Cloud isolated</span>
+</div>
+
+<div class="col-span-2 flex justify-center">
+<span class="px-sm py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 text-label-caps font-label-caps flex items-center gap-xs status-pulse-blue">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                                        ⏳ BUILDING
+                                    </span>
+</div>
+<div class="col-span-3 flex justify-end">
+<button class="px-md py-1.5 rounded-lg bg-error-container/40 text-error hover:bg-error-container hover:text-white transition-all text-label-caps font-label-caps flex items-center gap-sm active:scale-95 ml-auto">
+<span class="material-symbols-outlined text-[18px]" data-icon="stop_circle">stop_circle</span>
+                                        [🛑 停止]
+                                    </button>
+</div>
+</div>
+</div>
+<!-- Log Panel -->
+<div class="px-lg pb-md">
+<div class="terminal-box p-md rounded-lg overflow-hidden relative">
+<div class="text-code-sm font-code-sm space-y-1 text-on-surface-variant/80">
+
+
+
+<div class="flex gap-md"><span class="text-primary">17:50:56</span> [INFO] Running task ':app:minifyReleaseWithR8' [64%]</div><div class="flex gap-md"><span class="text-primary">17:51:05</span> [INFO] Running task ':app:minifyReleaseWithR8' [64%]</div><div class="flex gap-md"><span class="text-primary">17:51:11</span> [INFO] Running task ':app:minifyReleaseWithR8' [64%]</div><div class="flex gap-md"><span class="text-primary">17:51:35</span> [INFO] Running task ':app:minifyReleaseWithR8' [64%]</div><div class="flex gap-md"><span class="text-primary">17:51:38</span> [INFO] Running task ':app:minifyReleaseWithR8' [64%]</div></div>
+<!-- Progress line -->
+<div class="absolute bottom-0 left-0 h-0.5 bg-primary/20 w-full">
+<div class="h-full bg-primary w-2/3 shadow-[0_0_10px_rgba(170,199,255,0.5)]" style="width: 98.2528%;"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Project Card B -->
+<section class="glass-card inner-glow rounded-xl overflow-hidden">
+<div class="px-lg py-md bg-white/5 flex justify-between items-center border-b border-white/10">
+<div class="flex items-center gap-md">
+<span class="text-[20px]">🛒</span>
+<h2 class="text-body-lg font-headline-md text-on-surface">项目 B：供应链管理系统</h2>
+</div>
+<div class="flex items-center gap-sm">
+<div class="bg-black/40 px-sm py-1 rounded-lg border border-white/10 flex items-center gap-xs opacity-50 cursor-not-allowed">
+<span class="text-label-caps font-label-caps text-on-surface-variant">Branch:</span>
+<span class="text-label-caps font-label-caps text-primary">develop</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="lock">lock</span>
+</div>
+<button class="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+<div class="divide-y divide-white/5">
+<!-- Row 1: Syncing (Disabled controls) -->
+<div class="bg-tertiary-container/5">
+<div class="px-lg py-md flex items-center justify-between border-l-2 border-tertiary">
+<div class="flex-1 grid grid-cols-12 items-center gap-md">
+<div class="col-span-3 flex flex-col">
+<span class="text-body-md font-semibold text-on-surface">🤖 自动化测试加固包</span>
+<span class="text-code-sm font-code-sm text-tertiary/60">Dependency check</span>
+</div>
+
+<div class="col-span-2 flex justify-center">
+<span class="px-sm py-0.5 rounded-full bg-tertiary-container/20 text-tertiary border border-tertiary-container/30 text-label-caps font-label-caps flex items-center gap-xs status-pulse-orange">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                                        ⏳ SYNCING
+                                    </span>
+</div>
+<div class="col-span-3 flex justify-end">
+<button class="px-md py-1.5 rounded-lg bg-error-container/40 text-error hover:bg-error-container hover:text-white transition-all text-label-caps font-label-caps flex items-center gap-sm active:scale-95">
+<span class="material-symbols-outlined text-[18px]" data-icon="stop_circle">stop_circle</span>
+                                        [🛑 停止]
+                                    </button>
+</div>
+</div>
+</div>
+<div class="px-lg pb-md">
+<div class="terminal-box p-md rounded-lg overflow-hidden relative">
+<div class="text-code-sm font-code-sm space-y-1 text-on-surface-variant/80">
+
+
+<div class="flex gap-md"><span class="text-tertiary">17:51:02</span> [INFO] Fetching external dependencies: 112/480</div><div class="flex gap-md"><span class="text-tertiary">17:51:05</span> [INFO] Fetching external dependencies: 112/480</div><div class="flex gap-md"><span class="text-tertiary">17:51:08</span> [INFO] Fetching external dependencies: 112/480</div><div class="flex gap-md"><span class="text-tertiary">17:51:23</span> [INFO] Fetching external dependencies: 112/480</div><div class="flex gap-md"><span class="text-tertiary">17:51:26</span> [INFO] Fetching external dependencies: 112/480</div></div>
+</div>
+</div>
+</div>
+<!-- Row 2: Idle & Dimmed -->
+
+</div>
+</section>
+</main>
+</div>
+<!-- Footer Stats -->
+<footer class="fixed bottom-0 w-full bg-surface-container-lowest/50 backdrop-blur-md border-t border-white/10 flex justify-between items-center px-lg py-xs z-40">
+<span class="text-label-caps font-label-caps text-on-surface-variant">© 2026 MixBuild Systems</span>
+<div class="flex gap-xl">
+<div class="flex items-center gap-xs">
+<span class="text-code-sm font-code-sm text-tertiary">CPU: 12%</span>
+<div class="w-16 h-1 bg-white/5 rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-[12%]"></div>
+</div>
+</div>
+<div class="flex items-center gap-xs">
+<span class="text-code-sm font-code-sm text-tertiary">MEM: 4.2GB</span>
+<div class="w-16 h-1 bg-white/5 rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-[35%]"></div>
+</div>
+</div>
+<span class="text-code-sm font-code-sm text-primary flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                Connected
+            </span>
+</div>
+</footer>
+<!-- Background Decoration -->
+<div class="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 opacity-20 overflow-hidden">
+<div class="absolute top-[10%] left-[5%] w-[400px] h-[400px] bg-primary/20 rounded-full blur-[120px]"></div>
+<div class="absolute bottom-[20%] right-[10%] w-[500px] h-[500px] bg-tertiary/10 rounded-full blur-[150px]"></div>
+</div>
+<script>
+        // Micro-interaction for logs
+        const logContainers = document.querySelectorAll('.terminal-box');
+        logContainers.forEach(container => {
+            setInterval(() => {
+                const logs = container.querySelector('.space-y-1');
+                if(logs && Math.random() > 0.7) {
+                   const lastLog = logs.lastElementChild;
+                   const clone = lastLog.cloneNode(true);
+                   const time = new Date().toLocaleTimeString('en-GB', { hour12: false });
+                   clone.querySelector('span').innerText = time;
+                   logs.appendChild(clone);
+                   if(logs.children.length > 5) logs.removeChild(logs.firstElementChild);
+                }
+            }, 3000);
+        });
+
+        // Simulating progress bar movement
+        const progressBars = document.querySelectorAll('.absolute.bottom-0.left-0 > div');
+        progressBars.forEach(bar => {
+            let width = 64;
+            setInterval(() => {
+                if(width < 98) {
+                    width += Math.random() * 0.5;
+                    bar.style.width = width + '%';
+                }
+            }, 1000);
+        });
+    </script>
+
+
+</body></html>
