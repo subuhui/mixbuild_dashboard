@@ -3,6 +3,7 @@ import FlutterMacOS
 
 class MainFlutterWindow: NSWindow {
   override func awakeFromNib() {
+    let isMcpMode = ProcessInfo.processInfo.arguments.contains("--mcp")
     let flutterViewController = FlutterViewController()
     let windowFrame = self.frame
     let baseContentSize = NSSize(width: 1024, height: 720)
@@ -25,5 +26,9 @@ class MainFlutterWindow: NSWindow {
     RegisterGeneratedPlugins(registry: flutterViewController)
 
     super.awakeFromNib()
+
+    if isMcpMode {
+      self.orderOut(nil)
+    }
   }
 }

@@ -41,6 +41,37 @@ fvm flutter run -d macos
 fvm flutter build macos
 ```
 
+## MCP Server
+
+The packaged application can run as a stdio MCP server without opening the
+dashboard UI. It supports MCP `2026-07-28` discovery and stateless requests,
+with legacy initialization compatibility through `2025-11-25`. Build the macOS
+app, then register its executable in an MCP client:
+
+```json
+{
+  "mcpServers": {
+    "mixbuild": {
+      "command": "/absolute/path/to/mixbuild_dashboard.app/Contents/MacOS/mixbuild_dashboard",
+      "args": ["--mcp"]
+    }
+  }
+}
+```
+
+The server exposes three tools:
+
+| Tool | Purpose |
+|---|---|
+| `mixbuild_list_scenarios` | Match a configured project and list scenarios by absolute project directory and exact Git branch |
+| `mixbuild_build_project` | Run the existing validation, sync, restore, build, and post-hook pipeline |
+| `mixbuild_add_scenario` | Add a build scenario to the workspace YAML matched by the current project directory |
+
+`project_directory` may be the configured main project root or a directory
+inside it. Build calls require an exact scenario branch match. If more than one
+scenario matches, pass `scenario_name`. MCP build results are also written to
+the dashboard's daily execution history.
+
 ## Project Structure
 
 ```
