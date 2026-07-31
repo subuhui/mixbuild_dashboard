@@ -709,7 +709,7 @@ class _DependencyTree extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  project.branch,
+                  scenario.mainBranch,
                   style: MixBuildTheme.monoTextStyle(
                     fontSize: 10,
                     color: MixBuildPalette.muted,
