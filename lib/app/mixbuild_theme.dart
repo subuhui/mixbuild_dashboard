@@ -271,7 +271,6 @@ class MixBuildTheme {
     );
   }
 
-  /// 平台等宽字体样式：macOS 用 Menlo，Windows 用 Consolas，Linux 用 DejaVu Sans Mono。
   static TextStyle monoTextStyle({
     double? fontSize,
     FontWeight? fontWeight,

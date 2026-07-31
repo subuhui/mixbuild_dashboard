@@ -95,7 +95,6 @@ class ProcessSystemResourceMonitor implements SystemResourceMonitor {
   }
 
   double? _parseCpuUsageFromTop(String output) {
-    // Parse top output: CPU usage: 12.98% user, 14.2% sys, 72.98% idle
     for (final line in output.split('\n')) {
       if (line.contains('CPU usage:')) {
         final idleMatch = RegExp(r'([\d.]+)%\s+idle').firstMatch(line);

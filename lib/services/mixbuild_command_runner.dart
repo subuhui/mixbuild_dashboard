@@ -6,7 +6,6 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:process_run/process_run.dart';
 
-/// Command execution result with complete stdout, stderr, and exit code.
 class CommandRunResult {
   const CommandRunResult({
     required this.command,
@@ -23,9 +22,6 @@ class CommandRunResult {
   final String stderr;
 }
 
-/// Process execution abstraction for shell commands and direct process calls.
-///
-/// Implementations support [which] lookups and [killActive] termination.
 abstract class MixbuildCommandRunner {
   String? which(String command);
   Future<CommandRunResult> run(
@@ -47,10 +43,6 @@ abstract class MixbuildCommandRunner {
   bool killActive([ProcessSignal signal = ProcessSignal.sigkill]);
 }
 
-/// Real process runner backed by `dart:io` Process.
-///
-/// macOS/Linux run shell commands through `/bin/zsh -lc`; Windows uses `cmd /c`.
-/// Supports live stdout/stderr callbacks and SIGKILL termination.
 class ProcessRunCommandRunner implements MixbuildCommandRunner {
   static const Duration _streamCloseGracePeriod = Duration(milliseconds: 150);
   static const List<String> _macOsFallbackBins = <String>[

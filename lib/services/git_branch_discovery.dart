@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:mixbuild_dashboard/services/mixbuild_command_runner.dart';
 
-/// Branch discovery result with branches and an optional warning message.
 class GitBranchDiscoveryResult {
   const GitBranchDiscoveryResult({
     required this.branches,
@@ -13,9 +12,6 @@ class GitBranchDiscoveryResult {
   final String? warningMessage;
 }
 
-/// Git branch discovery service using `git for-each-ref` for local and remote branches.
-///
-/// Runs `git fetch --all --prune` first and falls back to ['develop', 'main', 'master'].
 class GitBranchDiscovery {
   GitBranchDiscovery({MixbuildCommandRunner? runner})
       : _runner = runner ?? ProcessRunCommandRunner();

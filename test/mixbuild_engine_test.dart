@@ -47,7 +47,6 @@ void main() {
             name: 'app',
             path: 'app',
             type: MixbuildProjectType.flutter,
-            defaultBranch: 'main',
           ),
           dependencies: const <MixbuildRepoConfig>[],
           buildScenarios: const <MixbuildScenarioConfig>[
@@ -66,6 +65,7 @@ void main() {
           description: 'demo',
           branch: 'main',
           scenarios: <BuildScenario>[],
+          type: MixbuildProjectType.flutter,
         ),
         scenario: const BuildScenario(
           id: 'release-build',
@@ -133,16 +133,14 @@ void main() {
           name: 'app',
           path: 'app',
           type: MixbuildProjectType.flutter,
-          defaultBranch: 'main',
         ),
         dependencies: const <MixbuildRepoConfig>[
           MixbuildRepoConfig(
-            name: 'shared_ui',
+            name: 'flutter.module.ui',
             path: 'shared_ui',
             type: MixbuildProjectType.flutter,
-            defaultBranch: 'develop',
             restoreCommand:
-                r'echo {{dependency.name}} ${workspace.root_path} ${main_project.name} ${dependencies.shared_ui.default_branch}',
+                r'echo {{dependency.name}} ${workspace.root_path} ${main_project.name} ${dependency.branch}',
           ),
         ],
         buildScenarios: const <MixbuildScenarioConfig>[
@@ -151,7 +149,7 @@ void main() {
             name: 'Release Build',
             mainBranch: 'release/main',
             command:
-                r'echo ${workspace.name} {{main_project.absolute_path}} ${scenario.main_branch} ${dependencies.shared_ui.branch}',
+                r'echo ${workspace.name} {{main_project.absolute_path}} ${scenario.main_branch} ${dependencies.flutter.module.ui.branch}',
           ),
         ],
       ),
@@ -162,6 +160,7 @@ void main() {
         description: 'demo',
         branch: 'main',
         scenarios: <BuildScenario>[],
+        type: MixbuildProjectType.flutter,
       ),
       scenario: BuildScenario(
         id: 'release-build',
@@ -170,7 +169,7 @@ void main() {
         environment: 'test',
         mainBranch: 'release/main',
         command:
-            r'echo ${workspace.name} {{main_project.absolute_path}} ${scenario.main_branch} ${dependencies.shared_ui.branch}',
+            r'echo ${workspace.name} {{main_project.absolute_path}} ${scenario.main_branch} ${dependencies.flutter.module.ui.branch}',
         status: BuildStatus.idle,
         progress: 0,
         logs: const <LogEntry>[],
@@ -181,7 +180,7 @@ void main() {
       ),
       cleanBeforeBuild: false,
       dependencyOverrides: const <String, String>{
-        'shared_ui': 'feature/shared',
+        'flutter.module.ui': 'feature/shared',
       },
       onProgress: (_, progress) {},
       onLog: (_) {},
@@ -189,7 +188,9 @@ void main() {
 
     expect(
       runner.shellCommands,
-      contains('echo shared_ui ${workspaceRoot.path} app develop'),
+      contains(
+        'echo flutter.module.ui ${workspaceRoot.path} app feature/shared',
+      ),
     );
     expect(
       runner.shellCommands,
@@ -235,7 +236,6 @@ void main() {
               name: 'app',
               path: 'app',
               type: MixbuildProjectType.flutter,
-              defaultBranch: 'main',
             ),
             dependencies: const <MixbuildRepoConfig>[],
             buildScenarios: const <MixbuildScenarioConfig>[
@@ -254,6 +254,7 @@ void main() {
             description: 'demo',
             branch: 'main',
             scenarios: <BuildScenario>[],
+            type: MixbuildProjectType.flutter,
           ),
           scenario: const BuildScenario(
             id: 'release-build',
@@ -319,7 +320,6 @@ void main() {
             name: 'app',
             path: 'app',
             type: MixbuildProjectType.flutter,
-            defaultBranch: 'master',
           ),
           dependencies: const <MixbuildRepoConfig>[],
           buildScenarios: const <MixbuildScenarioConfig>[
@@ -338,6 +338,7 @@ void main() {
           description: 'demo',
           branch: 'master',
           scenarios: <BuildScenario>[],
+          type: MixbuildProjectType.flutter,
         ),
         scenario: const BuildScenario(
           id: 'release-build',
@@ -552,7 +553,6 @@ Future<void> _runBranchPipeline({
         name: 'app',
         path: 'app',
         type: MixbuildProjectType.flutter,
-        defaultBranch: 'master',
       ),
       dependencies: const <MixbuildRepoConfig>[],
       buildScenarios: <MixbuildScenarioConfig>[
@@ -571,6 +571,7 @@ Future<void> _runBranchPipeline({
       description: 'demo',
       branch: 'master',
       scenarios: <BuildScenario>[],
+      type: MixbuildProjectType.flutter,
     ),
     scenario: BuildScenario(
       id: 'release-build',

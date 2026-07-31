@@ -68,7 +68,6 @@ class BuildExecutionHistoryStore {
     } catch (_) {}
   }
 
-  /// Deletes all historical log files.
   Future<int> clearAllLogs() async {
     try {
       final dir = Directory(logsDirectoryPath);

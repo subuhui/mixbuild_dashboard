@@ -46,13 +46,11 @@ class DashboardHomePage extends ConsumerWidget {
       final projectGlobalConfig = GlobalConfig(
         workspaceRoot: projectConfig.workspace.rootPath,
         activeProjectName: projectConfig.workspace.name,
-        mainProjectDefaultBranch: projectConfig.mainProject.defaultBranch,
         bindings: [
           WorkspaceBinding(
             projectName: projectConfig.mainProject.name,
             path: projectConfig.mainProject.path,
             type: projectConfig.mainProject.type,
-            defaultBranch: projectConfig.mainProject.defaultBranch,
             restoreCommand: projectConfig.mainProject.restoreCommand,
           ),
           ...projectConfig.dependencies.map(
@@ -60,7 +58,6 @@ class DashboardHomePage extends ConsumerWidget {
               projectName: d.name,
               path: d.path,
               type: d.type,
-              defaultBranch: d.defaultBranch,
               restoreCommand: d.restoreCommand,
             ),
           ),
@@ -640,7 +637,6 @@ class _ScenarioPreviewTile extends StatelessWidget {
                 ),
               ],
             ),
-            // Active scenario: terminal log panel + progress bar
             if (isActive) ...[
               const SizedBox(height: 14),
               Container(

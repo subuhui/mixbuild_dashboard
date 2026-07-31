@@ -119,13 +119,11 @@ main_project:
   name: "my_app"
   path: "./my_app"
   type: "flutter"
-  default_branch: "main"
   restore_command: "fvm flutter pub get"
 dependencies:
   - name: "shared_ui"
     path: "./shared_ui"
     type: "flutter"
-    default_branch: "develop"
     restore_command: "fvm flutter pub get"
 build_scenarios:
   - name: "Debug Build"
@@ -152,6 +150,24 @@ build_scenarios:
 | **RESTORING** | Runs each dependency's `restore_command` serially |
 | **BUILDING** | Executes the scenario's build command (with optional `--clean`) |
 | **POST_HOOK** | Auto-tag, open output directory, macOS notification |
+
+## Remote Build Trigger (HTTP API)
+
+The dashboard includes a local HTTP server on port `8765` by default. The port can be changed from Settings.
+
+```bash
+# Trigger by scenario name
+curl -X POST http://127.0.0.1:8765/build \
+  -H "Content-Type: application/json" \
+  -d '{"scenario": "Release Build", "branch": "release/v1.2"}'
+
+# Trigger by main project or dependency name
+curl -X POST http://127.0.0.1:8765/build \
+  -H "Content-Type: application/json" \
+  -d '{"project": "flutter.module.ui", "branch": "release/v1.2"}'
+```
+
+`branch` is required, and at least one of `scenario` or `project` must be supplied. The server returns `202` when the build is queued, `400` for invalid input, `404` when no matching configuration exists, and `409` while another build is running.
 
 ## State Management
 

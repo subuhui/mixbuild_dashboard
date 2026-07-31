@@ -3,10 +3,6 @@ import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/l10n/app_strings.dart';
 
-/// Build pipeline lifecycle state.
-///
-/// Normal flow: idle -> validating -> syncing -> restoring -> building -> postHook -> success.
-/// Terminal states include [success], [failed], and [interrupted].
 enum BuildStatus {
   idle,
   validating,
@@ -19,7 +15,6 @@ enum BuildStatus {
   interrupted,
 }
 
-/// UI helpers for [BuildStatus] labels, descriptions, colors, and controls.
 extension BuildStatusX on BuildStatus {
   String get label {
     switch (this) {
@@ -176,7 +171,6 @@ extension BuildStatusX on BuildStatus {
   }
 }
 
-/// Build log entry with timestamp, level, message, and theme color.
 class LogEntry {
   const LogEntry({
     required this.time,
@@ -210,7 +204,6 @@ class LogEntry {
   }
 }
 
-/// Single build execution record for history and Build Logs display.
 class BuildExecutionRecord {
   const BuildExecutionRecord({
     required this.id,
@@ -324,10 +317,6 @@ BuildStatus _buildStatusFromName(String? name) {
   return BuildStatus.idle;
 }
 
-/// Dependency repository branch data for display and branch switching.
-///
-/// [isOverride] marks a scenario-level branch override.
-/// [highlight] highlights overridden dependencies in the UI.
 class DependencyBranch {
   const DependencyBranch({
     required this.name,
@@ -360,9 +349,6 @@ class DependencyBranch {
   }
 }
 
-/// Runtime build scenario state with progress, logs, and dependency branch snapshots.
-///
-/// Unlike [MixbuildScenarioConfig], this type holds runtime data consumed by the UI.
 class BuildScenario {
   const BuildScenario({
     required this.id,
@@ -431,9 +417,6 @@ class BuildScenario {
   }
 }
 
-/// Build instance for one project with its [BuildScenario] list.
-///
-/// [id] is the absolute YAML path and uniquely identifies a project across configs.
 class ProjectBuild {
   const ProjectBuild({
     required this.id,
@@ -442,6 +425,7 @@ class ProjectBuild {
     required this.description,
     required this.branch,
     required this.scenarios,
+    required this.type,
   });
 
   final String id;
@@ -450,6 +434,7 @@ class ProjectBuild {
   final String description;
   final String branch;
   final List<BuildScenario> scenarios;
+  final MixbuildProjectType type;
 
   ProjectBuild copyWith({
     String? id,
@@ -458,6 +443,7 @@ class ProjectBuild {
     String? description,
     String? branch,
     List<BuildScenario>? scenarios,
+    MixbuildProjectType? type,
   }) {
     return ProjectBuild(
       id: id ?? this.id,
@@ -466,11 +452,11 @@ class ProjectBuild {
       description: description ?? this.description,
       branch: branch ?? this.branch,
       scenarios: scenarios ?? this.scenarios,
+      type: type ?? this.type,
     );
   }
 }
 
-/// Footer system resource metric used by the dashboard HUD.
 class ResourceMetric {
   const ResourceMetric({
     required this.label,
@@ -485,34 +471,25 @@ class ResourceMetric {
   final Color color;
 }
 
-/// Workspace binding that maps a project name to a relative path under the workspace root.
-///
-/// Mirrors YAML main_project and dependencies entries for the global config panel.
 class WorkspaceBinding {
   const WorkspaceBinding({
     required this.projectName,
     required this.path,
     this.type,
-    this.defaultBranch,
     this.restoreCommand,
   });
 
   final String projectName;
   final String path;
   final MixbuildProjectType? type;
-  final String? defaultBranch;
   final String? restoreCommand;
 }
 
-/// Project editor binding config with an [isMainProject] marker.
-///
-/// Used by [ProjectEditorPage] submissions to distinguish main project and dependencies.
 class ProjectBindingConfig {
   const ProjectBindingConfig({
     required this.projectName,
     required this.path,
     required this.type,
-    required this.defaultBranch,
     required this.restoreCommand,
     required this.isMainProject,
   });
@@ -520,41 +497,32 @@ class ProjectBindingConfig {
   final String projectName;
   final String path;
   final MixbuildProjectType type;
-  final String defaultBranch;
   final String? restoreCommand;
   final bool isMainProject;
 }
 
 const Object _buildExecutionSentinel = Object();
 
-/// Global workspace config with root path, active project name, and all bindings.
-///
-/// Derived from [MixbuildConfig] by [DashboardController] for the global config panel.
 class GlobalConfig {
   const GlobalConfig({
     required this.workspaceRoot,
     required this.activeProjectName,
     required this.bindings,
-    this.mainProjectDefaultBranch = 'main',
   });
 
   final String workspaceRoot;
   final String activeProjectName;
   final List<WorkspaceBinding> bindings;
-  final String mainProjectDefaultBranch;
 
   GlobalConfig copyWith({
     String? workspaceRoot,
     String? activeProjectName,
     List<WorkspaceBinding>? bindings,
-    String? mainProjectDefaultBranch,
   }) {
     return GlobalConfig(
       workspaceRoot: workspaceRoot ?? this.workspaceRoot,
       activeProjectName: activeProjectName ?? this.activeProjectName,
       bindings: bindings ?? this.bindings,
-      mainProjectDefaultBranch:
-          mainProjectDefaultBranch ?? this.mainProjectDefaultBranch,
     );
   }
 }

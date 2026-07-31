@@ -8,7 +8,6 @@ import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_command_runner.dart';
 
-/// Build pipeline exception with a log level.
 class MixbuildEngineException implements Exception {
   const MixbuildEngineException(this.message, {this.level = 'ERROR'});
 
@@ -19,10 +18,6 @@ class MixbuildEngineException implements Exception {
   String toString() => message;
 }
 
-/// Build pipeline orchestrator that runs 5 phases in order:
-/// VALIDATING → SYNCING → RESTORING → BUILDING → POST_HOOK。
-///
-/// Uses [MixbuildCommandRunner] to abstract process execution for tests.
 class MixbuildEngine {
   MixbuildEngine(this._runner);
 
@@ -32,16 +27,40 @@ class MixbuildEngine {
 
   final MixbuildCommandRunner _runner;
 
-  bool killActive() => _runner.killActive();
+  bool killActive({MixbuildProjectType? projectType, String? workingDirectory}) {
+    final killed = _runner.killActive();
+    if (projectType == MixbuildProjectType.android && workingDirectory != null) {
+      _stopGradleDaemon(workingDirectory);
+    }
+    return killed;
+  }
 
-  /// Runs the full build pipeline through all phases.
-  ///
-  /// [onProgress] is called on phase changes and [onLog] streams log entries.
-  /// Any phase failure throws [MixbuildEngineException].
+  void _stopGradleDaemon(String workingDirectory) {
+    try {
+      final isWindows = Platform.isWindows;
+      final gradlewExecutable = isWindows ? 'gradlew.bat' : './gradlew';
+      final gradlewFile = File(p.join(workingDirectory, gradlewExecutable));
+      final command = gradlewFile.existsSync()
+          ? (isWindows ? 'gradlew.bat --stop' : './gradlew --stop')
+          : 'gradle --stop';
+      _runner.run(command, workingDirectory: workingDirectory).catchError((_) {
+        return const CommandRunResult(
+          command: '',
+          workingDirectory: '',
+          exitCode: -1,
+          stdout: '',
+          stderr: '',
+        );
+      });
+    } catch (_) {
+    }
+  }
+
   Future<void> runPipeline({
     required MixbuildConfig config,
     required ProjectBuild project,
     required BuildScenario scenario,
+    String? projectBranch,
     required bool cleanBeforeBuild,
     required Map<String, String> dependencyOverrides,
     required void Function(BuildStatus status, double progress) onProgress,
@@ -72,9 +91,11 @@ class MixbuildEngine {
     );
     await _runSync(
       config: config,
-      projectBranch: scenario.mainBranch.trim().isEmpty
-          ? project.branch
-          : scenario.mainBranch,
+      projectBranch: projectBranch == null || projectBranch.trim().isEmpty
+          ? scenario.mainBranch.trim().isEmpty
+              ? project.branch
+              : scenario.mainBranch
+          : projectBranch,
       recreateLocalBranches: cleanBeforeBuild,
       dependencyOverrides: dependencyOverrides,
       onLog: onLog,
@@ -387,20 +408,6 @@ class MixbuildEngine {
         );
       }
     }
-
-    if (Platform.isMacOS) {
-      await _runner.run(
-        "osascript -e 'display notification \"Build finished\" with title \"MixBuild Dashboard\"'",
-        workingDirectory: workingDirectory,
-      );
-      onLog(
-        _entry(
-          level: 'INFO',
-          message: 'macOS notification dispatched.',
-          accent: MixBuildPalette.success,
-        ),
-      );
-    }
   }
 
   Future<void> _runGitSync({
@@ -410,7 +417,6 @@ class MixbuildEngine {
     required bool recreateLocalBranch,
     required void Function(LogEntry entry) onLog,
   }) async {
-    // Clean up a stale index.lock that may remain after an abnormal process exit.
     _cleanStaleIndexLock(repoPath);
     await _runGitCommandOrThrow(
       repoPath: repoPath,
@@ -628,9 +634,7 @@ class MixbuildEngine {
     MixbuildRepoConfig? dependency,
     required Map<String, String> dependencyOverrides,
   }) {
-    final effectiveMainBranch = scenario.mainBranch.trim().isEmpty
-        ? config.mainProject.defaultBranch
-        : scenario.mainBranch;
+    final effectiveMainBranch = scenario.mainBranch;
     final values = <String, String>{
       'workspace.name': config.workspace.name,
       'workspace.root_path': config.workspace.rootPath,
@@ -640,7 +644,6 @@ class MixbuildEngine {
         config.workspace.rootPath,
       ),
       'main_project.type': config.mainProject.type.name,
-      'main_project.default_branch': config.mainProject.defaultBranch,
       'main_project.restore_command': config.mainProject.restoreCommand ?? '',
       'scenario.id': scenario.id,
       'scenario.name': scenario.name,
@@ -682,7 +685,6 @@ class MixbuildEngine {
     values['$prefix.path'] = repo.path;
     values['$prefix.absolute_path'] = repo.absolutePath(workspaceRoot);
     values['$prefix.type'] = repo.type.name;
-    values['$prefix.default_branch'] = repo.defaultBranch;
     values['$prefix.restore_command'] = repo.restoreCommand ?? '';
   }
 
@@ -855,7 +857,6 @@ class MixbuildEngine {
     if (!lockFile.existsSync()) {
       return;
     }
-    // Treat index.lock as stale after 5 seconds.
     final lastModified = lockFile.lastModifiedSync();
     final elapsed = DateTime.now().difference(lastModified);
     if (elapsed.inSeconds >= 5) {

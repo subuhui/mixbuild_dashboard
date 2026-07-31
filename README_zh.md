@@ -88,13 +88,11 @@ main_project:
   name: "my_app"
   path: "./my_app"
   type: "flutter"
-  default_branch: "main"
   restore_command: "fvm flutter pub get"
 dependencies:
   - name: "shared_ui"
     path: "./shared_ui"
     type: "flutter"
-    default_branch: "develop"
     restore_command: "fvm flutter pub get"
 build_scenarios:
   - name: "Debug Build"
@@ -121,6 +119,24 @@ build_scenarios:
 | **RESTORING** | 串行执行各依赖的 `restore_command` |
 | **BUILDING** | 执行场景的构建命令（可选 `--clean`） |
 | **POST_HOOK** | 自动打标签、打开输出目录、macOS 通知 |
+
+## 远程构建触发（HTTP API）
+
+仪表盘内置本地 HTTP 服务，默认端口为 `8765`，可在设置页修改。
+
+```bash
+# 通过场景名称触发
+curl -X POST http://127.0.0.1:8765/build \
+  -H "Content-Type: application/json" \
+  -d '{"scenario": "Release Build", "branch": "release/v1.2"}'
+
+# 通过主项目或依赖名称触发
+curl -X POST http://127.0.0.1:8765/build \
+  -H "Content-Type: application/json" \
+  -d '{"project": "flutter.module.ui", "branch": "release/v1.2"}'
+```
+
+`branch` 必填，`scenario` 和 `project` 至少提供一个。成功入队返回 `202`，参数错误返回 `400`，未匹配到配置返回 `404`，已有任务运行时返回 `409`。
 
 ## 状态管理
 

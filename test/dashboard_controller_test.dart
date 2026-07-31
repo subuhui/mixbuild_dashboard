@@ -8,6 +8,7 @@ import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 import 'package:mixbuild_dashboard/services/build_execution_history_store.dart';
+import 'package:mixbuild_dashboard/services/build_trigger_server.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_command_runner.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_engine.dart';
 import 'package:mixbuild_dashboard/services/system_resource_monitor.dart';
@@ -16,6 +17,8 @@ import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
 import 'package:mixbuild_dashboard/state/dashboard_state.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('DashboardController', () {
     late Directory tempDir;
     late MixbuildYamlStore store;
@@ -51,6 +54,44 @@ void main() {
       });
     });
 
+    Future<
+        ({
+          RemoteBuildTriggerResult result,
+          String? capturedScenarioName,
+          String? capturedProjectBranch,
+        })> triggerRemoteBuild({
+      required MixbuildConfig config,
+      String? projectName,
+      String? scenarioName,
+      required String branch,
+    }) async {
+      store.saveConfigSync(config);
+      final fakeEngine = _RemoteTriggerMixbuildEngine();
+      final localContainer = ProviderContainer(
+        overrides: [
+          mixbuildYamlStoreProvider.overrideWithValue(store),
+          buildExecutionHistoryStoreProvider.overrideWithValue(historyStore),
+          systemResourceMonitorProvider.overrideWithValue(resourceMonitor),
+          mixbuildEngineProvider.overrideWithValue(fakeEngine),
+        ],
+      );
+      addTearDown(localContainer.dispose);
+
+      final controller = localContainer.read(
+        dashboardControllerProvider.notifier,
+      );
+      final result = await controller.triggerBuildFromRequest(
+        projectName: projectName,
+        scenarioName: scenarioName,
+        branch: branch,
+      );
+      return (
+        result: result,
+        capturedScenarioName: fakeEngine.scenarioName,
+        capturedProjectBranch: fakeEngine.projectBranch,
+      );
+    }
+
     test('editorBaseDependencies reflects scenario override branch', () {
       final controller = container.read(dashboardControllerProvider.notifier);
 
@@ -76,7 +117,6 @@ void main() {
             projectName: 'main_project',
             path: '.',
             type: MixbuildProjectType.flutter,
-            defaultBranch: 'develop',
             restoreCommand: 'fvm flutter pub get',
             isMainProject: true,
           ),
@@ -84,7 +124,6 @@ void main() {
             projectName: 'common_ui',
             path: 'modules/common_ui',
             type: MixbuildProjectType.flutter,
-            defaultBranch: 'main',
             restoreCommand: 'fvm flutter pub get',
             isMainProject: false,
           ),
@@ -118,7 +157,6 @@ void main() {
         container.read(dashboardControllerProvider).config.filePath,
       );
 
-      expect(savedConfig.mainProject.defaultBranch, 'develop');
       expect(savedConfig.buildScenarios, hasLength(1));
       expect(
           savedConfig.buildScenarios.single.mainBranch, 'release/main-project');
@@ -220,7 +258,7 @@ void main() {
             status: BuildStatus.failed,
             startedAt: DateTime(2026, 5, 23, 11, 30),
             finishedAt: DateTime(2026, 5, 23, 11, 31),
-            logs: const <LogEntry>[
+            logs: <LogEntry>[
               LogEntry(
                 time: '11:30:00',
                 level: 'ERROR',
@@ -309,6 +347,65 @@ void main() {
       expect(stateChanges, lessThan(18));
       expect(historySpy.saveCalls, lessThan(18));
     });
+
+    for (final testCase in <({
+      String description,
+      String? projectName,
+      String? scenarioName,
+      String branch,
+      String expectedScenarioName,
+    })>[
+      (
+        description: 'matches scenario name and requested branch',
+        projectName: null,
+        scenarioName: 'Release Build',
+        branch: 'release/v1.2',
+        expectedScenarioName: 'Release Build',
+      ),
+      (
+        description: 'matches main project name and branch',
+        projectName: 'main_project',
+        scenarioName: null,
+        branch: 'develop',
+        expectedScenarioName: 'Debug Build',
+      ),
+      (
+        description: 'matches dependency override branch',
+        projectName: 'common_ui',
+        scenarioName: null,
+        branch: 'release/v1.0',
+        expectedScenarioName: 'Release Build',
+      ),
+      (
+        description: 'matches scenario by dependency override branch',
+        projectName: null,
+        scenarioName: 'Release Build',
+        branch: 'release/v1.0',
+        expectedScenarioName: 'Release Build',
+      ),
+      (
+        description: 'matches dot-separated dependency name',
+        projectName: 'flutter.module.ui',
+        scenarioName: null,
+        branch: 'release/v1.0',
+        expectedScenarioName: 'Release Build',
+      ),
+    ]) {
+      test('curl trigger ${testCase.description}', () async {
+        final trigger = await triggerRemoteBuild(
+          config: _curlTriggerSeedConfig(),
+          projectName: testCase.projectName,
+          scenarioName: testCase.scenarioName,
+          branch: testCase.branch,
+        );
+
+        expect(trigger.result.accepted, isTrue);
+        expect(trigger.result.scenarioName, testCase.expectedScenarioName);
+        expect(trigger.result.branch, testCase.branch);
+        expect(trigger.capturedScenarioName, testCase.expectedScenarioName);
+        expect(trigger.capturedProjectBranch, testCase.branch);
+      });
+    }
   });
 }
 
@@ -323,7 +420,6 @@ MixbuildConfig _seedConfig() {
       name: 'main_project',
       path: '.',
       type: MixbuildProjectType.flutter,
-      defaultBranch: 'develop',
       restoreCommand: 'fvm flutter pub get',
     ),
     dependencies: <MixbuildRepoConfig>[
@@ -331,7 +427,6 @@ MixbuildConfig _seedConfig() {
         name: 'common_ui',
         path: 'modules/common_ui',
         type: MixbuildProjectType.flutter,
-        defaultBranch: 'main',
         restoreCommand: 'fvm flutter pub get',
       ),
     ],
@@ -342,6 +437,54 @@ MixbuildConfig _seedConfig() {
         mainBranch: 'develop',
         command: 'fvm flutter build macos --release',
         outputDir: 'build/macos/Build/Products/Release',
+      ),
+    ],
+  );
+}
+
+MixbuildConfig _curlTriggerSeedConfig() {
+  return const MixbuildConfig(
+    filePath: 'curl-trigger-seed.yaml',
+    workspace: MixbuildWorkspaceConfig(
+      name: 'workspace-demo',
+      rootPath: '/tmp/workspace-demo',
+    ),
+    mainProject: MixbuildRepoConfig(
+      name: 'main_project',
+      path: '.',
+      type: MixbuildProjectType.flutter,
+      restoreCommand: 'fvm flutter pub get',
+    ),
+    dependencies: <MixbuildRepoConfig>[
+      MixbuildRepoConfig(
+        name: 'common_ui',
+        path: 'modules/common_ui',
+        type: MixbuildProjectType.flutter,
+        restoreCommand: 'fvm flutter pub get',
+      ),
+      MixbuildRepoConfig(
+        name: 'flutter.module.ui',
+        path: 'modules/flutter.module.ui',
+        type: MixbuildProjectType.flutter,
+        restoreCommand: 'fvm flutter pub get',
+      ),
+    ],
+    buildScenarios: <MixbuildScenarioConfig>[
+      MixbuildScenarioConfig(
+        id: 'debug-build',
+        name: 'Debug Build',
+        mainBranch: 'develop',
+        command: 'fvm flutter build macos --debug',
+      ),
+      MixbuildScenarioConfig(
+        id: 'release-build',
+        name: 'Release Build',
+        mainBranch: 'release/v1.2',
+        command: 'fvm flutter build macos --release',
+        dependencyOverrides: {
+          'common_ui': 'release/v1.0',
+          'flutter.module.ui': 'release/v1.0',
+        },
       ),
     ],
   );
@@ -387,6 +530,7 @@ class _FakeMixbuildEngine extends MixbuildEngine {
     required MixbuildConfig config,
     required ProjectBuild project,
     required BuildScenario scenario,
+    String? projectBranch,
     required bool cleanBeforeBuild,
     required Map<String, String> dependencyOverrides,
     required void Function(BuildStatus status, double progress) onProgress,
@@ -401,6 +545,29 @@ class _FakeMixbuildEngine extends MixbuildEngine {
       onProgress: onProgress,
       onLog: onLog,
     );
+  }
+}
+
+class _RemoteTriggerMixbuildEngine extends MixbuildEngine {
+  _RemoteTriggerMixbuildEngine() : super(_NoopCommandRunner());
+
+  String? scenarioName;
+  String? projectBranch;
+
+  @override
+  Future<void> runPipeline({
+    required MixbuildConfig config,
+    required ProjectBuild project,
+    required BuildScenario scenario,
+    String? projectBranch,
+    required bool cleanBeforeBuild,
+    required Map<String, String> dependencyOverrides,
+    required void Function(BuildStatus status, double progress) onProgress,
+    required void Function(LogEntry entry) onLog,
+  }) async {
+    scenarioName = scenario.name;
+    this.projectBranch = projectBranch;
+    onProgress(BuildStatus.success, 1.0);
   }
 }
 

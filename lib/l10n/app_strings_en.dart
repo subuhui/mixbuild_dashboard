@@ -1,7 +1,6 @@
 import 'package:mixbuild_dashboard/l10n/app_strings.dart';
 
 class AppStringsEn extends AppStrings {
-  // App
   @override
   String get appTitle => 'MixBuild Dashboard';
   @override
@@ -20,7 +19,6 @@ class AppStringsEn extends AppStrings {
   @override
   String appVersionSubtitleWith(String v) => 'v$v-stable · Flutter Desktop / macOS';
 
-  // Navigation
   @override
   String get navDashboard => 'Dashboard';
   @override
@@ -36,11 +34,9 @@ class AppStringsEn extends AppStrings {
   @override
   String get navOpenMenu => 'Open navigation';
 
-  // Copyright
   @override
   String get copyright => '© 2026 MixBuild Systems';
 
-  // Common buttons
   @override
   String get btnEdit => 'Edit';
   @override
@@ -72,7 +68,6 @@ class AppStringsEn extends AppStrings {
   @override
   String get btnView => 'View';
 
-  // Project editor
   @override
   String get projectEditorTitle => 'Project Configuration';
   @override
@@ -99,7 +94,6 @@ class AppStringsEn extends AppStrings {
   @override
   String get projectYamlTitle => 'Current Project YAML';
 
-  // Workspace & paths
   @override
   String get workspaceRoot => 'Workspace Root';
   @override
@@ -126,7 +120,6 @@ class AppStringsEn extends AppStrings {
   @override
   String get outputPathHint => '';
 
-  // Main project
   @override
   String get mainProject => 'Main Project';
   @override
@@ -137,7 +130,6 @@ class AppStringsEn extends AppStrings {
   String get mainProjectBindingSubtitle =>
       'Configure main project path and default branch';
 
-  // Dependencies
   @override
   String get dependencyTopology => 'Dependency Topology';
   @override
@@ -177,7 +169,6 @@ class AppStringsEn extends AppStrings {
   @override
   String get dependencyOverride => 'Override';
 
-  // Build scenarios
   @override
   String get scenarioConfig => 'Build Scenario Configuration';
   @override
@@ -221,7 +212,6 @@ class AppStringsEn extends AppStrings {
   @override
   String get scenarioCreatedLog => 'Scenario created and waiting for execution';
 
-  // Build status
   @override
   String get statusIdle => 'IDLE';
   @override
@@ -269,7 +259,6 @@ class AppStringsEn extends AppStrings {
   @override
   String get loadingLabel => 'Loading…';
 
-  // Build status labels
   @override
   String get currentStatus => 'Current Status';
   @override
@@ -283,7 +272,6 @@ class AppStringsEn extends AppStrings {
   @override
   String get parallelRunning => 'Parallel Running';
 
-  // Build logs
   @override
   String get buildLogsTitle => 'Build Logs';
   @override
@@ -305,7 +293,6 @@ class AppStringsEn extends AppStrings {
   @override
   String get buildLogsStartFinish => 'Started at · Finished at';
 
-  // YAML editor
   @override
   String get yamlEditorTitle => 'YAML Configuration Override';
   @override
@@ -331,7 +318,6 @@ class AppStringsEn extends AppStrings {
   @override
   String get yamlGlobalConfig => 'Global Config';
 
-  // Global config
   @override
   String get globalConfigTitle => 'Global Configuration';
   @override
@@ -349,14 +335,12 @@ class AppStringsEn extends AppStrings {
   String get settingsThemeSectionNote =>
       'Theme changes take effect immediately and are restored on next launch.';
 
-  // Advanced options
   @override
   String get advancedOptions => 'Advanced Options';
   @override
   String get advancedOptionsSubtitle =>
       'Configure output directory and auto-tag behavior after successful build';
 
-  // Auto tag
   @override
   String get autoTag => 'Auto Tag';
   @override
@@ -372,11 +356,9 @@ class AppStringsEn extends AppStrings {
   @override
   String get autoTagDisabled => 'Disabled';
 
-  // Scenario preview
   @override
   String get scenarioTarget => 'Target';
 
-  // Misc
   @override
   String get mainBranchLabel => 'Main Branch';
   @override
@@ -384,7 +366,6 @@ class AppStringsEn extends AppStrings {
   @override
   String get zshTerminalTitle => 'zsh';
 
-  // Import / Export
   @override
   String get settingsDataTitle => 'Data Management';
   @override
@@ -410,7 +391,6 @@ class AppStringsEn extends AppStrings {
   @override
   String importError(String error) => 'Import failed: $error';
 
-  // Clear Logs
   @override
   String get settingsClearLogs => 'Clear Logs';
   @override
@@ -424,7 +404,6 @@ class AppStringsEn extends AppStrings {
   @override
   String settingsClearLogsError(String error) => 'Clear logs failed: $error';
 
-  // Error messages
   @override
   String yamlSaveError(String error) => 'YAML save failed: $error';
   @override
@@ -476,4 +455,35 @@ class AppStringsEn extends AppStrings {
       'Showing $visible of $total matching logs';
   @override
   String buildLogsLoadOlder(int count) => 'Load older ($count)';
+
+  @override
+  String get settingsServerTitle => 'Build Server';
+  @override
+  String get settingsServerSubtitle =>
+      'Manage local build trigger server port and status.';
+  @override
+  String get settingsServerPortLabel => 'Server Port';
+  @override
+  String get settingsServerPortHint => 'Enter server port (1024-65535)';
+  @override
+  String get settingsServerPortInvalid =>
+      'Please enter a valid port number (1024-65535)';
+  @override
+  String get settingsServerPortSave => 'Save & Restart';
+  @override
+  String get settingsServerPortSuccess =>
+      'Build server port updated and restarted successfully!';
+  @override
+  String get settingsServerStatus => 'Service Status';
+  @override
+  String get settingsServerRunning => 'Running';
+  @override
+  String get settingsServerStopped => 'Stopped';
+  @override
+  String get settingsServerCurlExample => 'Curl Trigger Example';
+  @override
+  String get settingsServerCurlProject =>
+      'A. Trigger by Project Name (Default):';
+  @override
+  String get settingsServerCurlScenario => 'B. Trigger by Build Scenario Name:';
 }

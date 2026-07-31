@@ -8,17 +8,19 @@ import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 import 'package:mixbuild_dashboard/services/build_execution_history_store.dart';
+import 'package:mixbuild_dashboard/services/build_notification_service.dart';
+import 'package:mixbuild_dashboard/services/build_trigger_server.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_command_runner.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_engine.dart';
 import 'package:mixbuild_dashboard/services/system_resource_monitor.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_yaml_store.dart';
 import 'package:mixbuild_dashboard/state/dashboard_state.dart';
+import 'package:mixbuild_dashboard/state/server_config_controller.dart';
 
 final mixbuildCommandRunnerProvider = Provider<MixbuildCommandRunner>((ref) {
   return ProcessRunCommandRunner();
 });
 
-/// Build engine provider.
 final mixbuildEngineProvider = Provider<MixbuildEngine>((ref) {
   return MixbuildEngine(ref.watch(mixbuildCommandRunnerProvider));
 });
@@ -27,7 +29,6 @@ final systemResourceMonitorProvider = Provider<SystemResourceMonitor>((ref) {
   return ProcessSystemResourceMonitor(ref.watch(mixbuildCommandRunnerProvider));
 });
 
-/// YAML persistence provider.
 final mixbuildYamlStoreProvider = Provider<MixbuildYamlStore>((ref) {
   return const MixbuildYamlStore();
 });
@@ -37,18 +38,39 @@ final buildExecutionHistoryStoreProvider =
   return const BuildExecutionHistoryStore();
 });
 
-/// Main state controller provider for dashboard business logic.
+final buildNotificationServiceProvider =
+    Provider<BuildNotificationService>((ref) {
+  return const NativeBuildNotificationService();
+});
+
 final dashboardControllerProvider =
     NotifierProvider<DashboardController, DashboardState>(
         DashboardController.new);
 
-/// Core dashboard business controller responsibilities:
-///
-/// - Discover and load workspace YAML configs on startup
-/// - Watch YAML changes and debounce reloads
-/// - Manage project and scenario selection state
-/// - Trigger and stop build pipelines through [MixbuildEngine]
-/// - Persist config changes through [MixbuildYamlStore]
+final buildTriggerServerProvider = Provider<BuildTriggerServer>((ref) {
+  final controller = ref.read(dashboardControllerProvider.notifier);
+  final port = ref.watch(buildTriggerPortControllerProvider);
+  final server = BuildTriggerServer(
+    port: port,
+    onTrigger: (request) => controller.triggerBuildFromRequest(
+      projectName: request.project,
+      scenarioName: request.scenario,
+      branch: request.branch,
+    ),
+  );
+  unawaited(
+    server.start().then((_) {
+      controller.clearBuildTriggerServerError();
+    }).catchError((Object error, StackTrace stackTrace) {
+      controller.setBuildTriggerServerError(error);
+    }),
+  );
+  ref.onDispose(() {
+    unawaited(server.stop());
+  });
+  return server;
+});
+
 class DashboardController extends Notifier<DashboardState> {
   static const Duration _historyPersistDebounceDelay =
       Duration(milliseconds: 320);
@@ -108,7 +130,7 @@ class DashboardController extends Notifier<DashboardState> {
   List<String> branchOptions(ProjectBuild project) {
     return <String>{
       project.branch,
-      state.config.mainProject.defaultBranch,
+      'main',
       'master',
       'develop',
       'release/v1.0',
@@ -117,11 +139,8 @@ class DashboardController extends Notifier<DashboardState> {
   }
 
   List<String> dependencyBranchOptions(DependencyBranch dependency) {
-    final configDependency =
-        state.config.dependencies.where((item) => item.name == dependency.name);
     return <String>{
       dependency.branch,
-      if (configDependency.isNotEmpty) configDependency.first.defaultBranch,
       'master',
       'develop',
       'main',
@@ -145,7 +164,7 @@ class DashboardController extends Notifier<DashboardState> {
       final overrideBranch = scenarioOverrides[dependency.name];
       return DependencyBranch(
         name: dependency.name,
-        branch: selected?.branch ?? overrideBranch ?? dependency.defaultBranch,
+        branch: selected?.branch ?? overrideBranch ?? 'main',
         icon:
             selected?.icon ?? _dependencyIcon(dependency.type, dependency.name),
         highlight: selected?.highlight,
@@ -153,7 +172,6 @@ class DashboardController extends Notifier<DashboardState> {
     }).toList(growable: false);
   }
 
-  /// Reloads the current workspace YAML config from disk and refreshes UI state.
   Future<void> reloadTopology() async {
     try {
       final config = ref
@@ -177,7 +195,6 @@ class DashboardController extends Notifier<DashboardState> {
         .readYamlSync(state.config.filePath);
   }
 
-  /// Saves raw YAML text, reparses it, and updates workspace config.
   Future<void> saveCurrentYaml(String content) async {
     final savedConfig = ref.read(mixbuildYamlStoreProvider).saveRawYamlSync(
           content,
@@ -214,13 +231,11 @@ class DashboardController extends Notifier<DashboardState> {
       globalConfig: GlobalConfig(
         workspaceRoot: config.workspace.rootPath,
         activeProjectName: config.workspace.name,
-        mainProjectDefaultBranch: config.mainProject.defaultBranch,
         bindings: [
           WorkspaceBinding(
             projectName: config.mainProject.name,
             path: config.mainProject.path,
             type: config.mainProject.type,
-            defaultBranch: config.mainProject.defaultBranch,
             restoreCommand: config.mainProject.restoreCommand,
           ),
           ...config.dependencies.map(
@@ -228,7 +243,6 @@ class DashboardController extends Notifier<DashboardState> {
               projectName: d.name,
               path: d.path,
               type: d.type,
-              defaultBranch: d.defaultBranch,
               restoreCommand: d.restoreCommand,
             ),
           ),
@@ -336,7 +350,6 @@ class DashboardController extends Notifier<DashboardState> {
         projectName: baseConfig.mainProject.name,
         path: baseConfig.mainProject.path,
         type: baseConfig.mainProject.type,
-        defaultBranch: baseConfig.mainProject.defaultBranch,
         restoreCommand: baseConfig.mainProject.restoreCommand,
         isMainProject: true,
       ),
@@ -348,7 +361,6 @@ class DashboardController extends Notifier<DashboardState> {
         name: binding.projectName,
         path: binding.path,
         type: binding.type,
-        defaultBranch: binding.defaultBranch,
         restoreCommand: binding.restoreCommand,
       );
     }).toList(growable: false);
@@ -365,9 +377,7 @@ class DashboardController extends Notifier<DashboardState> {
       return MixbuildScenarioConfig(
         id: scenario.id,
         name: scenario.name,
-        mainBranch: scenario.mainBranch.trim().isEmpty
-            ? mainBinding.defaultBranch
-            : scenario.mainBranch.trim(),
+        mainBranch: scenario.mainBranch.trim(),
         command: scenario.command,
         outputDir: scenario.outputPath.trim().isEmpty
             ? null
@@ -387,7 +397,6 @@ class DashboardController extends Notifier<DashboardState> {
         name: mainBinding.projectName,
         path: mainBinding.path,
         type: mainBinding.type,
-        defaultBranch: mainBinding.defaultBranch,
         restoreCommand: mainBinding.restoreCommand,
       ),
       dependencies: updatedDependencies,
@@ -402,7 +411,6 @@ class DashboardController extends Notifier<DashboardState> {
         previousFilePath: baseConfig.filePath);
   }
 
-  /// Creates a new workspace project, writes its YAML config, and switches to it.
   Future<void> createProject({
     required GlobalConfig config,
     required List<ProjectBindingConfig> bindings,
@@ -412,11 +420,10 @@ class DashboardController extends Notifier<DashboardState> {
 
     final mainBinding = bindings.firstWhere(
       (binding) => binding.isMainProject,
-      orElse: () => ProjectBindingConfig(
+      orElse: () => const ProjectBindingConfig(
         projectName: 'new_project',
         path: '.',
         type: MixbuildProjectType.flutter,
-        defaultBranch: 'main',
         restoreCommand: null,
         isMainProject: true,
       ),
@@ -428,7 +435,6 @@ class DashboardController extends Notifier<DashboardState> {
         name: binding.projectName,
         path: binding.path,
         type: binding.type,
-        defaultBranch: binding.defaultBranch,
         restoreCommand: binding.restoreCommand,
       );
     }).toList(growable: false);
@@ -437,9 +443,7 @@ class DashboardController extends Notifier<DashboardState> {
       return MixbuildScenarioConfig(
         id: scenario.id,
         name: scenario.name,
-        mainBranch: scenario.mainBranch.trim().isEmpty
-            ? mainBinding.defaultBranch
-            : scenario.mainBranch.trim(),
+        mainBranch: scenario.mainBranch.trim(),
         command: scenario.command,
         outputDir: scenario.outputPath.trim().isEmpty
             ? null
@@ -467,7 +471,6 @@ class DashboardController extends Notifier<DashboardState> {
         name: mainBinding.projectName,
         path: mainBinding.path,
         type: mainBinding.type,
-        defaultBranch: mainBinding.defaultBranch,
         restoreCommand: mainBinding.restoreCommand,
       ),
       dependencies: newDependencies,
@@ -479,7 +482,6 @@ class DashboardController extends Notifier<DashboardState> {
         overrideGlobalConfig: config, preserveError: false);
   }
 
-  /// Switches to a workspace by name and reloads its YAML config.
   Future<void> switchWorkspace(String workspaceName) async {
     final store = ref.read(mixbuildYamlStoreProvider);
     File matchedFile = File(state.config.filePath);
@@ -531,9 +533,6 @@ class DashboardController extends Notifier<DashboardState> {
     );
   }
 
-  /// Triggers the build pipeline for the selected scenario.
-  ///
-  /// If the scenario is already running, this stops it; otherwise it streams status and logs.
   Future<void> triggerSelectedScenario() async {
     final project = state.selectedProject;
     final scenario = state.selectedScenario;
@@ -552,15 +551,134 @@ class DashboardController extends Notifier<DashboardState> {
       return;
     }
 
+    final scenarioBranch = scenario.mainBranch.trim();
+    if (scenarioBranch.isEmpty) {
+      state = state.copyWith(
+        lastError: 'main_branch is required for scenario: ${scenario.name}',
+      );
+      return;
+    }
+    await _runScenarioPipeline(
+      config: state.config,
+      project: project,
+      scenario: scenario,
+      projectBranch: scenarioBranch,
+      cleanBeforeBuild: state.cleanBeforeBuild[scenario.id] ?? false,
+    );
+  }
+
+  Future<RemoteBuildTriggerResult> triggerBuildFromRequest({
+    String? projectName,
+    String? scenarioName,
+    required String branch,
+  }) async {
+    final normalizedBranch = branch.trim();
+    if ((projectName == null || projectName.trim().isEmpty) &&
+        (scenarioName == null || scenarioName.trim().isEmpty)) {
+      return const RemoteBuildTriggerResult.rejected(
+        statusCode: HttpStatus.badRequest,
+        message: 'Scenario or project name is required',
+      );
+    }
+    if (normalizedBranch.isEmpty) {
+      return const RemoteBuildTriggerResult.rejected(
+        statusCode: HttpStatus.badRequest,
+        message: 'Branch is required',
+      );
+    }
+    if (state.runningCount > 0) {
+      return const RemoteBuildTriggerResult.rejected(
+        statusCode: HttpStatus.conflict,
+        message: 'A build is already running',
+      );
+    }
+
+    _ScenarioAndProject? match;
+    if (scenarioName != null && scenarioName.trim().isNotEmpty) {
+      match = _findScenarioAndProjectByScenarioNameAndBranch(
+        scenarioName: scenarioName,
+        branch: normalizedBranch,
+      );
+      if (match == null) {
+        return RemoteBuildTriggerResult.rejected(
+          statusCode: HttpStatus.notFound,
+          message:
+              'Scenario not found: ${scenarioName.trim()} with branch $normalizedBranch',
+        );
+      }
+    } else if (projectName != null && projectName.trim().isNotEmpty) {
+      match = _findScenarioAndProjectByProjectNameAndBranch(
+        projectName: projectName,
+        branch: normalizedBranch,
+      );
+      if (match == null) {
+        return RemoteBuildTriggerResult.rejected(
+          statusCode: HttpStatus.notFound,
+          message:
+              'No matching scenario found for project "${projectName.trim()}" and branch "$normalizedBranch"',
+        );
+      }
+    }
+
+    if (match == null) {
+      return const RemoteBuildTriggerResult.rejected(
+        statusCode: HttpStatus.badRequest,
+        message: 'No match found',
+      );
+    }
+
+    unawaited(
+      _runScenarioPipeline(
+        config: configForProject(match.project),
+        project: match.project,
+        scenario: match.scenario,
+        projectBranch: normalizedBranch,
+        cleanBeforeBuild: state.cleanBeforeBuild[match.scenario.id] ?? false,
+      ),
+    );
+    return RemoteBuildTriggerResult.accepted(
+      projectName: match.project.name,
+      scenarioName: match.scenario.name,
+      branch: normalizedBranch,
+      score: 1.0,
+    );
+  }
+
+  void setBuildTriggerServerError(Object error) {
+    if (_isDisposed) {
+      return;
+    }
+    state = state.copyWith(lastError: 'Build trigger server failed: $error');
+  }
+
+  void clearBuildTriggerServerError() {
+    if (_isDisposed) {
+      return;
+    }
+    if (state.lastError != null &&
+        state.lastError!.startsWith('Build trigger server failed:')) {
+      state = state.copyWith(lastError: null);
+    }
+  }
+
+  Future<void> _runScenarioPipeline({
+    required MixbuildConfig config,
+    required ProjectBuild project,
+    required BuildScenario scenario,
+    required String projectBranch,
+    required bool cleanBeforeBuild,
+  }) async {
+    final notificationService = ref.read(buildNotificationServiceProvider);
     _stopRequested = false;
-    _startExecution(project, scenario);
+    _startExecution(project, scenario, projectBranch: projectBranch);
     final queuedLogs = <LogEntry>[
       _log(
         level: 'INFO',
-        message: 'Queued pipeline for ${project.name} / ${scenario.name}',
+        message:
+            'Queued pipeline for ${project.name} / ${scenario.name} on $projectBranch',
         accent: MixBuildPalette.warning,
       ),
-      if (state.cleanBeforeBuild[scenario.id] ?? false)
+      if (cleanBeforeBuild)
         _log(
           level: 'INFO',
           message: 'Clean flag enabled. Build command will append --clean.',
@@ -587,12 +705,13 @@ class DashboardController extends Notifier<DashboardState> {
 
     try {
       await ref.read(mixbuildEngineProvider).runPipeline(
-            config: state.config,
-            project: state.selectedProject,
-            scenario: state.selectedScenario,
-            cleanBeforeBuild: state.cleanBeforeBuild[scenario.id] ?? false,
+            config: config,
+            project: project,
+            scenario: scenario,
+            projectBranch: projectBranch,
+            cleanBeforeBuild: cleanBeforeBuild,
             dependencyOverrides: {
-              for (final dependency in state.selectedScenario.dependencies)
+              for (final dependency in scenario.dependencies)
                 if (dependency.isOverride) dependency.name: dependency.branch,
             },
             onProgress: (status, progress) {
@@ -633,7 +752,6 @@ class DashboardController extends Notifier<DashboardState> {
         transform: (current) => current.copyWith(
           status: BuildStatus.failed,
           progress: 0,
-          mainBranch: project.branch,
           logs: [
             errorLog,
             ...current.logs,
@@ -645,6 +763,12 @@ class DashboardController extends Notifier<DashboardState> {
         scenarioId: scenario.id,
         status: BuildStatus.failed,
       );
+      await _notifyBuildFinished(
+        notificationService: notificationService,
+        projectName: project.name,
+        scenarioName: scenario.name,
+        status: BuildStatus.failed,
+      );
       state = state.copyWith(lastError: '$error');
       return;
     }
@@ -653,26 +777,61 @@ class DashboardController extends Notifier<DashboardState> {
       scenarioId: scenario.id,
       status: BuildStatus.success,
     );
+    await _notifyBuildFinished(
+      notificationService: notificationService,
+      projectName: project.name,
+      scenarioName: scenario.name,
+      status: BuildStatus.success,
+    );
   }
 
-  /// Stops the active build pipeline and sends SIGKILL to child processes.
   void stopSelectedScenario() {
     _stopRequested = true;
-    ref.read(mixbuildEngineProvider).killActive();
     final project = state.selectedProject;
+    String? workingDirectory;
+    try {
+      final config = ref.read(mixbuildYamlStoreProvider).loadConfigSync(project.id);
+      workingDirectory = config.mainProject.absolutePath(config.workspace.rootPath);
+    } catch (_) {
+    }
+
+    ref.read(mixbuildEngineProvider).killActive(
+          projectType: project.type,
+          workingDirectory: workingDirectory,
+        );
+
     final scenario = state.selectedScenario;
+    final notificationService = ref.read(buildNotificationServiceProvider);
     _flushExecutionLogs(project.id, scenario.id);
+
     final interruptionLog = _log(
       level: 'WARN',
       message:
           'Stop signal dispatched to the active build process tree. Background children may need a short moment to exit.',
       accent: MixBuildPalette.error,
     );
+
+    final isAndroid = project.type == MixbuildProjectType.android;
+    final gradleLog = isAndroid
+        ? _log(
+            level: 'INFO',
+            message:
+                'Android project detected. Triggering gradle daemon stop command in background.',
+            accent: MixBuildPalette.warning,
+          )
+        : null;
+
+    final logsToRecord = <LogEntry>[
+      interruptionLog,
+      ?gradleLog,
+    ];
+
     _recordImmediateExecutionLogs(
       projectId: project.id,
       scenarioId: scenario.id,
-      logs: <LogEntry>[interruptionLog],
+      logs: logsToRecord,
     );
+
     _updateScenario(
       projectId: project.id,
       scenarioId: scenario.id,
@@ -680,7 +839,7 @@ class DashboardController extends Notifier<DashboardState> {
         status: BuildStatus.interrupted,
         progress: 0,
         logs: [
-          interruptionLog,
+          ...logsToRecord,
           ...current.logs,
         ].toList(growable: false),
       ),
@@ -689,7 +848,27 @@ class DashboardController extends Notifier<DashboardState> {
       projectId: project.id,
       scenarioId: scenario.id,
       status: BuildStatus.interrupted,
-    ));
+    ).then((_) {
+      return _notifyBuildFinished(
+        notificationService: notificationService,
+        projectName: project.name,
+        scenarioName: scenario.name,
+        status: BuildStatus.interrupted,
+      );
+    }));
+  }
+
+  Future<void> _notifyBuildFinished({
+    required BuildNotificationService notificationService,
+    required String projectName,
+    required String scenarioName,
+    required BuildStatus status,
+  }) {
+    return notificationService.notifyBuildFinished(
+      projectName: projectName,
+      scenarioName: scenarioName,
+      status: status,
+    );
   }
 
   DashboardState _stateFromConfigs(
@@ -712,13 +891,11 @@ class DashboardController extends Notifier<DashboardState> {
       globalConfig: GlobalConfig(
         workspaceRoot: activeConfig.workspace.rootPath,
         activeProjectName: activeConfig.workspace.name,
-        mainProjectDefaultBranch: activeConfig.mainProject.defaultBranch,
         bindings: [
           WorkspaceBinding(
             projectName: activeConfig.mainProject.name,
             path: activeConfig.mainProject.path,
             type: activeConfig.mainProject.type,
-            defaultBranch: activeConfig.mainProject.defaultBranch,
             restoreCommand: activeConfig.mainProject.restoreCommand,
           ),
           ...activeConfig.dependencies.map(
@@ -726,7 +903,6 @@ class DashboardController extends Notifier<DashboardState> {
               projectName: d.name,
               path: d.path,
               type: d.type,
-              defaultBranch: d.defaultBranch,
               restoreCommand: d.restoreCommand,
             ),
           ),
@@ -750,7 +926,7 @@ class DashboardController extends Notifier<DashboardState> {
               name: 'Default Build',
               subtitle: 'No build scenario is defined in YAML',
               environment: config.workspace.name,
-              mainBranch: config.mainProject.defaultBranch,
+              mainBranch: '',
               command: '',
               status: BuildStatus.idle,
               progress: 0,
@@ -788,7 +964,7 @@ class DashboardController extends Notifier<DashboardState> {
                 final isOverride = overrideBranch != null;
                 return DependencyBranch(
                   name: dependency.name,
-                  branch: overrideBranch ?? dependency.defaultBranch,
+                  branch: overrideBranch ?? 'main',
                   icon: _dependencyIcon(dependency.type, dependency.name),
                   isOverride: isOverride,
                   highlight: isOverride ? MixBuildPalette.primary : null,
@@ -814,9 +990,9 @@ class DashboardController extends Notifier<DashboardState> {
       id: config.filePath,
       emoji: '📦',
       name: config.workspace.name,
-      description:
-          '${config.mainProject.type.name} / ${config.mainProject.defaultBranch}',
-      branch: config.mainProject.defaultBranch,
+      description: config.mainProject.type.name,
+      branch: 'main',
+      type: config.mainProject.type,
       scenarios: scenarios,
     );
   }
@@ -913,7 +1089,7 @@ class DashboardController extends Notifier<DashboardState> {
     final dependencyLines = config.dependencies.map((dependency) {
       final overrideBranch =
           scenarioConfig.dependencyOverrides[dependency.name];
-      final branch = overrideBranch ?? dependency.defaultBranch;
+      final branch = overrideBranch ?? 'main';
       return '  ${dependency.name}:\n    branch: $branch';
     }).join('\n');
     return 'workspace:\n  root_path: ${config.workspace.rootPath}\nscenario:\n  name: ${scenarioConfig.name}\n  main_branch: ${scenarioConfig.mainBranch}\ndependencies:\n$dependencyLines\n';
@@ -971,13 +1147,11 @@ class DashboardController extends Notifier<DashboardState> {
           GlobalConfig(
             workspaceRoot: config.workspace.rootPath,
             activeProjectName: config.workspace.name,
-            mainProjectDefaultBranch: config.mainProject.defaultBranch,
             bindings: [
               WorkspaceBinding(
                 projectName: config.mainProject.name,
                 path: config.mainProject.path,
                 type: config.mainProject.type,
-                defaultBranch: config.mainProject.defaultBranch,
                 restoreCommand: config.mainProject.restoreCommand,
               ),
               ...config.dependencies.map(
@@ -985,7 +1159,6 @@ class DashboardController extends Notifier<DashboardState> {
                   projectName: d.name,
                   path: d.path,
                   type: d.type,
-                  defaultBranch: d.defaultBranch,
                   restoreCommand: d.restoreCommand,
                 ),
               ),
@@ -1024,12 +1197,17 @@ class DashboardController extends Notifier<DashboardState> {
     });
   }
 
-  void _startExecution(ProjectBuild project, BuildScenario scenario) {
+  void _startExecution(
+    ProjectBuild project,
+    BuildScenario scenario, {
+    required String projectBranch,
+  }) {
     final taskId =
         '${DateTime.now().microsecondsSinceEpoch}-${project.id.hashCode}-${scenario.id}';
     final executionKey = _executionKey(project.id, scenario.id);
     _activeExecutions[executionKey] = _ActiveExecutionContext(
       executionId: taskId,
+      projectBranch: projectBranch,
     );
     state = state.copyWith(
       executionHistory: <BuildExecutionRecord>[
@@ -1040,9 +1218,7 @@ class DashboardController extends Notifier<DashboardState> {
           scenarioId: scenario.id,
           scenarioName: scenario.name,
           command: scenario.command,
-          branch: scenario.mainBranch.trim().isEmpty
-              ? project.branch
-              : scenario.mainBranch,
+          branch: projectBranch,
           status: BuildStatus.validating,
           startedAt: DateTime.now(),
         ),
@@ -1152,6 +1328,92 @@ class DashboardController extends Notifier<DashboardState> {
     return null;
   }
 
+  String _lastSegment(String value) {
+    final trimmed = value.trim();
+    if (trimmed.contains('/')) {
+      final parts = trimmed.split('/').where((part) => part.isNotEmpty);
+      if (parts.isNotEmpty) {
+        return parts.last;
+      }
+    }
+    return trimmed;
+  }
+
+  _ScenarioAndProject? _findScenarioAndProjectByScenarioNameAndBranch({
+    required String scenarioName,
+    required String branch,
+  }) {
+    final target = _normalizeMatchText(scenarioName);
+    final targetBranch = _normalizeMatchText(branch);
+    for (final project in state.projects) {
+      for (final scenario in project.scenarios) {
+        if (_normalizeMatchText(scenario.name) != target) {
+          continue;
+        }
+        if (_normalizeMatchText(scenario.mainBranch) == targetBranch ||
+            scenario.dependencies.any(
+              (dependency) =>
+                  _normalizeMatchText(dependency.branch) == targetBranch,
+            )) {
+          return _ScenarioAndProject(scenario: scenario, project: project);
+        }
+      }
+    }
+    return null;
+  }
+
+  _ScenarioAndProject? _findScenarioAndProjectByProjectNameAndBranch({
+    required String projectName,
+    required String branch,
+  }) {
+    final target = _normalizeMatchText(_lastSegment(projectName));
+    final targetBranch = _normalizeMatchText(branch);
+
+    for (final project in state.projects) {
+      final config = configForProject(project);
+      final isMainProjectMatch = <String>[
+        config.mainProject.name,
+        project.name,
+        config.workspace.name,
+      ].any(
+        (name) => _normalizeMatchText(_lastSegment(name)) == target,
+      );
+      if (isMainProjectMatch) {
+        for (final scenario in project.scenarios) {
+          if (_normalizeMatchText(scenario.mainBranch) == targetBranch) {
+            return _ScenarioAndProject(scenario: scenario, project: project);
+          }
+        }
+      }
+
+      final hasDependency = config.dependencies.any(
+        (dependency) =>
+            _normalizeMatchText(_lastSegment(dependency.name)) == target,
+      );
+      if (!hasDependency) {
+        continue;
+      }
+      for (final scenario in project.scenarios) {
+        for (final dependency in scenario.dependencies) {
+          if (_normalizeMatchText(_lastSegment(dependency.name)) == target &&
+              _normalizeMatchText(dependency.branch) == targetBranch) {
+            return _ScenarioAndProject(scenario: scenario, project: project);
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  String _normalizeMatchText(String value) {
+    final tokens = value
+        .toLowerCase()
+        .split(RegExp(r'[^a-z0-9]+'))
+        .where((token) => token.isNotEmpty)
+        .toList(growable: false);
+    return tokens.isEmpty ? value.trim().toLowerCase() : tokens.join();
+  }
+
   List<BuildExecutionRecord> _syncExecutionHistory({
     required List<BuildExecutionRecord> history,
     required String projectId,
@@ -1168,7 +1430,7 @@ class DashboardController extends Notifier<DashboardState> {
       }
       return record.copyWith(
         status: scenario.status,
-        branch: scenario.mainBranch,
+        branch: context.projectBranch,
         logs: List<LogEntry>.from(context.executionLogs, growable: false),
       );
     }).toList(growable: false);
@@ -1263,7 +1525,6 @@ class DashboardController extends Notifier<DashboardState> {
     );
   }
 
-  /// Exports all workspace configs as a ZIP file through the system file picker.
   Future<int> exportConfigToZip() async {
     final store = ref.read(mixbuildYamlStoreProvider);
     final zipBytes = store.exportAllToZipBytes();
@@ -1276,14 +1537,13 @@ class DashboardController extends Notifier<DashboardState> {
       suggestedName: 'mixbuild_config.zip',
     );
     if (saveLocation == null) {
-      return 0; // User cancelled.
+      return 0;
     }
 
     File(saveLocation.path).writeAsBytesSync(zipBytes);
     return workspaceCount;
   }
 
-  /// Imports workspace configs from a ZIP selected through the system file picker.
   Future<int> importConfigFromZip() async {
     final typeGroup = XTypeGroup(
       label: 'ZIP',
@@ -1291,7 +1551,7 @@ class DashboardController extends Notifier<DashboardState> {
     );
     final file = await openFile(acceptedTypeGroups: [typeGroup]);
     if (file == null) {
-      return 0; // User cancelled.
+      return 0;
     }
 
     final zipBytes = File(file.path).readAsBytesSync();
@@ -1299,7 +1559,6 @@ class DashboardController extends Notifier<DashboardState> {
     final importedConfigs = store.importFromZipBytes(zipBytes);
 
     if (importedConfigs.isNotEmpty) {
-      // Reload all configs.
       final yamlFiles = store.discoverWorkspaceYamlFilesSync();
       final configs = <MixbuildConfig>[];
       for (final yamlFile in yamlFiles) {
@@ -1316,7 +1575,6 @@ class DashboardController extends Notifier<DashboardState> {
     return importedConfigs.length;
   }
 
-  /// Clears all historical build logs.
   Future<int> clearAllExecutionLogs() async {
     final store = ref.read(buildExecutionHistoryStoreProvider);
     final count = await store.clearAllLogs();
@@ -1326,10 +1584,24 @@ class DashboardController extends Notifier<DashboardState> {
 }
 
 class _ActiveExecutionContext {
-  _ActiveExecutionContext({required this.executionId});
+  _ActiveExecutionContext({
+    required this.executionId,
+    required this.projectBranch,
+  });
 
   final String executionId;
+  final String projectBranch;
   final List<LogEntry> executionLogs = <LogEntry>[];
   final List<LogEntry> pendingLogs = <LogEntry>[];
   Timer? flushTimer;
+}
+
+class _ScenarioAndProject {
+  const _ScenarioAndProject({
+    required this.scenario,
+    required this.project,
+  });
+
+  final BuildScenario scenario;
+  final ProjectBuild project;
 }

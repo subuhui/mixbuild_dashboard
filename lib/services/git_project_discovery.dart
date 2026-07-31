@@ -4,7 +4,6 @@ import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
-/// Discovered Git repository with absolute and workspace-relative paths.
 class DiscoveredGitProject {
   const DiscoveredGitProject({
     required this.name,
@@ -17,13 +16,9 @@ class DiscoveredGitProject {
   final String absolutePath;
   final String relativePath;
 
-  /// Project type inferred from files in the repository root.
   final MixbuildProjectType? projectType;
 }
 
-/// Recursively scans a workspace directory for child repositories containing `.git`.
-///
-/// The default max depth is 3 and common generated directories are skipped.
 class GitProjectDiscovery {
   const GitProjectDiscovery({this.maxDepth = 3});
 
@@ -94,7 +89,6 @@ class GitProjectDiscovery {
     return projects;
   }
 
-  /// Detects project type by priority: Flutter, iOS, then Android.
   Future<MixbuildProjectType?> _detectProjectType(
     Directory projectDirectory,
   ) async {
@@ -133,7 +127,6 @@ class GitProjectDiscovery {
     return null;
   }
 
-  /// Checks whether pubspec declares a Flutter SDK dependency.
   Future<bool> _isFlutterProject(File pubspec) async {
     try {
       final document = loadYaml(await pubspec.readAsString());
@@ -147,7 +140,6 @@ class GitProjectDiscovery {
     }
   }
 
-  /// Checks whether the flutter dependency entry points to the Flutter SDK.
   bool _hasFlutterSdkDependency(Object? dependencies) {
     if (dependencies is! YamlMap) {
       return false;

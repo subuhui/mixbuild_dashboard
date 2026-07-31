@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
+import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 
-/// 静态示例数据仓库，提供开发/演示用的项目、指标和全局配置。
-///
-/// 生产环境由 [DashboardController] 从 YAML 文件动态加载数据。
 class MixBuildRepository {
   static List<ProjectBuild> projects() {
     return [
@@ -14,6 +12,7 @@ class MixBuildRepository {
         name: '项目 A：物流核心平台',
         description: '隔离打包区',
         branch: 'release/v1.0',
+        type: MixbuildProjectType.flutter,
         scenarios: [
           BuildScenario(
             id: 'a-debug',
@@ -103,7 +102,7 @@ class MixBuildRepository {
                 time: '17:51:11',
                 level: 'WARN',
                 message:
-                    'analytics_sdk missing same-name branch, fallback to default_branch',
+                    'analytics_sdk requested branch is unavailable remotely',
                 accent: MixBuildPalette.warning,
               ),
               LogEntry(
@@ -123,6 +122,7 @@ class MixBuildRepository {
         name: '项目 B：供应链管理系统',
         description: '依赖扫描中',
         branch: 'develop',
+        type: MixbuildProjectType.android,
         scenarios: [
           BuildScenario(
             id: 'b-auto-test',
@@ -173,7 +173,7 @@ class MixBuildRepository {
                 time: '17:51:20',
                 level: 'WARN',
                 message:
-                    'webpack branch missing remotely, fallback to default_branch=main',
+                    'webpack requested branch is unavailable remotely',
                 accent: MixBuildPalette.warning,
               ),
             ],

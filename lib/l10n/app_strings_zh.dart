@@ -1,7 +1,6 @@
 import 'package:mixbuild_dashboard/l10n/app_strings.dart';
 
 class AppStringsZh extends AppStrings {
-  // App
   @override
   String get appTitle => 'MixBuild Dashboard';
   @override
@@ -20,7 +19,6 @@ class AppStringsZh extends AppStrings {
   @override
   String appVersionSubtitleWith(String v) => 'v$v-stable · Flutter Desktop / macOS';
 
-  // Navigation
   @override
   String get navDashboard => '仪表盘';
   @override
@@ -36,11 +34,9 @@ class AppStringsZh extends AppStrings {
   @override
   String get navOpenMenu => '打开导航';
 
-  // Copyright
   @override
   String get copyright => '© 2026 MixBuild Systems';
 
-  // Common buttons
   @override
   String get btnEdit => '编辑';
   @override
@@ -72,7 +68,6 @@ class AppStringsZh extends AppStrings {
   @override
   String get btnView => '查看';
 
-  // Project editor
   @override
   String get projectEditorTitle => '工程配置中心';
   @override
@@ -98,7 +93,6 @@ class AppStringsZh extends AppStrings {
   @override
   String get projectYamlTitle => '当前项目 YAML';
 
-  // Workspace & paths
   @override
   String get workspaceRoot => '工作区根路径';
   @override
@@ -123,7 +117,6 @@ class AppStringsZh extends AppStrings {
   @override
   String get outputPathHint => '';
 
-  // Main project
   @override
   String get mainProject => '主工程';
   @override
@@ -133,7 +126,6 @@ class AppStringsZh extends AppStrings {
   @override
   String get mainProjectBindingSubtitle => '配置主工程路径与默认分支';
 
-  // Dependencies
   @override
   String get dependencyTopology => '依赖项拓扑视图';
   @override
@@ -171,7 +163,6 @@ class AppStringsZh extends AppStrings {
   @override
   String get dependencyOverride => '覆写';
 
-  // Build scenarios
   @override
   String get scenarioConfig => '构建场景配置';
   @override
@@ -213,7 +204,6 @@ class AppStringsZh extends AppStrings {
   @override
   String get scenarioCreatedLog => '场景已创建，等待执行';
 
-  // Build status
   @override
   String get statusIdle => 'IDLE';
   @override
@@ -257,7 +247,6 @@ class AppStringsZh extends AppStrings {
   @override
   String get loadingLabel => 'Loading…';
 
-  // Build status labels
   @override
   String get currentStatus => '当前状态';
   @override
@@ -271,7 +260,6 @@ class AppStringsZh extends AppStrings {
   @override
   String get parallelRunning => '并行运行';
 
-  // Build logs
   @override
   String get buildLogsTitle => '构建日志';
   @override
@@ -293,7 +281,6 @@ class AppStringsZh extends AppStrings {
   @override
   String get buildLogsStartFinish => '开始于 · 结束于';
 
-  // YAML editor
   @override
   String get yamlEditorTitle => 'YAML Configuration Override';
   @override
@@ -317,7 +304,6 @@ class AppStringsZh extends AppStrings {
   @override
   String get yamlGlobalConfig => 'Global Config';
 
-  // Global config
   @override
   String get globalConfigTitle => '工程配置中心';
   @override
@@ -333,13 +319,11 @@ class AppStringsZh extends AppStrings {
   @override
   String get settingsThemeSectionNote => '主题切换会立即生效，并在下次启动时自动恢复。';
 
-  // Advanced options
   @override
   String get advancedOptions => '高级选项';
   @override
   String get advancedOptionsSubtitle => '配置产物输出目录以及构建成功后的自动标签行为';
 
-  // Auto tag
   @override
   String get autoTag => '自动标签';
   @override
@@ -355,11 +339,9 @@ class AppStringsZh extends AppStrings {
   @override
   String get autoTagDisabled => '关闭';
 
-  // Scenario preview
   @override
   String get scenarioTarget => '目标';
 
-  // Misc
   @override
   String get mainBranchLabel => '主分支';
   @override
@@ -367,7 +349,6 @@ class AppStringsZh extends AppStrings {
   @override
   String get zshTerminalTitle => 'zsh';
 
-  // Import / Export
   @override
   String get settingsDataTitle => '数据管理';
   @override
@@ -393,7 +374,6 @@ class AppStringsZh extends AppStrings {
   @override
   String importError(String error) => '导入失败: $error';
 
-  // Clear Logs
   @override
   String get settingsClearLogs => '清除日志';
   @override
@@ -407,7 +387,6 @@ class AppStringsZh extends AppStrings {
   @override
   String settingsClearLogsError(String error) => '清除日志失败: $error';
 
-  // Error messages
   @override
   String yamlSaveError(String error) => 'YAML 保存失败: $error';
   @override
@@ -455,4 +434,31 @@ class AppStringsZh extends AppStrings {
       '显示匹配结果 $visible / $total 条';
   @override
   String buildLogsLoadOlder(int count) => '加载更早日志 ($count)';
+
+  @override
+  String get settingsServerTitle => '构建服务配置';
+  @override
+  String get settingsServerSubtitle => '管理本地构建触发服务的端口与运行状态。';
+  @override
+  String get settingsServerPortLabel => '构建服务端口';
+  @override
+  String get settingsServerPortHint => '请输入服务端口 (1024-65535)';
+  @override
+  String get settingsServerPortInvalid => '请输入合法的端口号 (1024-65535)';
+  @override
+  String get settingsServerPortSave => '保存并重启服务';
+  @override
+  String get settingsServerPortSuccess => '构建服务端口已成功修改并重启！';
+  @override
+  String get settingsServerStatus => '运行状态';
+  @override
+  String get settingsServerRunning => '运行中';
+  @override
+  String get settingsServerStopped => '已停止';
+  @override
+  String get settingsServerCurlExample => 'Curl 触发示例';
+  @override
+  String get settingsServerCurlProject => 'A. 通过项目名称触发（默认）：';
+  @override
+  String get settingsServerCurlScenario => 'B. 通过构建场景触发：';
 }
