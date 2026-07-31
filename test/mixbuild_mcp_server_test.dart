@@ -115,6 +115,9 @@ void main() {
     final discoverResult = discover['result'] as Map<String, dynamic>;
     expect(discoverResult['supportedVersions'], <String>['2026-07-28']);
     expect(discoverResult['resultType'], 'complete');
+    expect(discoverResult['instructions'], contains('构建'));
+    expect(discoverResult['instructions'], contains('新增场景'));
+    expect(discoverResult['instructions'], contains('列出场景'));
 
     final list =
         await server.handlePayload(<String, dynamic>{

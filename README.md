@@ -43,21 +43,22 @@ fvm flutter build macos
 
 ## MCP Server
 
-The packaged application can run as a stdio MCP server without opening the
-dashboard UI. It supports MCP `2026-07-28` discovery and stateless requests,
-with legacy initialization compatibility through `2025-11-25`. Build the macOS
-app, then register its executable in an MCP client:
+The dashboard starts a localhost MCP endpoint alongside the existing remote
+build trigger server. Start the app, then register the local URL in an MCP
+client:
 
 ```json
 {
   "mcpServers": {
     "mixbuild": {
-      "command": "/absolute/path/to/mixbuild_dashboard.app/Contents/MacOS/mixbuild_dashboard",
-      "args": ["--mcp"]
+      "url": "http://127.0.0.1:8765/mcp"
     }
   }
 }
 ```
+
+The endpoint binds to `127.0.0.1` only, uses the same port configured in
+Settings, and does not require authentication for local use.
 
 The server exposes three tools:
 

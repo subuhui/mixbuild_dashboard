@@ -7,9 +7,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
+import 'package:mixbuild_dashboard/mcp/mixbuild_mcp_server.dart';
 import 'package:mixbuild_dashboard/services/build_execution_history_store.dart';
 import 'package:mixbuild_dashboard/services/build_notification_service.dart';
 import 'package:mixbuild_dashboard/services/build_trigger_server.dart';
+import 'package:mixbuild_dashboard/services/mcp_build_service.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_command_runner.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_engine.dart';
 import 'package:mixbuild_dashboard/services/system_resource_monitor.dart';
@@ -43,6 +45,20 @@ final buildNotificationServiceProvider =
   return const NativeBuildNotificationService();
 });
 
+final mcpBuildServiceProvider = Provider<McpBuildService>((ref) {
+  return McpBuildService(
+    ref.watch(mixbuildYamlStoreProvider),
+    ref.watch(mixbuildEngineProvider),
+    ref.watch(buildExecutionHistoryStoreProvider),
+  );
+});
+
+final mixbuildMcpServerProvider = Provider<MixbuildMcpServer>((ref) {
+  return MixbuildMcpServer(
+    MixbuildMcpToolHandler(ref.watch(mcpBuildServiceProvider)),
+  );
+});
+
 final dashboardControllerProvider =
     NotifierProvider<DashboardController, DashboardState>(
         DashboardController.new);
@@ -52,6 +68,7 @@ final buildTriggerServerProvider = Provider<BuildTriggerServer>((ref) {
   final port = ref.watch(buildTriggerPortControllerProvider);
   final server = BuildTriggerServer(
     port: port,
+    mcpServer: ref.watch(mixbuildMcpServerProvider),
     onTrigger: (request) => controller.triggerBuildFromRequest(
       projectName: request.project,
       scenarioName: request.scenario,

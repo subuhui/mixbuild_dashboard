@@ -41,6 +41,30 @@ fvm flutter run -d macos
 fvm flutter build macos
 ```
 
+## MCP 服务
+
+仪表盘启动后会随本地远程构建服务一起暴露 MCP URL 端点。启动 App 后，在 MCP 客户端中配置本地地址：
+
+```json
+{
+  "mcpServers": {
+    "mixbuild": {
+      "url": "http://127.0.0.1:8765/mcp"
+    }
+  }
+}
+```
+
+该端点只绑定 `127.0.0.1`，复用设置页里的本地服务端口，本地使用不需要身份验证。
+
+可用工具：
+
+| 工具 | 用途 |
+|---|---|
+| `mixbuild_list_scenarios` | 按项目目录和目标 Git 分支列出匹配的构建场景 |
+| `mixbuild_build_project` | 运行现有校验、同步、恢复、构建和后置流水线 |
+| `mixbuild_add_scenario` | 向匹配项目目录的工作区 YAML 新增构建场景 |
+
 ## 项目结构
 
 ```

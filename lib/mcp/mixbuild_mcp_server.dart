@@ -11,6 +11,12 @@ const List<String> _legacyProtocolVersions = <String>[
   '2025-03-26',
   '2024-11-05',
 ];
+const String _serverInstructions =
+    'MixBuild 构建打包工具。中文意图映射：'
+    '“有哪些场景/查场景/列出场景/匹配场景”使用 mixbuild_list_scenarios；'
+    '“构建/打包/触发构建/跑 release/发包/出包”使用 mixbuild_build_project；'
+    '“新增场景/配置场景/添加构建场景/为某分支创建场景”使用 mixbuild_add_scenario。'
+    '匹配时必须提供绝对 project_directory 和精确 branch；同一分支有多个场景时先列场景，再带 scenario_name 构建。';
 
 class McpToolCallResult {
   const McpToolCallResult(this.payload, {this.isError = false});
@@ -34,20 +40,20 @@ class MixbuildMcpToolHandler implements McpToolHandler {
   List<Map<String, dynamic>> get tools => <Map<String, dynamic>>[
     <String, dynamic>{
       'name': 'mixbuild_list_scenarios',
-      'title': 'List matching MixBuild scenarios',
+      'title': '查找/列出 MixBuild 构建场景',
       'description':
-          'Find build scenarios by project directory and target Git branch.',
+          '用于“有哪些构建场景、查场景、列出场景、匹配项目分支、看看 release/main 分支能怎么构建”。'
+          'Find configured build scenarios by absolute project directory and exact Git branch.',
       'inputSchema': <String, dynamic>{
         'type': 'object',
         'properties': <String, dynamic>{
           'project_directory': <String, dynamic>{
             'type': 'string',
-            'description':
-                'Absolute main project directory or a directory inside it.',
+            'description': '项目绝对路径；可以是主项目目录，也可以是主项目内部任意目录。',
           },
           'branch': <String, dynamic>{
             'type': 'string',
-            'description': 'Exact target Git branch.',
+            'description': '要匹配的精确 Git 分支名，例如 main、release/v1.0。',
           },
         },
         'required': <String>['project_directory', 'branch'],
@@ -62,32 +68,30 @@ class MixbuildMcpToolHandler implements McpToolHandler {
     },
     <String, dynamic>{
       'name': 'mixbuild_build_project',
-      'title': 'Build and package a MixBuild project',
+      'title': '触发 MixBuild 构建/打包',
       'description':
-          'Run the configured MixBuild pipeline selected by project '
-          'directory, branch, and optional scenario name. The pipeline may '
-          'reset and clean configured Git repositories.',
+          '用于“构建、打包、触发构建、跑 release、发包、出包、对某项目某分支执行构建”。'
+          'Run the configured MixBuild pipeline selected by project_directory, branch, '
+          'and optional scenario_name. The pipeline may reset and clean configured Git repositories.',
       'inputSchema': <String, dynamic>{
         'type': 'object',
         'properties': <String, dynamic>{
           'project_directory': <String, dynamic>{
             'type': 'string',
-            'description':
-                'Absolute main project directory or a directory inside it.',
+            'description': '项目绝对路径；可以是主项目目录，也可以是主项目内部任意目录。',
           },
           'branch': <String, dynamic>{
             'type': 'string',
-            'description': 'Exact target Git branch.',
+            'description': '要构建的精确 Git 分支名。',
           },
           'scenario_name': <String, dynamic>{
             'type': 'string',
-            'description':
-                'Required only when multiple scenarios match the branch.',
+            'description': '场景名称；当同一目录和分支匹配多个场景时必须提供，例如 release。',
           },
           'clean_before_build': <String, dynamic>{
             'type': 'boolean',
             'default': false,
-            'description': 'Append --clean to the configured build command.',
+            'description': '构建命令追加 --clean。',
           },
         },
         'required': <String>['project_directory', 'branch'],
@@ -102,32 +106,45 @@ class MixbuildMcpToolHandler implements McpToolHandler {
     },
     <String, dynamic>{
       'name': 'mixbuild_add_scenario',
-      'title': 'Add a MixBuild scenario',
+      'title': '新增/配置 MixBuild 构建场景',
       'description':
-          'Add a build scenario to the workspace matched by the current '
-          'project directory.',
+          '用于“新增场景、添加构建场景、配置某分支构建、给 apk_fly main 分支创建场景”。'
+          'Add a build scenario to the workspace matched by project_directory.',
       'inputSchema': <String, dynamic>{
         'type': 'object',
         'properties': <String, dynamic>{
           'project_directory': <String, dynamic>{
             'type': 'string',
-            'description':
-                'Absolute main project directory or a directory inside it.',
+            'description': '项目绝对路径；用于定位要写入哪个 MixBuild 工作区配置。',
           },
           'branch': <String, dynamic>{
             'type': 'string',
-            'description': 'Exact target Git branch for the new scenario.',
+            'description': '新场景的主项目精确 Git 分支名。',
           },
-          'name': <String, dynamic>{'type': 'string'},
+          'name': <String, dynamic>{
+            'type': 'string',
+            'description': '新构建场景名称，例如 release、apk_fly main。',
+          },
           'command': <String, dynamic>{
             'type': 'string',
-            'description': 'Build/package shell command.',
+            'description': '构建/打包 shell 命令。',
           },
-          'output_directory': <String, dynamic>{'type': 'string'},
-          'auto_tag': <String, dynamic>{'type': 'boolean', 'default': false},
-          'tag_prefix': <String, dynamic>{'type': 'string'},
+          'output_directory': <String, dynamic>{
+            'type': 'string',
+            'description': '构建产物输出目录。',
+          },
+          'auto_tag': <String, dynamic>{
+            'type': 'boolean',
+            'default': false,
+            'description': '构建成功后是否自动打 Git tag。',
+          },
+          'tag_prefix': <String, dynamic>{
+            'type': 'string',
+            'description': '自动 tag 前缀，例如 release_。',
+          },
           'dependency_overrides': <String, dynamic>{
             'type': 'object',
+            'description': '依赖仓库分支覆盖；例如 {"apk_fly": "main"}。',
             'additionalProperties': <String, dynamic>{'type': 'string'},
           },
         },
@@ -305,9 +322,7 @@ class MixbuildMcpServer {
           'tools': <String, dynamic>{'listChanged': false},
         },
         '_meta': _serverInfoMeta,
-        'instructions':
-            'Match projects with absolute project_directory and exact branch. '
-            'List scenarios before building when a branch has multiple options.',
+        'instructions': _serverInstructions,
         'ttlMs': 300000,
         'cacheScope': 'public',
       });
@@ -398,9 +413,7 @@ class MixbuildMcpServer {
         'name': 'mixbuild-dashboard',
         'version': '1.0.4',
       },
-      'instructions':
-          'Match projects with absolute project_directory and exact branch. '
-          'List scenarios before building when a branch has multiple options.',
+      'instructions': _serverInstructions,
     });
   }
 

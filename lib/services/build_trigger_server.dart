@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:mixbuild_dashboard/mcp/mixbuild_mcp_server.dart';
+
 typedef BuildTriggerHandler =
     Future<RemoteBuildTriggerResult> Function(BuildTriggerRequest request);
 
@@ -59,6 +61,7 @@ class RemoteBuildTriggerResult {
 class BuildTriggerServer {
   BuildTriggerServer({
     required this.onTrigger,
+    this.mcpServer,
     this.host = '127.0.0.1',
     this.port = 8765,
   });
@@ -66,6 +69,7 @@ class BuildTriggerServer {
   final String host;
   int port;
   final BuildTriggerHandler onTrigger;
+  final MixbuildMcpServer? mcpServer;
   HttpServer? _server;
   StreamSubscription<HttpRequest>? _subscription;
 
@@ -88,6 +92,11 @@ class BuildTriggerServer {
   }
 
   Future<void> _handleRequest(HttpRequest request) async {
+    if (request.uri.path == '/mcp') {
+      await _handleMcpRequest(request);
+      return;
+    }
+
     if (request.method != 'POST' || request.uri.path != '/build') {
       _writeJson(request, HttpStatus.notFound, <String, Object?>{
         'accepted': false,
@@ -143,6 +152,93 @@ class BuildTriggerServer {
     }
   }
 
+  Future<void> _handleMcpRequest(HttpRequest request) async {
+    if (!_isAllowedLocalOrigin(request)) {
+      _writeJsonPayload(request, HttpStatus.forbidden, <String, Object?>{
+        'jsonrpc': '2.0',
+        'id': null,
+        'error': <String, Object?>{
+          'code': -32000,
+          'message': 'Forbidden origin',
+        },
+      });
+      return;
+    }
+
+    if (request.method == 'GET') {
+      request.response
+        ..statusCode = HttpStatus.methodNotAllowed
+        ..headers.set(HttpHeaders.allowHeader, 'POST, GET');
+      unawaited(request.response.close());
+      return;
+    }
+
+    if (request.method != 'POST') {
+      request.response
+        ..statusCode = HttpStatus.methodNotAllowed
+        ..headers.set(HttpHeaders.allowHeader, 'POST, GET');
+      unawaited(request.response.close());
+      return;
+    }
+
+    final server = mcpServer;
+    if (server == null) {
+      _writeJson(request, HttpStatus.notFound, <String, Object?>{
+        'error': 'MCP endpoint is not configured',
+      });
+      return;
+    }
+
+    try {
+      final payload = await utf8.decodeStream(request);
+      final decoded = jsonDecode(payload);
+      final response = await server.handlePayload(decoded);
+      if (response == null) {
+        request.response.statusCode = HttpStatus.accepted;
+        unawaited(request.response.close());
+        return;
+      }
+      _writeJsonPayload(request, HttpStatus.ok, response);
+    } on FormatException catch (error) {
+      _writeJsonPayload(request, HttpStatus.badRequest, <String, Object?>{
+        'jsonrpc': '2.0',
+        'id': null,
+        'error': <String, Object?>{
+          'code': -32700,
+          'message': 'Parse error',
+          'data': error.message,
+        },
+      });
+    } catch (error) {
+      _writeJsonPayload(
+        request,
+        HttpStatus.internalServerError,
+        <String, Object?>{
+          'jsonrpc': '2.0',
+          'id': null,
+          'error': <String, Object?>{
+            'code': -32603,
+            'message': 'Internal error',
+            'data': '$error',
+          },
+        },
+      );
+    }
+  }
+
+  bool _isAllowedLocalOrigin(HttpRequest request) {
+    final origin = request.headers.value('origin');
+    if (origin == null || origin.trim().isEmpty) {
+      return true;
+    }
+    final uri = Uri.tryParse(origin);
+    if (uri == null) {
+      return false;
+    }
+    return (uri.scheme == 'http' || uri.scheme == 'https') &&
+        (uri.host == '127.0.0.1' || uri.host == 'localhost');
+  }
+
   void _writeBadRequest(HttpRequest request, String message) {
     _writeJson(request, HttpStatus.badRequest, <String, Object?>{
       'accepted': false,
@@ -155,6 +251,10 @@ class BuildTriggerServer {
     int statusCode,
     Map<String, Object?> body,
   ) {
+    _writeJsonPayload(request, statusCode, body);
+  }
+
+  void _writeJsonPayload(HttpRequest request, int statusCode, Object? body) {
     request.response
       ..statusCode = statusCode
       ..headers.contentType = ContentType.json
