@@ -61,6 +61,7 @@ class McpBuildService {
       name: match.config.mainProject.name,
       description: match.config.workspace.name,
       branch: branch.trim(),
+      type: match.config.mainProject.type,
       scenarios: <BuildScenario>[scenario],
     );
     final startedAt = DateTime.now();
@@ -73,6 +74,7 @@ class McpBuildService {
         config: match.config,
         project: project,
         scenario: scenario,
+        projectBranch: scenarioConfig.mainBranch,
         cleanBeforeBuild: cleanBeforeBuild,
         dependencyOverrides: scenarioConfig.dependencyOverrides,
         onProgress: (nextStatus, _) => status = nextStatus,

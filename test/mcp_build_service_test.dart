@@ -40,14 +40,12 @@ void main() {
           name: 'sample_app',
           path: 'app',
           type: MixbuildProjectType.flutter,
-          defaultBranch: 'main',
         ),
         dependencies: const <MixbuildRepoConfig>[
           MixbuildRepoConfig(
             name: 'shared_ui',
             path: 'shared_ui',
             type: MixbuildProjectType.flutter,
-            defaultBranch: 'main',
           ),
         ],
         buildScenarios: const <MixbuildScenarioConfig>[
@@ -119,6 +117,7 @@ void main() {
       p.join(projectDirectory.resolveSymbolicLinksSync(), 'build/release'),
     );
     expect(engine.lastScenario?.name, 'Release Build');
+    expect(engine.lastProjectBranch, 'release/1.0');
     expect(engine.lastCleanBeforeBuild, isTrue);
     expect(engine.lastDependencyOverrides, const <String, String>{
       'shared_ui': 'release/1.0',
@@ -158,6 +157,7 @@ class _RecordingEngine extends MixbuildEngine {
   _RecordingEngine() : super(ProcessRunCommandRunner());
 
   BuildScenario? lastScenario;
+  String? lastProjectBranch;
   bool? lastCleanBeforeBuild;
   Map<String, String>? lastDependencyOverrides;
 
@@ -166,12 +166,14 @@ class _RecordingEngine extends MixbuildEngine {
     required MixbuildConfig config,
     required ProjectBuild project,
     required BuildScenario scenario,
+    String? projectBranch,
     required bool cleanBeforeBuild,
     required Map<String, String> dependencyOverrides,
     required void Function(BuildStatus status, double progress) onProgress,
     required void Function(LogEntry entry) onLog,
   }) async {
     lastScenario = scenario;
+    lastProjectBranch = projectBranch;
     lastCleanBeforeBuild = cleanBeforeBuild;
     lastDependencyOverrides = dependencyOverrides;
     onProgress(BuildStatus.success, 1);
