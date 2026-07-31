@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
-final RegExp _projectNamePattern = RegExp(r'^[A-Za-z0-9_-]+$');
+final RegExp _projectNamePattern = RegExp(
+  r'^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*$',
+);
 
 /// 项目类型枚举，影响依赖恢复命令和构建命令的选择。
 enum MixbuildProjectType { android, flutter, ios }
@@ -321,7 +323,7 @@ String _asProjectName(Object? value, {required String field}) {
 String _validateProjectName(String value, {required String field}) {
   if (!_projectNamePattern.hasMatch(value)) {
     throw FormatException(
-      '$field must contain only ASCII letters, numbers, underscores, or hyphens.',
+      '$field must contain only ASCII letters, numbers, underscores, hyphens, and separator dots.',
     );
   }
   return value;

@@ -63,6 +63,34 @@ build_scenarios:
     expect(config.toYamlString(), isNot(contains('default_branch')));
   });
 
+  test('accepts dot-separated project names used by command variables', () {
+    const yaml = '''
+workspace:
+  name: "Flutter Modules"
+  root_path: "/tmp/workspace"
+main_project:
+  name: "FhbApp.Flutter"
+  path: "FhbApp.Flutter"
+  type: "flutter"
+dependencies:
+  - name: "flutter.module.ui"
+    path: "flutter.module.ui"
+    type: "flutter"
+build_scenarios:
+  - name: "Debug"
+    main_branch: "main"
+    command: "echo \${dependencies.flutter.module.ui.path}"
+''';
+
+    final config = MixbuildConfig.fromYaml(
+      filePath: '/tmp/dotted-project-names.yaml',
+      content: yaml,
+    );
+
+    expect(config.mainProject.name, 'FhbApp.Flutter');
+    expect(config.dependencies.single.name, 'flutter.module.ui');
+  });
+
   test('parses and serializes ios project type', () {
     const yaml = '''
 workspace:

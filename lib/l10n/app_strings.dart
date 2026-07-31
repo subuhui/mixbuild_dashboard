@@ -230,6 +230,21 @@ abstract class AppStrings {
   String settingsClearLogsSuccess(int count);
   String settingsClearLogsError(String error);
 
+  // Build Server
+  String get settingsServerTitle;
+  String get settingsServerSubtitle;
+  String get settingsServerPortLabel;
+  String get settingsServerPortHint;
+  String get settingsServerPortInvalid;
+  String get settingsServerPortSave;
+  String get settingsServerPortSuccess;
+  String get settingsServerStatus;
+  String get settingsServerRunning;
+  String get settingsServerStopped;
+  String get settingsServerCurlExample;
+  String get settingsServerCurlProject;
+  String get settingsServerCurlScenario;
+
   // Error messages
   String yamlSaveError(String error);
   String dirAccessError(String error);

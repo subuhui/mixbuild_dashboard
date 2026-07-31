@@ -120,6 +120,24 @@ build_scenarios:
 | **BUILDING** | Executes the scenario's build command (with optional `--clean`) |
 | **POST_HOOK** | Auto-tag, open output directory, macOS notification |
 
+## Remote Build Trigger (HTTP API)
+
+The dashboard includes a local HTTP server on port `8765` by default. The port can be changed from Settings.
+
+```bash
+# Trigger by scenario name
+curl -X POST http://127.0.0.1:8765/build \
+  -H "Content-Type: application/json" \
+  -d '{"scenario": "Release Build", "branch": "release/v1.2"}'
+
+# Trigger by main project or dependency name
+curl -X POST http://127.0.0.1:8765/build \
+  -H "Content-Type: application/json" \
+  -d '{"project": "flutter.module.ui", "branch": "release/v1.2"}'
+```
+
+`branch` is required, and at least one of `scenario` or `project` must be supplied. The server returns `202` when the build is queued, `400` for invalid input, `404` when no matching configuration exists, and `409` while another build is running.
+
 ## State Management
 
 Uses [Riverpod](https://riverpod.dev/) with the Notifier pattern:

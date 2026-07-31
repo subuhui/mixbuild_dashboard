@@ -382,6 +382,7 @@ class _FakeMixbuildEngine extends MixbuildEngine {
     required MixbuildConfig config,
     required ProjectBuild project,
     required BuildScenario scenario,
+    String? projectBranch,
     required bool cleanBeforeBuild,
     required Map<String, String> dependencyOverrides,
     required void Function(BuildStatus status, double progress) onProgress,

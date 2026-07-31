@@ -70,6 +70,7 @@ class MixbuildEngine {
     required MixbuildConfig config,
     required ProjectBuild project,
     required BuildScenario scenario,
+    String? projectBranch,
     required bool cleanBeforeBuild,
     required Map<String, String> dependencyOverrides,
     required void Function(BuildStatus status, double progress) onProgress,
@@ -100,9 +101,11 @@ class MixbuildEngine {
     );
     await _runSync(
       config: config,
-      projectBranch: scenario.mainBranch.trim().isEmpty
-          ? project.branch
-          : scenario.mainBranch,
+      projectBranch: projectBranch == null || projectBranch.trim().isEmpty
+          ? scenario.mainBranch.trim().isEmpty
+              ? project.branch
+              : scenario.mainBranch
+          : projectBranch,
       recreateLocalBranches: cleanBeforeBuild,
       dependencyOverrides: dependencyOverrides,
       onLog: onLog,
@@ -414,20 +417,6 @@ class MixbuildEngine {
           ),
         );
       }
-    }
-
-    if (Platform.isMacOS) {
-      await _runner.run(
-        "osascript -e 'display notification \"Build finished\" with title \"MixBuild Dashboard\"'",
-        workingDirectory: workingDirectory,
-      );
-      onLog(
-        _entry(
-          level: 'INFO',
-          message: 'macOS notification dispatched.',
-          accent: MixBuildPalette.success,
-        ),
-      );
     }
   }
 

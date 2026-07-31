@@ -136,7 +136,7 @@ void main() {
         ),
         dependencies: const <MixbuildRepoConfig>[
           MixbuildRepoConfig(
-            name: 'shared_ui',
+            name: 'flutter.module.ui',
             path: 'shared_ui',
             type: MixbuildProjectType.flutter,
             restoreCommand:
@@ -149,7 +149,7 @@ void main() {
             name: 'Release Build',
             mainBranch: 'release/main',
             command:
-                r'echo ${workspace.name} {{main_project.absolute_path}} ${scenario.main_branch} ${dependencies.shared_ui.branch}',
+                r'echo ${workspace.name} {{main_project.absolute_path}} ${scenario.main_branch} ${dependencies.flutter.module.ui.branch}',
           ),
         ],
       ),
@@ -169,7 +169,7 @@ void main() {
         environment: 'test',
         mainBranch: 'release/main',
         command:
-            r'echo ${workspace.name} {{main_project.absolute_path}} ${scenario.main_branch} ${dependencies.shared_ui.branch}',
+            r'echo ${workspace.name} {{main_project.absolute_path}} ${scenario.main_branch} ${dependencies.flutter.module.ui.branch}',
         status: BuildStatus.idle,
         progress: 0,
         logs: const <LogEntry>[],
@@ -180,7 +180,7 @@ void main() {
       ),
       cleanBeforeBuild: false,
       dependencyOverrides: const <String, String>{
-        'shared_ui': 'feature/shared',
+        'flutter.module.ui': 'feature/shared',
       },
       onProgress: (_, progress) {},
       onLog: (_) {},
@@ -188,7 +188,9 @@ void main() {
 
     expect(
       runner.shellCommands,
-      contains('echo shared_ui ${workspaceRoot.path} app feature/shared'),
+      contains(
+        'echo flutter.module.ui ${workspaceRoot.path} app feature/shared',
+      ),
     );
     expect(
       runner.shellCommands,
