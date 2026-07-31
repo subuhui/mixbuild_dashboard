@@ -6,12 +6,6 @@ import 'package:archive/archive.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:path/path.dart' as p;
 
-/// Persistence and discovery service for YAML config files.
-///
-/// Config directory priority: XDG_CONFIG_HOME, then ~/.config.
-/// Workspace YAML files live under `<config_dir>/workspaces/<slug>.yaml`.
-/// The last opened workspace path is stored in `last_opened_workspace.txt`.
-/// Local `config/` files are migrated automatically.
 class MixbuildYamlStore {
   const MixbuildYamlStore({String? configHomePath}) : _configHomePathOverride = configHomePath;
 
@@ -277,22 +271,15 @@ class MixbuildYamlStore {
     }
   }
 
-  /// Exports all workspace YAML configs as ZIP bytes.
-  ///
-  /// ZIP layout:
-  /// - `config/mixbuild.yaml` for global config
-  /// - `config/workspaces/<slug>.yaml` for workspace configs
   Uint8List exportAllToZipBytes() {
     final archive = Archive();
 
-    // Global config
     final legacyFile = File(legacyYamlPath);
     if (legacyFile.existsSync()) {
       final content = legacyFile.readAsBytesSync();
       archive.addFile(ArchiveFile('config/mixbuild.yaml', content.length, content));
     }
 
-    // Workspace configs
     for (final file in discoverWorkspaceYamlFilesSync()) {
       final slug = p.basenameWithoutExtension(file.path);
       final content = file.readAsBytesSync();
@@ -302,9 +289,6 @@ class MixbuildYamlStore {
     return Uint8List.fromList(ZipEncoder().encode(archive));
   }
 
-  /// Imports workspace YAML configs from ZIP bytes.
-  ///
-  /// Parses YAML files from `config/workspaces/`, writes them locally, and returns imported configs.
   List<MixbuildConfig> importFromZipBytes(Uint8List zipBytes) {
     final archive = ZipDecoder().decodeBytes(zipBytes);
     final importedConfigs = <MixbuildConfig>[];
@@ -316,7 +300,6 @@ class MixbuildYamlStore {
           final savedConfig = saveRawYamlSync(content);
           importedConfigs.add(savedConfig);
         } catch (_) {
-          // Skip files that cannot be parsed.
         }
       }
     }

@@ -8,7 +8,6 @@ import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 import 'package:mixbuild_dashboard/services/mixbuild_command_runner.dart';
 
-/// Build pipeline exception with a log level.
 class MixbuildEngineException implements Exception {
   const MixbuildEngineException(this.message, {this.level = 'ERROR'});
 
@@ -19,10 +18,6 @@ class MixbuildEngineException implements Exception {
   String toString() => message;
 }
 
-/// Build pipeline orchestrator that runs 5 phases in order:
-/// VALIDATING → SYNCING → RESTORING → BUILDING → POST_HOOK。
-///
-/// Uses [MixbuildCommandRunner] to abstract process execution for tests.
 class MixbuildEngine {
   MixbuildEngine(this._runner);
 
@@ -58,14 +53,9 @@ class MixbuildEngine {
         );
       });
     } catch (_) {
-      // Ignore background gradle stop failures
     }
   }
 
-  /// Runs the full build pipeline through all phases.
-  ///
-  /// [onProgress] is called on phase changes and [onLog] streams log entries.
-  /// Any phase failure throws [MixbuildEngineException].
   Future<void> runPipeline({
     required MixbuildConfig config,
     required ProjectBuild project,
@@ -427,7 +417,6 @@ class MixbuildEngine {
     required bool recreateLocalBranch,
     required void Function(LogEntry entry) onLog,
   }) async {
-    // Clean up a stale index.lock that may remain after an abnormal process exit.
     _cleanStaleIndexLock(repoPath);
     await _runGitCommandOrThrow(
       repoPath: repoPath,
@@ -868,7 +857,6 @@ class MixbuildEngine {
     if (!lockFile.existsSync()) {
       return;
     }
-    // Treat index.lock as stale after 5 seconds.
     final lastModified = lockFile.lastModifiedSync();
     final elapsed = DateTime.now().difference(lastModified);
     if (elapsed.inSeconds >= 5) {

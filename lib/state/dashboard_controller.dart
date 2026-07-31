@@ -21,7 +21,6 @@ final mixbuildCommandRunnerProvider = Provider<MixbuildCommandRunner>((ref) {
   return ProcessRunCommandRunner();
 });
 
-/// Build engine provider.
 final mixbuildEngineProvider = Provider<MixbuildEngine>((ref) {
   return MixbuildEngine(ref.watch(mixbuildCommandRunnerProvider));
 });
@@ -30,7 +29,6 @@ final systemResourceMonitorProvider = Provider<SystemResourceMonitor>((ref) {
   return ProcessSystemResourceMonitor(ref.watch(mixbuildCommandRunnerProvider));
 });
 
-/// YAML persistence provider.
 final mixbuildYamlStoreProvider = Provider<MixbuildYamlStore>((ref) {
   return const MixbuildYamlStore();
 });
@@ -45,7 +43,6 @@ final buildNotificationServiceProvider =
   return const NativeBuildNotificationService();
 });
 
-/// Main state controller provider for dashboard business logic.
 final dashboardControllerProvider =
     NotifierProvider<DashboardController, DashboardState>(
         DashboardController.new);
@@ -74,13 +71,6 @@ final buildTriggerServerProvider = Provider<BuildTriggerServer>((ref) {
   return server;
 });
 
-/// Core dashboard business controller responsibilities:
-///
-/// - Discover and load workspace YAML configs on startup
-/// - Watch YAML changes and debounce reloads
-/// - Manage project and scenario selection state
-/// - Trigger and stop build pipelines through [MixbuildEngine]
-/// - Persist config changes through [MixbuildYamlStore]
 class DashboardController extends Notifier<DashboardState> {
   static const Duration _historyPersistDebounceDelay =
       Duration(milliseconds: 320);
@@ -182,7 +172,6 @@ class DashboardController extends Notifier<DashboardState> {
     }).toList(growable: false);
   }
 
-  /// Reloads the current workspace YAML config from disk and refreshes UI state.
   Future<void> reloadTopology() async {
     try {
       final config = ref
@@ -206,7 +195,6 @@ class DashboardController extends Notifier<DashboardState> {
         .readYamlSync(state.config.filePath);
   }
 
-  /// Saves raw YAML text, reparses it, and updates workspace config.
   Future<void> saveCurrentYaml(String content) async {
     final savedConfig = ref.read(mixbuildYamlStoreProvider).saveRawYamlSync(
           content,
@@ -423,7 +411,6 @@ class DashboardController extends Notifier<DashboardState> {
         previousFilePath: baseConfig.filePath);
   }
 
-  /// Creates a new workspace project, writes its YAML config, and switches to it.
   Future<void> createProject({
     required GlobalConfig config,
     required List<ProjectBindingConfig> bindings,
@@ -495,7 +482,6 @@ class DashboardController extends Notifier<DashboardState> {
         overrideGlobalConfig: config, preserveError: false);
   }
 
-  /// Switches to a workspace by name and reloads its YAML config.
   Future<void> switchWorkspace(String workspaceName) async {
     final store = ref.read(mixbuildYamlStoreProvider);
     File matchedFile = File(state.config.filePath);
@@ -547,9 +533,6 @@ class DashboardController extends Notifier<DashboardState> {
     );
   }
 
-  /// Triggers the build pipeline for the selected scenario.
-  ///
-  /// If the scenario is already running, this stops it; otherwise it streams status and logs.
   Future<void> triggerSelectedScenario() async {
     final project = state.selectedProject;
     final scenario = state.selectedScenario;
@@ -802,7 +785,6 @@ class DashboardController extends Notifier<DashboardState> {
     );
   }
 
-  /// Stops the active build pipeline and sends SIGKILL to child processes.
   void stopSelectedScenario() {
     _stopRequested = true;
     final project = state.selectedProject;
@@ -811,7 +793,6 @@ class DashboardController extends Notifier<DashboardState> {
       final config = ref.read(mixbuildYamlStoreProvider).loadConfigSync(project.id);
       workingDirectory = config.mainProject.absolutePath(config.workspace.rootPath);
     } catch (_) {
-      // Ignore config loading errors in stop flow
     }
 
     ref.read(mixbuildEngineProvider).killActive(
@@ -1544,7 +1525,6 @@ class DashboardController extends Notifier<DashboardState> {
     );
   }
 
-  /// Exports all workspace configs as a ZIP file through the system file picker.
   Future<int> exportConfigToZip() async {
     final store = ref.read(mixbuildYamlStoreProvider);
     final zipBytes = store.exportAllToZipBytes();
@@ -1557,14 +1537,13 @@ class DashboardController extends Notifier<DashboardState> {
       suggestedName: 'mixbuild_config.zip',
     );
     if (saveLocation == null) {
-      return 0; // User cancelled.
+      return 0;
     }
 
     File(saveLocation.path).writeAsBytesSync(zipBytes);
     return workspaceCount;
   }
 
-  /// Imports workspace configs from a ZIP selected through the system file picker.
   Future<int> importConfigFromZip() async {
     final typeGroup = XTypeGroup(
       label: 'ZIP',
@@ -1572,7 +1551,7 @@ class DashboardController extends Notifier<DashboardState> {
     );
     final file = await openFile(acceptedTypeGroups: [typeGroup]);
     if (file == null) {
-      return 0; // User cancelled.
+      return 0;
     }
 
     final zipBytes = File(file.path).readAsBytesSync();
@@ -1580,7 +1559,6 @@ class DashboardController extends Notifier<DashboardState> {
     final importedConfigs = store.importFromZipBytes(zipBytes);
 
     if (importedConfigs.isNotEmpty) {
-      // Reload all configs.
       final yamlFiles = store.discoverWorkspaceYamlFilesSync();
       final configs = <MixbuildConfig>[];
       for (final yamlFile in yamlFiles) {
@@ -1597,7 +1575,6 @@ class DashboardController extends Notifier<DashboardState> {
     return importedConfigs.length;
   }
 
-  /// Clears all historical build logs.
   Future<int> clearAllExecutionLogs() async {
     final store = ref.read(buildExecutionHistoryStoreProvider);
     final count = await store.clearAllLogs();

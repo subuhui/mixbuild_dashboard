@@ -7,7 +7,6 @@ import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
 import 'package:mixbuild_dashboard/state/theme_controller.dart';
 import 'package:mixbuild_dashboard/ui/dashboard_home_page.dart';
 
-/// 应用根 Widget，提供 Riverpod 作用域和 Material 主题配置。
 class MixBuildApp extends ConsumerWidget {
   const MixBuildApp({super.key});
 

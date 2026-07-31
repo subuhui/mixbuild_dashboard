@@ -637,7 +637,6 @@ class _ScenarioPreviewTile extends StatelessWidget {
                 ),
               ],
             ),
-            // Active scenario: terminal log panel + progress bar
             if (isActive) ...[
               const SizedBox(height: 14),
               Container(

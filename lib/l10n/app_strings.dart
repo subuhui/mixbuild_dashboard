@@ -7,7 +7,6 @@ abstract class AppStrings {
     return Localizations.of<AppStrings>(context, AppStrings)!;
   }
 
-  // App
   String get appTitle;
   String get appTitleWithVersion;
   String get appBrand;
@@ -17,7 +16,6 @@ abstract class AppStrings {
   String appTitleWithVersionWith(String v);
   String appVersionSubtitleWith(String v);
 
-  // Navigation
   String get navDashboard;
   String get navBuildLogs;
   String get navSettings;
@@ -26,10 +24,8 @@ abstract class AppStrings {
   String get navDocs;
   String get navOpenMenu;
 
-  // Copyright
   String get copyright;
 
-  // Common buttons
   String get btnEdit;
   String get btnStop;
   String get btnStart;
@@ -46,7 +42,6 @@ abstract class AppStrings {
   String get btnBack;
   String get btnView;
 
-  // Project editor
   String get projectEditorTitle;
   String get projectEditorSubtitle;
   String get projectEditorSave;
@@ -60,7 +55,6 @@ abstract class AppStrings {
   String get projectSaveConfig;
   String get projectYamlTitle;
 
-  // Workspace & paths
   String get workspaceRoot;
   String get workspaceRootHint;
   String get workspaceRootSubtitle;
@@ -73,13 +67,11 @@ abstract class AppStrings {
   String get outputPath;
   String get outputPathHint;
 
-  // Main project
   String get mainProject;
   String get mainProjectBranch;
   String get mainProjectBinding;
   String get mainProjectBindingSubtitle;
 
-  // Dependencies
   String get dependencyTopology;
   String get dependencyTopologyMatrix;
   String get dependencyBranchOverride;
@@ -99,7 +91,6 @@ abstract class AppStrings {
   String get dependencyDefault;
   String get dependencyOverride;
 
-  // Build scenarios
   String get scenarioConfig;
   String get scenarioMatrixEditor;
   String get scenarioMatrixEditorSubtitle;
@@ -121,7 +112,6 @@ abstract class AppStrings {
   String get scenarioDefaultSubtitle;
   String get scenarioCreatedLog;
 
-  // Build status
   String get statusIdle;
   String get statusValidating;
   String get statusSyncing;
@@ -145,7 +135,6 @@ abstract class AppStrings {
   String get triggerLabel;
   String get loadingLabel;
 
-  // Build status labels
   String get currentStatus;
   String get runningStatus;
   String get failedStatus;
@@ -153,7 +142,6 @@ abstract class AppStrings {
   String get connectedStatus;
   String get parallelRunning;
 
-  // Build logs
   String get buildLogsTitle;
   String get buildLogsSubtitle;
   String get buildLogsEmpty;
@@ -165,7 +153,6 @@ abstract class AppStrings {
   String get buildLogsStart;
   String get buildLogsStartFinish;
 
-  // YAML editor
   String get yamlEditorTitle;
   String get yamlEditorSubtitle;
   String get yamlEditorFilename;
@@ -178,7 +165,6 @@ abstract class AppStrings {
   String get yamlOpen;
   String get yamlGlobalConfig;
 
-  // Global config
   String get globalConfigTitle;
   String get settingsAppearanceTitle;
   String get settingsAppearanceSubtitle;
@@ -187,11 +173,9 @@ abstract class AppStrings {
   String get settingsThemeDark;
   String get settingsThemeSectionNote;
 
-  // Advanced options
   String get advancedOptions;
   String get advancedOptionsSubtitle;
 
-  // Auto tag
   String get autoTag;
   String get autoTagTitle;
   String get autoTagDesc;
@@ -200,15 +184,12 @@ abstract class AppStrings {
   String get autoTagEnabled;
   String get autoTagDisabled;
 
-  // Scenario preview
   String get scenarioTarget;
 
-  // Misc
   String get mainBranchLabel;
   String get nodesLabel;
   String get zshTerminalTitle;
 
-  // Import / Export
   String get settingsDataTitle;
   String get settingsDataSubtitle;
   String get settingsExport;
@@ -222,7 +203,6 @@ abstract class AppStrings {
   String importSuccess(int count);
   String importError(String error);
 
-  // Clear Logs
   String get settingsClearLogs;
   String get settingsClearLogsDesc;
   String get settingsClearLogsConfirmTitle;
@@ -230,7 +210,6 @@ abstract class AppStrings {
   String settingsClearLogsSuccess(int count);
   String settingsClearLogsError(String error);
 
-  // Build Server
   String get settingsServerTitle;
   String get settingsServerSubtitle;
   String get settingsServerPortLabel;
@@ -245,7 +224,6 @@ abstract class AppStrings {
   String get settingsServerCurlProject;
   String get settingsServerCurlScenario;
 
-  // Error messages
   String yamlSaveError(String error);
   String dirAccessError(String error);
   String scanError(String error);

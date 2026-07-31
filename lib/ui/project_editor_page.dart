@@ -205,7 +205,6 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  /// 使用扫描到的文件特征类型，无法识别时沿用 Android 默认值。
   MixbuildProjectType _inferProjectType(
     MixbuildProjectType? detectedType,
   ) {

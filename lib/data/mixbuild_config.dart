@@ -7,7 +7,6 @@ final RegExp _projectNamePattern = RegExp(
   r'^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*$',
 );
 
-/// 项目类型枚举，影响依赖恢复命令和构建命令的选择。
 enum MixbuildProjectType { android, flutter, ios }
 
 MixbuildProjectType _parseProjectType(String value) {
@@ -18,7 +17,6 @@ MixbuildProjectType _parseProjectType(String value) {
   );
 }
 
-/// YAML 中 `workspace` 节点的映射：工作区名称和根目录绝对路径。
 class MixbuildWorkspaceConfig {
   const MixbuildWorkspaceConfig({required this.name, required this.rootPath});
 
@@ -33,9 +31,6 @@ class MixbuildWorkspaceConfig {
   }
 }
 
-/// YAML 中仓库节点的映射（main_project 或 dependencies 列表项）。
-///
-/// [path] 为相对于工作区根目录的路径，[absolutePath] 方法可拼接为绝对路径。
 class MixbuildRepoConfig {
   const MixbuildRepoConfig({
     required this.name,
@@ -70,9 +65,6 @@ class MixbuildRepoConfig {
   }
 }
 
-/// YAML 中 `build_scenarios` 列表项的映射。
-///
-/// [dependencyOverrides] 存储该场景对依赖分支的覆盖关系（key=依赖名, value=分支名）。
 class MixbuildScenarioConfig {
   const MixbuildScenarioConfig({
     required this.id,
@@ -117,10 +109,6 @@ class MixbuildScenarioConfig {
   }
 }
 
-/// 完整的 YAML 工作区配置，聚合了 workspace、main_project、dependencies 和 build_scenarios。
-///
-/// 通过 [MixbuildConfig.fromYaml] 从 YAML 字符串解析，
-/// 通过 [toYamlString] 序列化回 YAML 文本。
 class MixbuildConfig {
   const MixbuildConfig({
     required this.filePath,

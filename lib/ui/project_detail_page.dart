@@ -275,9 +275,6 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Sidebar
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _SidebarPanel extends StatelessWidget {
   const _SidebarPanel({
@@ -687,7 +684,6 @@ class _DependencyTree extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       child: Column(
         children: [
-          // Root node
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             child: Row(
@@ -718,7 +714,6 @@ class _DependencyTree extends StatelessWidget {
               ],
             ),
           ),
-          // Children with tree lines
           if (scenario.dependencies.isNotEmpty)
             Stack(
               children: [
@@ -990,9 +985,6 @@ class _SidebarFooter extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Right Panel – Pipeline Header
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _PipelineHeader extends StatelessWidget {
   const _PipelineHeader({
@@ -1155,9 +1147,6 @@ class _PipelineHeader extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Right Panel – Terminal
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _TerminalPanel extends StatelessWidget {
   const _TerminalPanel({
@@ -1196,7 +1185,6 @@ class _TerminalPanel extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Title bar
           Container(
             height: 44,
             padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -1278,7 +1266,6 @@ class _TerminalPanel extends StatelessWidget {
               ),
             ),
           ),
-          // Log output
           Expanded(
             child: scenario.logs.isEmpty
                 ? Center(
@@ -1374,7 +1361,6 @@ class _TerminalPanel extends StatelessWidget {
                         },
                       ),
           ),
-          // Progress footer
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
             child: Column(
@@ -1420,9 +1406,6 @@ class _TerminalPanel extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// HUD Overlay (bottom-right of terminal area)
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _HudOverlay extends StatelessWidget {
   const _HudOverlay({required this.metrics});
