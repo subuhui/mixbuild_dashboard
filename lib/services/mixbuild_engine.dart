@@ -61,6 +61,7 @@ class MixbuildEngine {
     required ProjectBuild project,
     required BuildScenario scenario,
     String? projectBranch,
+    String updateDescription = '',
     required bool cleanBeforeBuild,
     required Map<String, String> dependencyOverrides,
     required void Function(BuildStatus status, double progress) onProgress,
@@ -77,6 +78,7 @@ class MixbuildEngine {
     await _runPreflight(
       config: config,
       scenario: scenario,
+      updateDescription: updateDescription,
       dependencyOverrides: dependencyOverrides,
       onLog: onLog,
     );
@@ -127,6 +129,7 @@ class MixbuildEngine {
     await _runBuild(
       config: config,
       scenario: scenario,
+      updateDescription: updateDescription,
       cleanBeforeBuild: cleanBeforeBuild,
       dependencyOverrides: dependencyOverrides,
       onLog: onLog,
@@ -155,6 +158,7 @@ class MixbuildEngine {
   Future<void> _runPreflight({
     required MixbuildConfig config,
     required BuildScenario scenario,
+    required String updateDescription,
     required Map<String, String> dependencyOverrides,
     required void Function(LogEntry entry) onLog,
   }) async {
@@ -198,6 +202,7 @@ class MixbuildEngine {
       scenario.command,
       config: config,
       scenario: scenario,
+      updateDescription: updateDescription,
       dependencyOverrides: dependencyOverrides,
     );
     toolNames.add(
@@ -317,6 +322,7 @@ class MixbuildEngine {
   Future<void> _runBuild({
     required MixbuildConfig config,
     required BuildScenario scenario,
+    required String updateDescription,
     required bool cleanBeforeBuild,
     required Map<String, String> dependencyOverrides,
     required void Function(LogEntry entry) onLog,
@@ -328,6 +334,7 @@ class MixbuildEngine {
       scenario.command,
       config: config,
       scenario: scenario,
+      updateDescription: updateDescription,
       dependencyOverrides: dependencyOverrides,
     );
     final buildCommand =
@@ -606,6 +613,7 @@ class MixbuildEngine {
     required MixbuildConfig config,
     required BuildScenario scenario,
     MixbuildRepoConfig? dependency,
+    String? updateDescription,
     Map<String, String> dependencyOverrides = const <String, String>{},
   }) {
     return command.replaceAllMapped(_commandPlaceholderPattern, (match) {
@@ -617,6 +625,7 @@ class MixbuildEngine {
         config: config,
         scenario: scenario,
         dependency: dependency,
+        updateDescription: updateDescription,
         dependencyOverrides: dependencyOverrides,
       )[fieldPath];
       if (value == null) {
@@ -632,6 +641,7 @@ class MixbuildEngine {
     required MixbuildConfig config,
     required BuildScenario scenario,
     MixbuildRepoConfig? dependency,
+    String? updateDescription,
     required Map<String, String> dependencyOverrides,
   }) {
     final effectiveMainBranch = scenario.mainBranch;
@@ -651,6 +661,8 @@ class MixbuildEngine {
       'scenario.output_dir': scenario.outputPath,
       'scenario.auto_tag': scenario.autoTag.toString(),
       'scenario.tag_prefix': scenario.tagPrefix,
+      if (updateDescription != null)
+        'build.update_description': _shellQuote(updateDescription),
     };
     for (final item in config.dependencies) {
       _addRepoTemplateValues(
@@ -673,6 +685,13 @@ class MixbuildEngine {
           dependencyOverrides[dependency.name] ?? effectiveMainBranch;
     }
     return values;
+  }
+
+  String _shellQuote(String value) {
+    if (Platform.isWindows) {
+      return '"${value.replaceAll('"', '""').replaceAll('%', '%%')}"';
+    }
+    return "'${value.replaceAll("'", "'\"'\"'")}'";
   }
 
   void _addRepoTemplateValues({

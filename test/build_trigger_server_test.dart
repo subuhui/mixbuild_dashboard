@@ -35,6 +35,7 @@ void main() {
         jsonEncode(<String, String>{
           'scenario': 'Release Build',
           'branch': 'release/v1.2',
+          'update_description': '修复登录问题',
         }),
       );
 
@@ -45,6 +46,7 @@ void main() {
       expect(response.statusCode, HttpStatus.accepted);
       expect(capturedRequest?.scenario, 'Release Build');
       expect(capturedRequest?.branch, 'release/v1.2');
+      expect(capturedRequest?.updateDescription, '修复登录问题');
       expect(body['accepted'], isTrue);
       expect(body['scenario'], 'Release Build');
     },

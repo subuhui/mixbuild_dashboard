@@ -357,6 +357,7 @@ class BuildScenario {
     required this.environment,
     required this.mainBranch,
     required this.command,
+    this.defaultUpdateDescription = '',
     required this.status,
     required this.progress,
     required this.logs,
@@ -373,6 +374,7 @@ class BuildScenario {
   final String environment;
   final String mainBranch;
   final String command;
+  final String defaultUpdateDescription;
   final BuildStatus status;
   final double progress;
   final List<LogEntry> logs;
@@ -389,6 +391,7 @@ class BuildScenario {
     String? environment,
     String? mainBranch,
     String? command,
+    String? defaultUpdateDescription,
     BuildStatus? status,
     double? progress,
     List<LogEntry>? logs,
@@ -405,6 +408,8 @@ class BuildScenario {
       environment: environment ?? this.environment,
       mainBranch: mainBranch ?? this.mainBranch,
       command: command ?? this.command,
+      defaultUpdateDescription:
+          defaultUpdateDescription ?? this.defaultUpdateDescription,
       status: status ?? this.status,
       progress: progress ?? this.progress,
       logs: logs ?? this.logs,

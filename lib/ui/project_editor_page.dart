@@ -1371,6 +1371,7 @@ class _ScenarioDraft {
     required this.original,
     required this.nameController,
     required this.commandController,
+    required this.defaultUpdateDescriptionController,
     required this.outputController,
     required this.tagController,
     required this.autoTag,
@@ -1383,6 +1384,9 @@ class _ScenarioDraft {
       original: scenario,
       nameController: TextEditingController(text: scenario.name),
       commandController: TextEditingController(text: scenario.command),
+      defaultUpdateDescriptionController: TextEditingController(
+        text: scenario.defaultUpdateDescription,
+      ),
       outputController: TextEditingController(text: scenario.outputPath),
       tagController: TextEditingController(text: scenario.tagPrefix),
       autoTag: scenario.autoTag,
@@ -1394,6 +1398,7 @@ class _ScenarioDraft {
   final BuildScenario original;
   final TextEditingController nameController;
   final TextEditingController commandController;
+  final TextEditingController defaultUpdateDescriptionController;
   final TextEditingController outputController;
   final TextEditingController tagController;
   bool autoTag;
@@ -1445,6 +1450,8 @@ class _ScenarioDraft {
       mainBranch:
           mainBranch.trim().isEmpty ? original.mainBranch : mainBranch.trim(),
       command: commandController.text.trim(),
+      defaultUpdateDescription:
+          defaultUpdateDescriptionController.text.trim(),
       dependencies: dependencies,
       outputPath: outputController.text.trim(),
       autoTag: autoTag,
@@ -1455,6 +1462,7 @@ class _ScenarioDraft {
   void dispose() {
     nameController.dispose();
     commandController.dispose();
+    defaultUpdateDescriptionController.dispose();
     outputController.dispose();
     tagController.dispose();
   }
@@ -1692,6 +1700,7 @@ class AddScenarioDialog extends StatefulWidget {
 class _AddScenarioDialogState extends State<AddScenarioDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _commandController;
+  late final TextEditingController _defaultUpdateDescriptionController;
   late final TextEditingController _outputController;
   late final TextEditingController _tagController;
   bool _autoTag = true;
@@ -1705,6 +1714,9 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
     );
     _commandController = TextEditingController(
       text: widget.initialScenario?.command ?? './gradlew assembleRelease',
+    );
+    _defaultUpdateDescriptionController = TextEditingController(
+      text: widget.initialScenario?.defaultUpdateDescription ?? '',
     );
     _outputController = TextEditingController(
       text: widget.initialScenario?.outputPath ?? 'output_dir/',
@@ -1741,6 +1753,7 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
   void dispose() {
     _nameController.dispose();
     _commandController.dispose();
+    _defaultUpdateDescriptionController.dispose();
     _outputController.dispose();
     _tagController.dispose();
     super.dispose();
@@ -1814,6 +1827,18 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                               fontSize: 13,
                               color: MixBuildPalette.foreground,
                             ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _defaultUpdateDescriptionController,
+                            decoration: InputDecoration(
+                              labelText:
+                                  strings.scenarioDefaultUpdateDescription,
+                              helperText:
+                                  strings.scenarioDefaultUpdateDescriptionHint,
+                            ),
+                            minLines: 2,
+                            maxLines: 4,
                           ),
                         ],
                       ),
@@ -2036,6 +2061,9 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                 _branches[widget.mainProject.projectName] ??
                                     widget.mainProject.initialBranch,
                             command: _commandController.text.trim(),
+                            defaultUpdateDescription:
+                                _defaultUpdateDescriptionController.text
+                                    .trim(),
                             status: widget.initialScenario?.status ??
                                 BuildStatus.idle,
                             progress: widget.initialScenario?.progress ?? 0,

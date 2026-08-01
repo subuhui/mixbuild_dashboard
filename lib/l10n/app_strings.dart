@@ -100,6 +100,10 @@ abstract class AppStrings {
   String get scenarioNameHint;
   String get scenarioCommand;
   String get scenarioCommandHint;
+  String get scenarioDefaultUpdateDescription;
+  String get scenarioDefaultUpdateDescriptionHint;
+  String get buildUpdateDescription;
+  String get buildUpdateDescriptionHint;
   String get scenarioCleanBefore;
   String get scenarioCleanBeforeShort;
   String get scenarioMainBranch;

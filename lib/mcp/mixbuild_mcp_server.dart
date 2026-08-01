@@ -93,6 +93,11 @@ class MixbuildMcpToolHandler implements McpToolHandler {
             'default': false,
             'description': '构建命令追加 --clean。',
           },
+          'update_description': <String, dynamic>{
+            'type': 'string',
+            'description':
+                '本次构建更新说明；未提供时使用场景默认值，并替换命令中的 \${build.update_description}。',
+          },
         },
         'required': <String>['project_directory', 'branch'],
         'additionalProperties': false,
@@ -128,6 +133,10 @@ class MixbuildMcpToolHandler implements McpToolHandler {
           'command': <String, dynamic>{
             'type': 'string',
             'description': '构建/打包 shell 命令。',
+          },
+          'default_update_description': <String, dynamic>{
+            'type': 'string',
+            'description': '场景默认更新说明，可在构建时覆盖。',
           },
           'output_directory': <String, dynamic>{
             'type': 'string',
@@ -179,6 +188,10 @@ class MixbuildMcpToolHandler implements McpToolHandler {
             projectDirectory: _stringArgument(arguments, 'project_directory'),
             branch: _stringArgument(arguments, 'branch'),
             scenarioName: _optionalStringArgument(arguments, 'scenario_name'),
+            updateDescription: _optionalStringArgumentAllowEmpty(
+              arguments,
+              'update_description',
+            ),
             cleanBeforeBuild: _optionalBoolArgument(
               arguments,
               'clean_before_build',
@@ -195,6 +208,10 @@ class MixbuildMcpToolHandler implements McpToolHandler {
               branch: _stringArgument(arguments, 'branch'),
               name: _stringArgument(arguments, 'name'),
               command: _stringArgument(arguments, 'command'),
+              defaultUpdateDescription: _optionalStringArgument(
+                arguments,
+                'default_update_description',
+              ),
               outputDirectory: _optionalStringArgument(
                 arguments,
                 'output_directory',
@@ -531,6 +548,20 @@ String? _optionalStringArgument(Map<String, dynamic> arguments, String name) {
   }
   final trimmed = value.trim();
   return trimmed.isEmpty ? null : trimmed;
+}
+
+String? _optionalStringArgumentAllowEmpty(
+  Map<String, dynamic> arguments,
+  String name,
+) {
+  final value = arguments[name];
+  if (value == null) {
+    return null;
+  }
+  if (value is! String) {
+    throw FormatException('$name must be a string.');
+  }
+  return value.trim();
 }
 
 bool _optionalBoolArgument(Map<String, dynamic> arguments, String name) {

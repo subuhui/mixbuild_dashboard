@@ -12,11 +12,13 @@ class BuildTriggerRequest {
     this.project,
     this.scenario,
     required this.branch,
+    this.updateDescription,
   });
 
   final String? project;
   final String? scenario;
   final String branch;
+  final String? updateDescription;
 }
 
 class RemoteBuildTriggerResult {
@@ -115,9 +117,15 @@ class BuildTriggerServer {
       final project = decoded['project'];
       final scenario = decoded['scenario'];
       final branch = decoded['branch'];
+      final updateDescription = decoded['update_description'];
 
-      if (project is! String? || scenario is! String?) {
-        _writeBadRequest(request, 'project and scenario must be string values');
+      if (project is! String? ||
+          scenario is! String? ||
+          updateDescription is! String?) {
+        _writeBadRequest(
+          request,
+          'project, scenario and update_description must be string values',
+        );
         return;
       }
 
@@ -139,6 +147,7 @@ class BuildTriggerServer {
           project: hasProject ? project.trim() : null,
           scenario: hasScenario ? scenario.trim() : null,
           branch: branch.trim(),
+          updateDescription: updateDescription?.trim(),
         ),
       );
       _writeJson(request, result.statusCode, result.toJson());

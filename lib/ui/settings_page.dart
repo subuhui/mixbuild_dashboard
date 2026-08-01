@@ -422,11 +422,11 @@ class _BuildServerPanelState extends ConsumerState<_BuildServerPanel> {
     final curlProjectCommand =
         'curl -X POST http://127.0.0.1:$serverPort/build \\\n'
         '  -H "Content-Type: application/json" \\\n'
-        '  -d \'{"project": "$projectName", "branch": "$branch"}\'';
+        '  -d \'{"project": "$projectName", "branch": "$branch", "update_description": "本次更新说明"}\'';
     final curlScenarioCommand =
         'curl -X POST http://127.0.0.1:$serverPort/build \\\n'
         '  -H "Content-Type: application/json" \\\n'
-        '  -d \'{"scenario": "$scenarioName", "branch": "$branch"}\'';
+        '  -d \'{"scenario": "$scenarioName", "branch": "$branch", "update_description": "本次更新说明"}\'';
 
     return Container(
       width: double.infinity,

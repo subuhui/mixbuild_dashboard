@@ -136,11 +136,14 @@ build_scenarios:
       shared_ui: "feature/new-components"
   - name: "Release Build"
     main_branch: "main"
-    command: "fvm flutter build macos --release"
+    command: './build.sh --release-notes=${build.update_description}'
+    default_update_description: "Routine improvements"
     output_dir: "build/macos/Build/Products/Release"
     auto_tag: true
     tag_prefix: "release_"
 ```
+
+`default_update_description` is optional. It can be overridden when a build starts, and the command decides how to pass it downstream through `${build.update_description}`. The value is already escaped as one shell argument, so do not add another pair of quotes around the variable.
 
 ## Build Pipeline Stages
 
@@ -160,7 +163,7 @@ The dashboard includes a local HTTP server on port `8765` by default. The port c
 # Trigger by scenario name
 curl -X POST http://127.0.0.1:8765/build \
   -H "Content-Type: application/json" \
-  -d '{"scenario": "Release Build", "branch": "release/v1.2"}'
+  -d '{"scenario": "Release Build", "branch": "release/v1.2", "update_description": "Fix login issue"}'
 
 # Trigger by main project or dependency name
 curl -X POST http://127.0.0.1:8765/build \
@@ -168,7 +171,7 @@ curl -X POST http://127.0.0.1:8765/build \
   -d '{"project": "flutter.module.ui", "branch": "release/v1.2"}'
 ```
 
-`branch` is required, and at least one of `scenario` or `project` must be supplied. The server returns `202` when the build is queued, `400` for invalid input, `404` when no matching configuration exists, and `409` while another build is running.
+`branch` is required, and at least one of `scenario` or `project` must be supplied. `update_description` is optional and falls back to the scenario default. The server returns `202` when the build is queued, `400` for invalid input, `404` when no matching configuration exists, and `409` while another build is running.
 
 ## State Management
 

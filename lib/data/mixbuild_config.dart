@@ -71,6 +71,7 @@ class MixbuildScenarioConfig {
     required this.name,
     required this.mainBranch,
     required this.command,
+    this.defaultUpdateDescription = '',
     this.outputDir,
     this.autoTag = false,
     this.tagPrefix = '',
@@ -81,6 +82,7 @@ class MixbuildScenarioConfig {
   final String name;
   final String mainBranch;
   final String command;
+  final String defaultUpdateDescription;
   final String? outputDir;
   final bool autoTag;
   final String tagPrefix;
@@ -91,6 +93,7 @@ class MixbuildScenarioConfig {
     String? name,
     String? mainBranch,
     String? command,
+    String? defaultUpdateDescription,
     Object? outputDir = _sentinel,
     bool? autoTag,
     String? tagPrefix,
@@ -101,6 +104,8 @@ class MixbuildScenarioConfig {
       name: name ?? this.name,
       mainBranch: mainBranch ?? this.mainBranch,
       command: command ?? this.command,
+      defaultUpdateDescription:
+          defaultUpdateDescription ?? this.defaultUpdateDescription,
       outputDir: outputDir == _sentinel ? this.outputDir : outputDir as String?,
       autoTag: autoTag ?? this.autoTag,
       tagPrefix: tagPrefix ?? this.tagPrefix,
@@ -184,6 +189,8 @@ class MixbuildConfig {
               name: name,
               mainBranch: _asOptionalString(item['main_branch']) ?? '',
               command: _asOptionalString(item['command']) ?? '',
+              defaultUpdateDescription:
+                  _asOptionalString(item['default_update_description']) ?? '',
               outputDir: _asOptionalString(item['output_dir']),
               autoTag: item['auto_tag'] == true,
               tagPrefix: _asOptionalString(item['tag_prefix']) ?? '',
@@ -258,6 +265,11 @@ class MixbuildConfig {
         ..writeln('  - name: ${_quote(scenario.name)}')
         ..writeln('    main_branch: ${_quote(scenario.mainBranch)}')
         ..writeln('    command: ${_quote(scenario.command)}');
+      if (scenario.defaultUpdateDescription.isNotEmpty) {
+        buffer.writeln(
+          '    default_update_description: ${_quote(scenario.defaultUpdateDescription)}',
+        );
+      }
       if (scenario.outputDir != null) {
         buffer.writeln('    output_dir: ${_quote(scenario.outputDir!)}');
       }
@@ -358,5 +370,5 @@ String _slugify(String value) {
 }
 
 String _quote(String value) {
-  return '"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"';
+  return '"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"').replaceAll('\r', r'\r').replaceAll('\n', r'\n')}"';
 }

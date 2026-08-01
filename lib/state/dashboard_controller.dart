@@ -73,6 +73,7 @@ final buildTriggerServerProvider = Provider<BuildTriggerServer>((ref) {
       projectName: request.project,
       scenarioName: request.scenario,
       branch: request.branch,
+      updateDescription: request.updateDescription,
     ),
   );
   unawaited(
@@ -396,6 +397,7 @@ class DashboardController extends Notifier<DashboardState> {
         name: scenario.name,
         mainBranch: scenario.mainBranch.trim(),
         command: scenario.command,
+        defaultUpdateDescription: scenario.defaultUpdateDescription,
         outputDir: scenario.outputPath.trim().isEmpty
             ? null
             : scenario.outputPath.trim(),
@@ -462,6 +464,7 @@ class DashboardController extends Notifier<DashboardState> {
         name: scenario.name,
         mainBranch: scenario.mainBranch.trim(),
         command: scenario.command,
+        defaultUpdateDescription: scenario.defaultUpdateDescription,
         outputDir: scenario.outputPath.trim().isEmpty
             ? null
             : scenario.outputPath.trim(),
@@ -550,7 +553,7 @@ class DashboardController extends Notifier<DashboardState> {
     );
   }
 
-  Future<void> triggerSelectedScenario() async {
+  Future<void> triggerSelectedScenario({String? updateDescription}) async {
     final project = state.selectedProject;
     final scenario = state.selectedScenario;
     if (scenario.status.canStop) {
@@ -580,6 +583,8 @@ class DashboardController extends Notifier<DashboardState> {
       project: project,
       scenario: scenario,
       projectBranch: scenarioBranch,
+      updateDescription:
+          updateDescription ?? scenario.defaultUpdateDescription,
       cleanBeforeBuild: state.cleanBeforeBuild[scenario.id] ?? false,
     );
   }
@@ -588,6 +593,7 @@ class DashboardController extends Notifier<DashboardState> {
     String? projectName,
     String? scenarioName,
     required String branch,
+    String? updateDescription,
   }) async {
     final normalizedBranch = branch.trim();
     if ((projectName == null || projectName.trim().isEmpty) &&
@@ -650,6 +656,8 @@ class DashboardController extends Notifier<DashboardState> {
         project: match.project,
         scenario: match.scenario,
         projectBranch: normalizedBranch,
+        updateDescription:
+            updateDescription ?? match.scenario.defaultUpdateDescription,
         cleanBeforeBuild: state.cleanBeforeBuild[match.scenario.id] ?? false,
       ),
     );
@@ -683,6 +691,7 @@ class DashboardController extends Notifier<DashboardState> {
     required ProjectBuild project,
     required BuildScenario scenario,
     required String projectBranch,
+    required String updateDescription,
     required bool cleanBeforeBuild,
   }) async {
     final notificationService = ref.read(buildNotificationServiceProvider);
@@ -726,6 +735,7 @@ class DashboardController extends Notifier<DashboardState> {
             project: project,
             scenario: scenario,
             projectBranch: projectBranch,
+            updateDescription: updateDescription,
             cleanBeforeBuild: cleanBeforeBuild,
             dependencyOverrides: {
               for (final dependency in scenario.dependencies)
@@ -969,6 +979,8 @@ class DashboardController extends Notifier<DashboardState> {
               environment: config.workspace.name,
               mainBranch: scenarioConfig.mainBranch,
               command: scenarioConfig.command,
+              defaultUpdateDescription:
+                  scenarioConfig.defaultUpdateDescription,
               status: BuildStatus.idle,
               progress: 0,
               outputPath: scenarioConfig.outputDir ?? '',

@@ -164,7 +164,9 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
           dashboardState.cleanBeforeBuild[dashboardState.selectedScenarioId] ??
               false,
       onCleanChanged: _controller.setCleanBeforeBuild,
-      onTrigger: _controller.triggerSelectedScenario,
+      onTrigger: (updateDescription) => _controller.triggerSelectedScenario(
+        updateDescription: updateDescription,
+      ),
       onStop: _controller.stopSelectedScenario,
       onOpenSettings: () => _openProjectEditor(dashboardState),
       onBack: () => Navigator.of(context).pop(),
@@ -263,7 +265,10 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
                           responsive.shellPadding.right,
                           0,
                         ),
-                        child: sidebarPanel,
+                        child: SizedBox(
+                          height: MediaQuery.sizeOf(context).height * 0.58,
+                          child: sidebarPanel,
+                        ),
                       ),
                       Expanded(child: terminalSection),
                     ],
@@ -307,7 +312,7 @@ class _SidebarPanel extends StatelessWidget {
       dependencyBranchOptions;
   final bool cleanBeforeBuild;
   final ValueChanged<bool> onCleanChanged;
-  final VoidCallback onTrigger;
+  final ValueChanged<String> onTrigger;
   final VoidCallback onStop;
   final VoidCallback onOpenSettings;
   final VoidCallback onBack;
@@ -387,10 +392,7 @@ class _SidebarPanel extends StatelessWidget {
       child: Column(
         children: [
           _SidebarHeader(onBack: onBack, onOpenSettings: onOpenSettings, version: version),
-          if (stacked)
-            content
-          else
-            Expanded(child: SingleChildScrollView(child: content)),
+          Expanded(child: SingleChildScrollView(child: content)),
           _SidebarFooter(
             scenario: scenario,
             cleanBeforeBuild: cleanBeforeBuild,
@@ -865,7 +867,7 @@ class _DependencyTreeNode extends StatelessWidget {
   }
 }
 
-class _SidebarFooter extends StatelessWidget {
+class _SidebarFooter extends StatefulWidget {
   const _SidebarFooter({
     required this.scenario,
     required this.cleanBeforeBuild,
@@ -877,8 +879,40 @@ class _SidebarFooter extends StatelessWidget {
   final BuildScenario scenario;
   final bool cleanBeforeBuild;
   final ValueChanged<bool> onCleanChanged;
-  final VoidCallback onTrigger;
+  final ValueChanged<String> onTrigger;
   final VoidCallback onStop;
+
+  @override
+  State<_SidebarFooter> createState() => _SidebarFooterState();
+}
+
+class _SidebarFooterState extends State<_SidebarFooter> {
+  late final TextEditingController _updateDescriptionController;
+
+  @override
+  void initState() {
+    super.initState();
+    _updateDescriptionController = TextEditingController(
+      text: widget.scenario.defaultUpdateDescription,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _SidebarFooter oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.scenario.id != oldWidget.scenario.id ||
+        widget.scenario.defaultUpdateDescription !=
+            oldWidget.scenario.defaultUpdateDescription) {
+      _updateDescriptionController.text =
+          widget.scenario.defaultUpdateDescription;
+    }
+  }
+
+  @override
+  void dispose() {
+    _updateDescriptionController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -905,28 +939,40 @@ class _SidebarFooter extends StatelessWidget {
                 width: 6,
                 height: 6,
                 decoration: BoxDecoration(
-                  color: scenario.status.color,
+                  color: widget.scenario.status.color,
                   shape: BoxShape.circle,
                 ),
               ),
               const SizedBox(width: 6),
               Text(
-                scenario.status.labelWithContext(context),
+                widget.scenario.status.labelWithContext(context),
                 style: MixBuildTheme.monoTextStyle(
                   fontSize: 11,
-                  color: scenario.status.color,
+                  color: widget.scenario.status.color,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
+          TextField(
+            controller: _updateDescriptionController,
+            enabled: !widget.scenario.status.controlsLocked,
+            minLines: 2,
+            maxLines: 3,
+            decoration: InputDecoration(
+              labelText: strings.buildUpdateDescription,
+              hintText: strings.buildUpdateDescriptionHint,
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: 8),
           Row(
             children: [
               Checkbox(
-                value: cleanBeforeBuild,
-                onChanged: scenario.status.controlsLocked
+                value: widget.cleanBeforeBuild,
+                onChanged: widget.scenario.status.controlsLocked
                     ? null
-                    : (v) => onCleanChanged(v ?? false),
+                    : (v) => widget.onCleanChanged(v ?? false),
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 visualDensity: VisualDensity.compact,
               ),
@@ -944,11 +990,19 @@ class _SidebarFooter extends StatelessWidget {
             width: double.infinity,
             height: 48,
             child: FilledButton.icon(
-              onPressed: scenario.status.canTrigger ? onTrigger : null,
+              onPressed: widget.scenario.status.canTrigger
+                  ? () => widget.onTrigger(
+                      _updateDescriptionController.text.trim(),
+                    )
+                  : null,
               icon: Icon(
-                scenario.status.controlsLocked ? Icons.sync : Icons.play_arrow,
+                widget.scenario.status.controlsLocked
+                    ? Icons.sync
+                    : Icons.play_arrow,
               ),
-              label: Text(scenario.status.triggerLabelWithContext(context)),
+              label: Text(
+                widget.scenario.status.triggerLabelWithContext(context),
+              ),
               style: FilledButton.styleFrom(
                 backgroundColor: MixBuildPalette.primary,
                 foregroundColor: theme.colorScheme.onPrimary,
@@ -962,12 +1016,12 @@ class _SidebarFooter extends StatelessWidget {
               ),
             ),
           ),
-          if (scenario.status.canStop) ...[
+          if (widget.scenario.status.canStop) ...[
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: onStop,
+                onPressed: widget.onStop,
                 icon: const Icon(Icons.stop_circle_outlined, size: 18),
                 label: Text(strings.btnStop),
                 style: OutlinedButton.styleFrom(

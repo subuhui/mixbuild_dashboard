@@ -65,6 +65,8 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
 
+      expect(find.text('默认更新说明内容'), findsOneWidget);
+
       await tester.pumpWidget(const SizedBox.shrink());
       container.dispose();
       await tester.pump();
@@ -235,6 +237,7 @@ MixbuildConfig _seedConfig() {
         name: 'Release Build',
         mainBranch: 'develop',
         command: 'fvm flutter build macos --release',
+        defaultUpdateDescription: '默认更新说明内容',
         outputDir: 'build/macos/Build/Products/Release',
       ),
     ],

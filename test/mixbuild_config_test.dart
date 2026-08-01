@@ -63,6 +63,37 @@ build_scenarios:
     expect(config.toYamlString(), isNot(contains('default_branch')));
   });
 
+  test('parses and serializes an optional default update description', () {
+    const yaml = '''
+workspace:
+  name: "Release Workspace"
+  root_path: "/tmp/workspace"
+main_project:
+  name: "sample_app"
+  path: "."
+  type: "flutter"
+build_scenarios:
+  - name: "Release"
+    main_branch: "main"
+    command: './build.sh --notes=\${build.update_description}'
+    default_update_description: "修复登录问题\\n优化性能"
+''';
+
+    final config = MixbuildConfig.fromYaml(
+      filePath: '/tmp/update-description.yaml',
+      content: yaml,
+    );
+
+    expect(
+      config.buildScenarios.single.defaultUpdateDescription,
+      '修复登录问题\n优化性能',
+    );
+    expect(
+      config.toYamlString(),
+      contains('default_update_description: "修复登录问题\\n优化性能"'),
+    );
+  });
+
   test('accepts dot-separated project names used by command variables', () {
     const yaml = '''
 workspace:

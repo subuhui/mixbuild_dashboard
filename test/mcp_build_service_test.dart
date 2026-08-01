@@ -54,6 +54,7 @@ void main() {
             name: 'Release Build',
             mainBranch: 'release/1.0',
             command: 'flutter build macos --release',
+            defaultUpdateDescription: '默认更新说明',
             outputDir: 'build/release',
             dependencyOverrides: <String, String>{'shared_ui': 'release/1.0'},
           ),
@@ -108,6 +109,7 @@ void main() {
       projectDirectory: projectDirectory.path,
       branch: 'release/1.0',
       cleanBeforeBuild: true,
+      updateDescription: '本次更新说明',
     );
 
     expect(result['success'], isTrue);
@@ -119,6 +121,7 @@ void main() {
     expect(engine.lastScenario?.name, 'Release Build');
     expect(engine.lastProjectBranch, 'release/1.0');
     expect(engine.lastCleanBeforeBuild, isTrue);
+    expect(engine.lastUpdateDescription, '本次更新说明');
     expect(engine.lastDependencyOverrides, const <String, String>{
       'shared_ui': 'release/1.0',
     });
@@ -130,12 +133,22 @@ void main() {
     expect(history.single.status, BuildStatus.success);
   });
 
+  test('uses the scenario default update description when omitted', () async {
+    await service.buildProject(
+      projectDirectory: projectDirectory.path,
+      branch: 'release/1.0',
+    );
+
+    expect(engine.lastUpdateDescription, '默认更新说明');
+  });
+
   test('adds a scenario to the project matched by directory', () {
     final result = service.addScenario(
       projectDirectory: p.join(projectDirectory.path, 'lib'),
       branch: 'feature/mcp',
       name: 'MCP Build',
       command: 'flutter build apk --release',
+      defaultUpdateDescription: '新增场景默认说明',
       outputDirectory: 'build/app/outputs',
       dependencyOverrides: const <String, String>{'shared_ui': 'feature/mcp'},
     );
@@ -147,6 +160,7 @@ void main() {
     expect(added.name, 'MCP Build');
     expect(added.mainBranch, 'feature/mcp');
     expect(added.command, 'flutter build apk --release');
+    expect(added.defaultUpdateDescription, '新增场景默认说明');
     expect(added.dependencyOverrides, const <String, String>{
       'shared_ui': 'feature/mcp',
     });
@@ -159,6 +173,7 @@ class _RecordingEngine extends MixbuildEngine {
   BuildScenario? lastScenario;
   String? lastProjectBranch;
   bool? lastCleanBeforeBuild;
+  String? lastUpdateDescription;
   Map<String, String>? lastDependencyOverrides;
 
   @override
@@ -167,6 +182,7 @@ class _RecordingEngine extends MixbuildEngine {
     required ProjectBuild project,
     required BuildScenario scenario,
     String? projectBranch,
+    String updateDescription = '',
     required bool cleanBeforeBuild,
     required Map<String, String> dependencyOverrides,
     required void Function(BuildStatus status, double progress) onProgress,
@@ -174,6 +190,7 @@ class _RecordingEngine extends MixbuildEngine {
   }) async {
     lastScenario = scenario;
     lastProjectBranch = projectBranch;
+    lastUpdateDescription = updateDescription;
     lastCleanBeforeBuild = cleanBeforeBuild;
     lastDependencyOverrides = dependencyOverrides;
     onProgress(BuildStatus.success, 1);

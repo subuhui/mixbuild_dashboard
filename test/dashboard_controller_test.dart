@@ -59,11 +59,13 @@ void main() {
           RemoteBuildTriggerResult result,
           String? capturedScenarioName,
           String? capturedProjectBranch,
+          String? capturedUpdateDescription,
         })> triggerRemoteBuild({
       required MixbuildConfig config,
       String? projectName,
       String? scenarioName,
       required String branch,
+      String? updateDescription,
     }) async {
       store.saveConfigSync(config);
       final fakeEngine = _RemoteTriggerMixbuildEngine();
@@ -84,11 +86,13 @@ void main() {
         projectName: projectName,
         scenarioName: scenarioName,
         branch: branch,
+        updateDescription: updateDescription,
       );
       return (
         result: result,
         capturedScenarioName: fakeEngine.scenarioName,
         capturedProjectBranch: fakeEngine.projectBranch,
+        capturedUpdateDescription: fakeEngine.updateDescription,
       );
     }
 
@@ -406,6 +410,18 @@ void main() {
         expect(trigger.capturedProjectBranch, testCase.branch);
       });
     }
+
+    test('curl trigger forwards a per-build update description', () async {
+      final trigger = await triggerRemoteBuild(
+        config: _curlTriggerSeedConfig(),
+        scenarioName: 'Release Build',
+        branch: 'release/v1.2',
+        updateDescription: '本次更新说明',
+      );
+
+      expect(trigger.result.accepted, isTrue);
+      expect(trigger.capturedUpdateDescription, '本次更新说明');
+    });
   });
 }
 
@@ -531,6 +547,7 @@ class _FakeMixbuildEngine extends MixbuildEngine {
     required ProjectBuild project,
     required BuildScenario scenario,
     String? projectBranch,
+    String updateDescription = '',
     required bool cleanBeforeBuild,
     required Map<String, String> dependencyOverrides,
     required void Function(BuildStatus status, double progress) onProgress,
@@ -553,6 +570,7 @@ class _RemoteTriggerMixbuildEngine extends MixbuildEngine {
 
   String? scenarioName;
   String? projectBranch;
+  String? updateDescription;
 
   @override
   Future<void> runPipeline({
@@ -560,6 +578,7 @@ class _RemoteTriggerMixbuildEngine extends MixbuildEngine {
     required ProjectBuild project,
     required BuildScenario scenario,
     String? projectBranch,
+    String updateDescription = '',
     required bool cleanBeforeBuild,
     required Map<String, String> dependencyOverrides,
     required void Function(BuildStatus status, double progress) onProgress,
@@ -567,6 +586,7 @@ class _RemoteTriggerMixbuildEngine extends MixbuildEngine {
   }) async {
     scenarioName = scenario.name;
     this.projectBranch = projectBranch;
+    this.updateDescription = updateDescription;
     onProgress(BuildStatus.success, 1.0);
   }
 }

@@ -200,6 +200,81 @@ void main() {
     );
   });
 
+  test('shell-quotes the runtime update description template value', () async {
+    final workspaceRoot = await Directory.systemTemp.createTemp(
+      'mixbuild-engine-update-description-test_',
+    );
+    addTearDown(() async {
+      if (await workspaceRoot.exists()) {
+        await workspaceRoot.delete(recursive: true);
+      }
+    });
+    await Directory(
+      p.join(workspaceRoot.path, 'app', '.git'),
+    ).create(recursive: true);
+
+    final runner = _TemplateCommandRunner(
+      remoteBranches: const <String>{'main'},
+    );
+    final engine = MixbuildEngine(runner);
+    const command = r'echo ${build.update_description}';
+
+    await engine.runPipeline(
+      config: MixbuildConfig(
+        filePath: p.join(workspaceRoot.path, 'workspace.yaml'),
+        workspace: MixbuildWorkspaceConfig(
+          name: 'workspace-demo',
+          rootPath: workspaceRoot.path,
+        ),
+        mainProject: const MixbuildRepoConfig(
+          name: 'app',
+          path: 'app',
+          type: MixbuildProjectType.flutter,
+        ),
+        dependencies: const <MixbuildRepoConfig>[],
+        buildScenarios: const <MixbuildScenarioConfig>[
+          MixbuildScenarioConfig(
+            id: 'release-build',
+            name: 'Release Build',
+            mainBranch: 'main',
+            command: command,
+          ),
+        ],
+      ),
+      project: const ProjectBuild(
+        id: 'workspace-demo',
+        emoji: '🚀',
+        name: 'app',
+        description: 'demo',
+        branch: 'main',
+        scenarios: <BuildScenario>[],
+        type: MixbuildProjectType.flutter,
+      ),
+      scenario: const BuildScenario(
+        id: 'release-build',
+        name: 'Release Build',
+        subtitle: 'demo',
+        environment: 'test',
+        mainBranch: 'main',
+        command: command,
+        status: BuildStatus.idle,
+        progress: 0,
+        logs: <LogEntry>[],
+        dependencies: <DependencyBranch>[],
+        outputPath: '',
+        autoTag: false,
+        tagPrefix: '',
+      ),
+      updateDescription: r'修复登录; $(unsafe)',
+      cleanBeforeBuild: false,
+      dependencyOverrides: const <String, String>{},
+      onProgress: (_, progress) {},
+      onLog: (_) {},
+    );
+
+    expect(runner.shellCommands, contains(r"echo '修复登录; $(unsafe)'"));
+  });
+
   test(
     'throws when command template references an unknown config field',
     () async {

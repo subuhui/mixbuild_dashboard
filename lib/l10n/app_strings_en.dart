@@ -189,6 +189,16 @@ class AppStringsEn extends AppStrings {
   @override
   String get scenarioCommandHint => '';
   @override
+  String get scenarioDefaultUpdateDescription => 'Default Update Description';
+  @override
+  String get scenarioDefaultUpdateDescriptionHint =>
+      'Optional; reference it with \${build.update_description} in the build command';
+  @override
+  String get buildUpdateDescription => 'Update Description';
+  @override
+  String get buildUpdateDescriptionHint =>
+      'Overrides the scenario default for this build only';
+  @override
   String get scenarioCleanBefore => 'Force clean before build (--clean)';
   @override
   String get scenarioCleanBeforeShort => 'Clean before build (--clean)';

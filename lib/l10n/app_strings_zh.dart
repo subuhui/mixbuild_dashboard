@@ -182,6 +182,15 @@ class AppStringsZh extends AppStrings {
   @override
   String get scenarioCommandHint => '';
   @override
+  String get scenarioDefaultUpdateDescription => '默认更新说明';
+  @override
+  String get scenarioDefaultUpdateDescriptionHint =>
+      '可选；构建命令通过 \${build.update_description} 引用';
+  @override
+  String get buildUpdateDescription => '本次更新说明';
+  @override
+  String get buildUpdateDescriptionHint => '可修改场景默认值，仅对本次构建生效';
+  @override
   String get scenarioCleanBefore => '执行构建前强制清理 (--clean)';
   @override
   String get scenarioCleanBeforeShort => '构建前清理 (--clean)';

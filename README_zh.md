@@ -128,11 +128,14 @@ build_scenarios:
       shared_ui: "feature/new-components"
   - name: "Release Build"
     main_branch: "main"
-    command: "fvm flutter build macos --release"
+    command: './build.sh --release-notes=${build.update_description}'
+    default_update_description: "日常功能优化"
     output_dir: "build/macos/Build/Products/Release"
     auto_tag: true
     tag_prefix: "release_"
 ```
+
+`default_update_description` 可选。开始构建时可以临时修改；构建命令通过 `${build.update_description}` 决定如何把文案传给下游。变量已经按单个 Shell 参数转义，命令中不需要再为变量额外添加引号。
 
 ## 构建流水线阶段
 
@@ -152,7 +155,7 @@ build_scenarios:
 # 通过场景名称触发
 curl -X POST http://127.0.0.1:8765/build \
   -H "Content-Type: application/json" \
-  -d '{"scenario": "Release Build", "branch": "release/v1.2"}'
+  -d '{"scenario": "Release Build", "branch": "release/v1.2", "update_description": "修复登录问题"}'
 
 # 通过主项目或依赖名称触发
 curl -X POST http://127.0.0.1:8765/build \
@@ -160,7 +163,7 @@ curl -X POST http://127.0.0.1:8765/build \
   -d '{"project": "flutter.module.ui", "branch": "release/v1.2"}'
 ```
 
-`branch` 必填，`scenario` 和 `project` 至少提供一个。成功入队返回 `202`，参数错误返回 `400`，未匹配到配置返回 `404`，已有任务运行时返回 `409`。
+`branch` 必填，`scenario` 和 `project` 至少提供一个。`update_description` 可选，未提供时使用场景默认值。成功入队返回 `202`，参数错误返回 `400`，未匹配到配置返回 `404`，已有任务运行时返回 `409`。
 
 ## 状态管理
 

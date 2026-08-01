@@ -44,6 +44,7 @@ class McpBuildService {
     required String projectDirectory,
     required String branch,
     String? scenarioName,
+    String? updateDescription,
     bool cleanBeforeBuild = false,
   }) async {
     final match = _matchProject(
@@ -55,6 +56,8 @@ class McpBuildService {
       scenarioName: scenarioName,
     );
     final scenario = _runtimeScenario(match.config, scenarioConfig);
+    final effectiveUpdateDescription =
+        (updateDescription ?? scenarioConfig.defaultUpdateDescription).trim();
     final project = ProjectBuild(
       id: match.config.filePath,
       emoji: '',
@@ -75,6 +78,7 @@ class McpBuildService {
         project: project,
         scenario: scenario,
         projectBranch: scenarioConfig.mainBranch,
+        updateDescription: effectiveUpdateDescription,
         cleanBeforeBuild: cleanBeforeBuild,
         dependencyOverrides: scenarioConfig.dependencyOverrides,
         onProgress: (nextStatus, _) => status = nextStatus,
@@ -111,6 +115,7 @@ class McpBuildService {
       'branch': branch.trim(),
       'scenario': _scenarioJson(scenarioConfig),
       'clean_before_build': cleanBeforeBuild,
+      'update_description': effectiveUpdateDescription,
       'status': status.name,
       'started_at': startedAt.toIso8601String(),
       'finished_at': finishedAt.toIso8601String(),
@@ -139,6 +144,7 @@ class McpBuildService {
     required String branch,
     required String name,
     required String command,
+    String? defaultUpdateDescription,
     String? outputDirectory,
     bool autoTag = false,
     String tagPrefix = '',
@@ -175,6 +181,7 @@ class McpBuildService {
       name: trimmedName,
       mainBranch: trimmedBranch,
       command: trimmedCommand,
+      defaultUpdateDescription: defaultUpdateDescription?.trim() ?? '',
       outputDir: _optionalText(outputDirectory),
       autoTag: autoTag,
       tagPrefix: tagPrefix.trim(),
@@ -322,6 +329,7 @@ class McpBuildService {
       environment: config.workspace.name,
       mainBranch: scenario.mainBranch,
       command: scenario.command,
+      defaultUpdateDescription: scenario.defaultUpdateDescription,
       status: BuildStatus.idle,
       progress: 0,
       logs: const <LogEntry>[],
@@ -363,6 +371,8 @@ Map<String, dynamic> _scenarioJson(MixbuildScenarioConfig scenario) {
     'name': scenario.name,
     'branch': scenario.mainBranch,
     'command': scenario.command,
+    if (scenario.defaultUpdateDescription.isNotEmpty)
+      'default_update_description': scenario.defaultUpdateDescription,
     if (scenario.outputDir != null) 'output_directory': scenario.outputDir,
     'auto_tag': scenario.autoTag,
     if (scenario.tagPrefix.isNotEmpty) 'tag_prefix': scenario.tagPrefix,
