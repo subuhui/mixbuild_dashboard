@@ -182,6 +182,8 @@ class AppStringsEn extends AppStrings {
   @override
   String get scenarioConfirmAdd => 'Confirm New Scenario';
   @override
+  String get gitBranchesLoading => 'Fetching Git branches, please wait…';
+  @override
   String get scenarioName => 'Scenario Name';
   @override
   String get scenarioNameHint => '';

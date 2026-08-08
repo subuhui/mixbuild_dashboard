@@ -74,6 +74,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   late final List<_ProjectBindingDraft> _bindingDrafts;
   late final List<_ScenarioDraft> _scenarioDrafts;
   Timer? _workspaceScanDebounce;
+  Future<void>? _activeProjectRefresh;
   List<DiscoveredGitProject> _discoveredProjects =
       const <DiscoveredGitProject>[];
   final Map<_ProjectBindingDraft, List<String>> _draftBranchOptions =
@@ -84,6 +85,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
       <_ProjectBindingDraft>{};
   String? _scanError;
   bool _isScanning = false;
+  bool _isScenarioDialogOpening = false;
 
   List<DiscoveredGitProject> get _availableDiscoveredProjects {
     return _discoveredProjects
@@ -265,6 +267,18 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   }
 
   Future<void> _refreshDiscoveredProjects() async {
+    final refresh = _performProjectRefresh();
+    _activeProjectRefresh = refresh;
+    try {
+      await refresh;
+    } finally {
+      if (identical(_activeProjectRefresh, refresh)) {
+        _activeProjectRefresh = null;
+      }
+    }
+  }
+
+  Future<void> _performProjectRefresh() async {
     final workspaceRoot = _workspaceController.text.trim();
     if (workspaceRoot.isEmpty) {
       if (!mounted) {
@@ -528,53 +542,104 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   }
 
   Future<void> _openScenarioDialog({_ScenarioDraft? editingDraft}) async {
-    final initialScenario = editingDraft?.toScenario();
-    final result = await showDialog<BuildScenario>(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => AddScenarioDialog(
-        mainProject: ScenarioBranchDraft(
-          projectName: _mainBindingDraft.projectName,
-          initialBranch: initialScenario?.mainBranch.trim().isNotEmpty == true
-              ? initialScenario!.mainBranch
-              : 'main',
-          icon: _dependencyIconForDraft(
-            _mainBindingDraft.type,
-            _mainBindingDraft.projectName,
-          ),
-          options: _branchOptionsForDraft(_mainBindingDraft),
-          highlight: MixBuildPalette.tertiary,
-        ),
-        dependencyDrafts: _scenarioDependencyDrafts(
-          scenarioDependencies: initialScenario?.dependencies,
-        ),
-        initialScenario: initialScenario,
-        title: editingDraft == null
-            ? AppStrings.of(context).scenarioAddNew
-            : '编辑构建场景',
-        primaryActionLabel: editingDraft == null
-            ? AppStrings.of(context).scenarioConfirmAdd
-            : '保存场景修改',
-      ),
-    );
-    if (result == null) {
+    if (_isScenarioDialogOpening) {
       return;
     }
-
-    setState(() {
-      final nextDraft = _ScenarioDraft.fromScenario(result);
-      if (editingDraft == null) {
-        _scenarioDrafts.add(nextDraft);
+    _isScenarioDialogOpening = true;
+    if (mounted) {
+      setState(() {});
+    }
+    try {
+      final activeRefresh = _activeProjectRefresh;
+      ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
+      loadingSnackBar;
+      if (activeRefresh != null) {
+        final messenger = ScaffoldMessenger.of(context);
+        final snackBarTheme = Theme.of(context).colorScheme;
+        loadingSnackBar = messenger.showSnackBar(
+          SnackBar(
+            duration: const Duration(hours: 1),
+            content: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: snackBarTheme.onInverseSurface,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(AppStrings.of(context).gitBranchesLoading),
+              ],
+            ),
+          ),
+        );
+        try {
+          await activeRefresh;
+        } finally {
+          loadingSnackBar.close();
+        }
+      }
+      if (!mounted) {
         return;
       }
-      final targetIndex = _scenarioDrafts.indexOf(editingDraft);
-      if (targetIndex == -1) {
-        _scenarioDrafts.add(nextDraft);
-      } else {
-        editingDraft.dispose();
-        _scenarioDrafts[targetIndex] = nextDraft;
+
+      final initialScenario = editingDraft?.toScenario();
+      final result = await showDialog<BuildScenario>(
+        context: context,
+        barrierDismissible: true,
+        builder: (context) => AddScenarioDialog(
+          mainProject: ScenarioBranchDraft(
+            projectName: _mainBindingDraft.projectName,
+            initialBranch: initialScenario?.mainBranch.trim().isNotEmpty == true
+                ? initialScenario!.mainBranch
+                : 'main',
+            icon: _dependencyIconForDraft(
+              _mainBindingDraft.type,
+              _mainBindingDraft.projectName,
+            ),
+            options: _branchOptionsForDraft(_mainBindingDraft),
+            highlight: MixBuildPalette.tertiary,
+          ),
+          dependencyDrafts: _scenarioDependencyDrafts(
+            scenarioDependencies: initialScenario?.dependencies,
+          ),
+          initialScenario: initialScenario,
+          title: editingDraft == null
+              ? AppStrings.of(context).scenarioAddNew
+              : '编辑构建场景',
+          primaryActionLabel: editingDraft == null
+              ? AppStrings.of(context).scenarioConfirmAdd
+              : '保存场景修改',
+        ),
+      );
+      if (result == null) {
+        return;
       }
-    });
+
+      setState(() {
+        final nextDraft = _ScenarioDraft.fromScenario(result);
+        if (editingDraft == null) {
+          _scenarioDrafts.add(nextDraft);
+          return;
+        }
+        final targetIndex = _scenarioDrafts.indexOf(editingDraft);
+        if (targetIndex == -1) {
+          _scenarioDrafts.add(nextDraft);
+        } else {
+          editingDraft.dispose();
+          _scenarioDrafts[targetIndex] = nextDraft;
+        }
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isScenarioDialogOpening = false;
+        });
+      }
+    }
   }
 
   Future<void> _openAddScenarioDialog() async {
@@ -1174,8 +1239,14 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
       title: strings.scenarioMatrixEditor,
       subtitle: strings.scenarioMatrixEditorSubtitle,
       trailing: FilledButton.icon(
-        onPressed: _openAddScenarioDialog,
-        icon: const Icon(Icons.add),
+        onPressed: _isScenarioDialogOpening ? null : _openAddScenarioDialog,
+        icon: _isScenarioDialogOpening
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.add),
         label: Text(strings.scenarioAddNew),
       ),
       child: LayoutBuilder(

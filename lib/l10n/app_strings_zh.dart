@@ -175,6 +175,8 @@ class AppStringsZh extends AppStrings {
   @override
   String get scenarioConfirmAdd => '确认新增场景';
   @override
+  String get gitBranchesLoading => '正在获取 Git 分支，请稍候…';
+  @override
   String get scenarioName => '场景名称';
   @override
   String get scenarioNameHint => '';

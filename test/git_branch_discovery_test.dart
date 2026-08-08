@@ -51,7 +51,8 @@ void main() {
     await Directory('${repoRoot.path}/.git').create(recursive: true);
 
     final runner = _RecordingCommandRunner();
-    final discovery = GitBranchDiscovery(runner: runner);
+    final logs = <String>[];
+    final discovery = GitBranchDiscovery(runner: runner, onLog: logs.add);
 
     final result = await discovery.discoverBranches(repoRoot.path);
 
@@ -61,6 +62,12 @@ void main() {
     expect(runner.commands.first.command, contains('git -C '));
     expect(runner.commands.first.command, contains(repoRoot.path));
     expect(runner.commands.first.workingDirectory, Directory.current.path);
+    expect(logs, contains(contains('Fetching all remote branches')));
+    expect(
+      logs,
+      contains(contains('git fetch --all --prune finished with exit code 0')),
+    );
+    expect(logs, contains(contains('Discovered 2 branches')));
   });
 
   test('keeps local refs when remote fetch fails', () async {
@@ -74,14 +81,17 @@ void main() {
     });
     await Directory('${repoRoot.path}/.git').create(recursive: true);
 
+    final logs = <String>[];
     final discovery = GitBranchDiscovery(
       runner: _RecordingCommandRunner(fetchExitCode: 1),
+      onLog: logs.add,
     );
 
     final result = await discovery.discoverBranches(repoRoot.path);
 
     expect(result.branches, contains('feat/curl-build-trigger'));
     expect(result.warningMessage, contains('fetch failed'));
+    expect(logs, contains(contains('git fetch --all --prune stderr')));
   });
 }
 

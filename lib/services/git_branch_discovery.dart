@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:mixbuild_dashboard/services/mixbuild_command_runner.dart';
@@ -10,10 +11,14 @@ class GitBranchDiscoveryResult {
 }
 
 class GitBranchDiscovery {
-  GitBranchDiscovery({MixbuildCommandRunner? runner})
-    : _runner = runner ?? ProcessRunCommandRunner();
+  GitBranchDiscovery({
+    MixbuildCommandRunner? runner,
+    void Function(String message)? onLog,
+  }) : _runner = runner ?? ProcessRunCommandRunner(),
+       _onLog = onLog ?? _defaultLog;
 
   final MixbuildCommandRunner _runner;
+  final void Function(String message) _onLog;
 
   Future<GitBranchDiscoveryResult> discoverBranches(
     String repoPath, {
@@ -21,6 +26,7 @@ class GitBranchDiscovery {
   }) async {
     final normalizedPath = repoPath.trim();
     if (normalizedPath.isEmpty) {
+      _log('Skipping branch discovery because the repository path is empty.');
       return GitBranchDiscoveryResult(
         branches: _fallbackBranches(preferredBranch),
       );
@@ -28,6 +34,10 @@ class GitBranchDiscovery {
 
     final root = Directory(normalizedPath);
     if (!root.existsSync() || !Directory('$normalizedPath/.git').existsSync()) {
+      _log(
+        'Skipping branch discovery because no Git repository was found at '
+        '$normalizedPath.',
+      );
       return GitBranchDiscoveryResult(
         branches: _fallbackBranches(preferredBranch),
       );
@@ -38,6 +48,10 @@ class GitBranchDiscovery {
     CommandRunResult currentBranchResult;
     CommandRunResult refResult;
     try {
+      _log(
+        'Fetching all remote branches for $normalizedPath: '
+        'git -C $normalizedPath fetch --all --prune',
+      );
       fetchResult = await _runner.runProcess(gitExecutable, <String>[
         '-C',
         normalizedPath,
@@ -45,12 +59,14 @@ class GitBranchDiscovery {
         '--all',
         '--prune',
       ], workingDirectory: Directory.current.path);
+      _logProcessResult('git fetch --all --prune', fetchResult);
       currentBranchResult = await _runner.runProcess(gitExecutable, <String>[
         '-C',
         normalizedPath,
         'branch',
         '--show-current',
       ], workingDirectory: Directory.current.path);
+      _logProcessResult('git branch --show-current', currentBranchResult);
       refResult = await _runner.runProcess(gitExecutable, <String>[
         '-C',
         normalizedPath,
@@ -59,7 +75,9 @@ class GitBranchDiscovery {
         'refs/heads',
         'refs/remotes',
       ], workingDirectory: Directory.current.path);
+      _logProcessResult('git for-each-ref', refResult);
     } catch (error) {
+      _log('Branch discovery command failed for $normalizedPath: $error');
       return GitBranchDiscoveryResult(
         branches: _fallbackBranches(preferredBranch),
         warningMessage: _buildExceptionWarningMessage(error),
@@ -67,6 +85,9 @@ class GitBranchDiscovery {
     }
 
     if (refResult.exitCode != 0) {
+      _log(
+        'Unable to read Git refs for $normalizedPath; using fallback branches.',
+      );
       return GitBranchDiscoveryResult(
         branches: _fallbackBranches(preferredBranch),
         warningMessage: _buildWarningMessage(
@@ -114,6 +135,10 @@ class GitBranchDiscovery {
         }
         return left.compareTo(right);
       });
+    _log(
+      'Discovered ${sorted.length} branches for $normalizedPath: '
+      '${sorted.join(', ')}',
+    );
     return GitBranchDiscoveryResult(
       branches: sorted.isEmpty ? _fallbackBranches(preferredBranch) : sorted,
       warningMessage: fetchResult.exitCode != 0
@@ -183,6 +208,26 @@ class GitBranchDiscovery {
 
   String _permissionDeniedMessage(String repoPath) {
     return 'Branch discovery failed: the app cannot access the repository directory. Re-select the workspace directory containing ${repoPath.split('/').last}, then refresh branches.';
+  }
+
+  void _log(String message) {
+    _onLog(message);
+  }
+
+  void _logProcessResult(String operation, CommandRunResult result) {
+    _log('$operation finished with exit code ${result.exitCode}.');
+    final stdout = result.stdout.trim();
+    if (stdout.isNotEmpty) {
+      _log('$operation stdout:\n$stdout');
+    }
+    final stderr = result.stderr.trim();
+    if (stderr.isNotEmpty) {
+      _log('$operation stderr:\n$stderr');
+    }
+  }
+
+  static void _defaultLog(String message) {
+    developer.log(message, name: 'GitBranchDiscovery');
   }
 
   String _resolveGitExecutable() {

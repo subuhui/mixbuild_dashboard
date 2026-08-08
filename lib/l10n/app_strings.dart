@@ -96,6 +96,7 @@ abstract class AppStrings {
   String get scenarioMatrixEditorSubtitle;
   String get scenarioAddNew;
   String get scenarioConfirmAdd;
+  String get gitBranchesLoading;
   String get scenarioName;
   String get scenarioNameHint;
   String get scenarioCommand;
