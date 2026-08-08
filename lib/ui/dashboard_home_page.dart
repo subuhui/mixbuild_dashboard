@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixbuild_dashboard/app/responsive_layout.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/l10n/app_strings.dart';
+import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 import 'package:mixbuild_dashboard/state/app_info_provider.dart';
 import 'package:mixbuild_dashboard/state/dashboard_controller.dart';
@@ -29,18 +30,17 @@ class DashboardHomePage extends ConsumerWidget {
         context,
         initialValue: controller.readCurrentYaml(),
         title: strings.projectYamlTitle,
+        onSave: controller.saveCurrentYaml,
       );
-      if (result == null) {
-        return;
-      }
-      await controller.saveCurrentYaml(result);
+      if (result == null) return;
     }
 
     Future<void> openProjectEditor({
       required String title,
       ProjectBuild? targetProject,
     }) async {
-      final project = targetProject ??
+      final project =
+          targetProject ??
           ref.read(dashboardControllerProvider).selectedProject;
       final projectConfig = controller.configForProject(project);
       final projectGlobalConfig = GlobalConfig(
@@ -112,18 +112,15 @@ class DashboardHomePage extends ConsumerWidget {
     Future<void> openBuildLogsPage({String? initialExecutionId}) async {
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (context) => BuildLogsPage(
-            initialExecutionId: initialExecutionId,
-          ),
+          builder: (context) =>
+              BuildLogsPage(initialExecutionId: initialExecutionId),
         ),
       );
     }
 
     Future<void> openSettingsPage() async {
       await Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (context) => const SettingsPage(),
-        ),
+        MaterialPageRoute<void>(builder: (context) => const SettingsPage()),
       );
     }
 
@@ -229,10 +226,8 @@ class DashboardHomePage extends ConsumerWidget {
             child: SafeArea(
               child: _DashboardNavigationMenu(
                 onCreateProject: () => handleCreateProject(closeDrawer: true),
-                onDestinationSelected: (index) => handleNavigationSelection(
-                  index,
-                  closeDrawer: true,
-                ),
+                onDestinationSelected: (index) =>
+                    handleNavigationSelection(index, closeDrawer: true),
                 compact: true,
                 version: appVersion,
               ),
@@ -354,16 +349,6 @@ class _DashboardNavigationMenu extends StatelessWidget {
     final footer = Column(
       children: [
         Divider(color: colorScheme.outlineVariant.withValues(alpha: 0.8)),
-        ListTile(
-          dense: true,
-          leading: const Icon(Icons.help_outline, size: 18),
-          title: Text(strings.navSupport, style: theme.textTheme.bodySmall),
-        ),
-        ListTile(
-          dense: true,
-          leading: const Icon(Icons.description_outlined, size: 18),
-          title: Text(strings.navDocs, style: theme.textTheme.bodySmall),
-        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
           child: Text(strings.copyright, style: theme.textTheme.bodySmall),
@@ -433,6 +418,14 @@ class _DashboardNavigationMenu extends StatelessWidget {
   }
 }
 
+IconData projectTypeIcon(MixbuildProjectType type) {
+  return switch (type) {
+    MixbuildProjectType.flutter => Icons.flutter_dash,
+    MixbuildProjectType.android => Icons.android,
+    MixbuildProjectType.ios => Icons.phone_iphone,
+  };
+}
+
 class ProjectOverviewCard extends StatelessWidget {
   const ProjectOverviewCard({
     super.key,
@@ -454,7 +447,7 @@ class ProjectOverviewCard extends StatelessWidget {
     final theme = Theme.of(context);
     final strings = AppStrings.of(context);
     return Container(
-      decoration: MixBuildTheme.surfacePanel(context, radius: 24),
+      decoration: MixBuildTheme.surfacePanel(context, radius: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -463,7 +456,7 @@ class ProjectOverviewCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: MixBuildPalette.surfaceHighest,
               borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
+                top: Radius.circular(16),
               ),
               border: Border(
                 bottom: BorderSide(
@@ -477,19 +470,17 @@ class ProjectOverviewCard extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      project.emoji,
-                      style: const TextStyle(fontSize: 20),
+                    Icon(
+                      projectTypeIcon(project.type),
+                      size: 22,
+                      color: theme.colorScheme.primary,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            project.name,
-                            style: theme.textTheme.titleLarge,
-                          ),
+                          Text(project.name, style: theme.textTheme.titleLarge),
                           const SizedBox(height: 4),
                           Text(
                             project.description,
@@ -506,8 +497,10 @@ class ProjectOverviewCard extends StatelessWidget {
                       children: [
                         IconButton(
                           onPressed: onOpenYaml,
-                          icon:
-                              const Icon(Icons.data_object_outlined, size: 18),
+                          icon: const Icon(
+                            Icons.data_object_outlined,
+                            size: 18,
+                          ),
                           color: MixBuildPalette.muted,
                           tooltip: strings.yamlOverride,
                         ),
@@ -564,8 +557,9 @@ class _ScenarioPreviewTile extends StatelessWidget {
     final isActive = scenario.status.isPipelineActive;
     final canStop = scenario.status.canStop;
     final actionLabel = canStop ? strings.btnStop : strings.btnView;
-    final actionColor =
-        canStop ? MixBuildPalette.error : MixBuildPalette.primary;
+    final actionColor = canStop
+        ? MixBuildPalette.error
+        : MixBuildPalette.primary;
 
     return InkWell(
       onTap: onTap,
@@ -576,15 +570,15 @@ class _ScenarioPreviewTile extends StatelessWidget {
           color: isActive
               ? scenario.status.color.withValues(alpha: 0.05)
               : selected
-                  ? scenario.status.color.withValues(alpha: 0.1)
-                  : MixBuildPalette.surfaceHighest,
+              ? scenario.status.color.withValues(alpha: 0.1)
+              : MixBuildPalette.surfaceHighest,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isActive
                 ? scenario.status.color.withValues(alpha: 0.32)
                 : selected
-                    ? scenario.status.color.withValues(alpha: 0.24)
-                    : MixBuildTheme.surfacePanelBorderColor(context),
+                ? scenario.status.color.withValues(alpha: 0.24)
+                : MixBuildTheme.surfacePanelBorderColor(context),
             width: isActive ? 1.5 : 1,
           ),
         ),
@@ -607,9 +601,7 @@ class _ScenarioPreviewTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: isActive
-                            ? scenario.status.color.withValues(
-                          alpha: 0.6,
-                        )
+                            ? scenario.status.color.withValues(alpha: 0.6)
                             : null,
                       ),
                     ),

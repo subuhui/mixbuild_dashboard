@@ -156,6 +156,8 @@ abstract class AppStrings {
   String get buildLogsBranch;
   String get buildLogsStart;
   String get buildLogsStartFinish;
+  String get buildLogsSearchHint;
+  String get logDownloadTooltip;
 
   String get yamlEditorTitle;
   String get yamlEditorSubtitle;
@@ -168,6 +170,10 @@ abstract class AppStrings {
   String get yamlReload;
   String get yamlOpen;
   String get yamlGlobalConfig;
+  String get yamlCopied;
+  String get yamlDiscardTitle;
+  String get yamlDiscardMessage;
+  String get yamlDiscard;
 
   String get globalConfigTitle;
   String get settingsAppearanceTitle;
@@ -227,6 +233,7 @@ abstract class AppStrings {
   String get settingsServerCurlExample;
   String get settingsServerCurlProject;
   String get settingsServerCurlScenario;
+  String get settingsServerCurlCopied;
 
   String yamlSaveError(String error);
   String dirAccessError(String error);

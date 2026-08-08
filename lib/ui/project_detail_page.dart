@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixbuild_dashboard/app/responsive_layout.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
@@ -33,6 +34,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
   DashboardController get _controller =>
       ref.read(dashboardControllerProvider.notifier);
   final TextEditingController _logSearchController = TextEditingController();
+  final FocusNode _logSearchFocusNode = FocusNode();
   String _logSearchQuery = '';
   int _visibleTerminalLogCount = kProjectDetailLogPageSize;
 
@@ -56,6 +58,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
   @override
   void dispose() {
     _logSearchController.dispose();
+    _logSearchFocusNode.dispose();
     super.dispose();
   }
 
@@ -70,9 +73,11 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
     if (location == null) {
       return;
     }
-    final lines = scenario.logs.reversed.map((log) {
-      return '[${log.time}] [${log.level}] ${log.message}';
-    }).join('\n');
+    final lines = scenario.logs.reversed
+        .map((log) {
+          return '[${log.time}] [${log.level}] ${log.message}';
+        })
+        .join('\n');
     await File(location.path).writeAsString('$lines\n');
     if (!mounted) {
       return;
@@ -132,9 +137,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
     }
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (context) => BuildLogsPage(
-          initialExecutionId: latestRecordId,
-        ),
+        builder: (context) => BuildLogsPage(initialExecutionId: latestRecordId),
       ),
     );
   }
@@ -162,7 +165,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
       dependencyBranchOptions: _controller.dependencyBranchOptions,
       cleanBeforeBuild:
           dashboardState.cleanBeforeBuild[dashboardState.selectedScenarioId] ??
-              false,
+          false,
       onCleanChanged: _controller.setCleanBeforeBuild,
       onTrigger: (updateDescription) => _controller.triggerSelectedScenario(
         updateDescription: updateDescription,
@@ -170,7 +173,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
       onStop: _controller.stopSelectedScenario,
       onOpenSettings: () => _openProjectEditor(dashboardState),
       onBack: () => Navigator.of(context).pop(),
-      stacked: !responsive.isWide,
+      stacked: responsive.isCompact,
       width: responsive.detailSidebarWidth,
       version: appVersion,
     );
@@ -194,6 +197,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
               visibleLogs: logViewport.visibleLogs,
               hiddenLogCount: logViewport.hiddenCount,
               searchController: _logSearchController,
+              searchFocusNode: _logSearchFocusNode,
               searchQuery: _logSearchQuery,
               onSearchChanged: (value) {
                 setState(() {
@@ -208,14 +212,12 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
                       });
                     }
                   : null,
-              onSaveLogs: () => _saveScenarioLogs(
-                selectedProject,
-                selectedScenario,
-              ),
+              onSaveLogs: () =>
+                  _saveScenarioLogs(selectedProject, selectedScenario),
             ),
           ),
         ),
-        if (!responsive.isWide || responsive.isCompact)
+        if (responsive.isCompact)
           Padding(
             padding: EdgeInsets.fromLTRB(
               responsive.shellPadding.left,
@@ -231,55 +233,65 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
       ],
     );
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          const DashboardBackground(),
-          SafeArea(
-            child: responsive.isWide
-                ? Row(
-                    children: [
-                      sidebarPanel,
-                      Expanded(
-                        child: Stack(
-                          children: [
-                            terminalSection,
-                            Positioned(
-                              bottom: 36,
-                              right: 36,
-                              child: _HudOverlay(
-                                metrics: dashboardState.metrics,
-                              ),
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        SingleActivator(LogicalKeyboardKey.keyF, control: true):
+            _logSearchFocusNode.requestFocus,
+        SingleActivator(LogicalKeyboardKey.keyF, meta: true):
+            _logSearchFocusNode.requestFocus,
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+          body: Stack(
+            children: [
+              const DashboardBackground(),
+              SafeArea(
+                child: !responsive.isCompact
+                    ? Row(
+                        children: [
+                          sidebarPanel,
+                          Expanded(
+                            child: Stack(
+                              children: [
+                                terminalSection,
+                                Positioned(
+                                  bottom: 36,
+                                  right: 36,
+                                  child: _HudOverlay(
+                                    metrics: dashboardState.metrics,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(
+                              responsive.shellPadding.left,
+                              responsive.shellPadding.top,
+                              responsive.shellPadding.right,
+                              0,
+                            ),
+                            child: SizedBox(
+                              height: MediaQuery.sizeOf(context).height * 0.58,
+                              child: sidebarPanel,
+                            ),
+                          ),
+                          Expanded(child: terminalSection),
+                        ],
                       ),
-                    ],
-                  )
-                : Column(
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          responsive.shellPadding.left,
-                          responsive.shellPadding.top,
-                          responsive.shellPadding.right,
-                          0,
-                        ),
-                        child: SizedBox(
-                          height: MediaQuery.sizeOf(context).height * 0.58,
-                          child: sidebarPanel,
-                        ),
-                      ),
-                      Expanded(child: terminalSection),
-                    ],
-                  ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
-
 
 class _SidebarPanel extends StatelessWidget {
   const _SidebarPanel({
@@ -307,9 +319,9 @@ class _SidebarPanel extends StatelessWidget {
   final ValueChanged<String> onBranchChanged;
   final ValueChanged<String> onScenarioChanged;
   final void Function(String dependencyName, String branch)
-      onDependencyBranchChanged;
+  onDependencyBranchChanged;
   final List<String> Function(DependencyBranch dependency)
-      dependencyBranchOptions;
+  dependencyBranchOptions;
   final bool cleanBeforeBuild;
   final ValueChanged<bool> onCleanChanged;
   final ValueChanged<String> onTrigger;
@@ -391,7 +403,12 @@ class _SidebarPanel extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _SidebarHeader(onBack: onBack, onOpenSettings: onOpenSettings, version: version),
+          _SidebarHeader(
+            projectName: project.name,
+            onBack: onBack,
+            onOpenSettings: onOpenSettings,
+            version: version,
+          ),
           Expanded(child: SingleChildScrollView(child: content)),
           _SidebarFooter(
             scenario: scenario,
@@ -407,8 +424,14 @@ class _SidebarPanel extends StatelessWidget {
 }
 
 class _SidebarHeader extends StatelessWidget {
-  const _SidebarHeader({required this.onBack, required this.onOpenSettings, required this.version});
+  const _SidebarHeader({
+    required this.projectName,
+    required this.onBack,
+    required this.onOpenSettings,
+    required this.version,
+  });
 
+  final String projectName;
   final VoidCallback onBack;
   final VoidCallback onOpenSettings;
   final String version;
@@ -432,6 +455,7 @@ class _SidebarHeader extends StatelessWidget {
             icon: const Icon(Icons.arrow_back, size: 20),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            tooltip: strings.btnBack,
           ),
           const SizedBox(width: 8),
           Container(
@@ -456,7 +480,7 @@ class _SidebarHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  strings.appTitle,
+                  projectName,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 Text(
@@ -499,11 +523,11 @@ class _SidebarSectionLabel extends StatelessWidget {
         Text(
           label.toUpperCase(),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: MixBuildPalette.muted,
-                fontWeight: FontWeight.w700,
-                fontSize: 11,
-                letterSpacing: 1.0,
-              ),
+            color: MixBuildPalette.muted,
+            fontWeight: FontWeight.w700,
+            fontSize: 11,
+            letterSpacing: 1.0,
+          ),
         ),
         if (trailing != null) ...[
           const Spacer(),
@@ -669,9 +693,9 @@ class _DependencyTree extends StatelessWidget {
   final ProjectBuild project;
   final BuildScenario scenario;
   final void Function(String dependencyName, String branch)
-      onDependencyBranchChanged;
+  onDependencyBranchChanged;
   final List<String> Function(DependencyBranch dependency)
-      dependencyBranchOptions;
+  dependencyBranchOptions;
 
   @override
   Widget build(BuildContext context) {
@@ -1039,23 +1063,30 @@ class _SidebarFooterState extends State<_SidebarFooter> {
   }
 }
 
-
-class _PipelineHeader extends StatelessWidget {
-  const _PipelineHeader({
-    required this.scenario,
-    required this.onOpenHistory,
-  });
-
-  final BuildScenario scenario;
-  final VoidCallback onOpenHistory;
-
-  static const _steps = [
-    BuildStatus.idle,
+List<BuildStatus> pipelineStatusesFor(BuildStatus status) {
+  if (status == BuildStatus.idle) {
+    return const <BuildStatus>[BuildStatus.idle];
+  }
+  final statuses = <BuildStatus>[
     BuildStatus.validating,
     BuildStatus.syncing,
+    BuildStatus.restoring,
     BuildStatus.building,
     BuildStatus.postHook,
   ];
+  if (status == BuildStatus.success ||
+      status == BuildStatus.failed ||
+      status == BuildStatus.interrupted) {
+    statuses.add(status);
+  }
+  return statuses;
+}
+
+class _PipelineHeader extends StatelessWidget {
+  const _PipelineHeader({required this.scenario, required this.onOpenHistory});
+
+  final BuildScenario scenario;
+  final VoidCallback onOpenHistory;
 
   @override
   Widget build(BuildContext context) {
@@ -1070,8 +1101,10 @@ class _PipelineHeader extends StatelessWidget {
           color: MixBuildPalette.foreground.withValues(alpha: 0.1),
         ),
       ),
-      child:
-          Row(mainAxisSize: MainAxisSize.min, children: _buildChips(context)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: _buildChips(context),
+      ),
     );
 
     final statusSummary = Row(
@@ -1158,19 +1191,21 @@ class _PipelineHeader extends StatelessWidget {
   }
 
   List<Widget> _buildChips(BuildContext context) {
-    final currentIndex =
-        _steps.contains(scenario.status) ? _steps.indexOf(scenario.status) : -1;
+    final statuses = pipelineStatusesFor(scenario.status);
+    final currentIndex = statuses.indexOf(scenario.status);
     final result = <Widget>[];
-    for (int i = 0; i < _steps.length; i++) {
-      final step = _steps[i];
+    for (int i = 0; i < statuses.length; i++) {
+      final step = statuses[i];
       final active = step == scenario.status;
-      final dimmed = currentIndex >= 0 && i > currentIndex;
+      final complete = currentIndex >= 0 && i < currentIndex;
       result.add(
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: active
-                ? MixBuildPalette.primary.withValues(alpha: 0.1)
+                ? MixBuildPalette.primary.withValues(alpha: 0.12)
+                : complete
+                ? MixBuildPalette.success.withValues(alpha: 0.1)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
@@ -1180,14 +1215,14 @@ class _PipelineHeader extends StatelessWidget {
               fontSize: 11,
               color: active
                   ? MixBuildPalette.primary
-                  : MixBuildPalette.muted.withValues(
-                      alpha: dimmed ? 0.45 : 1.0,
-                    ),
+                  : complete
+                  ? MixBuildPalette.success
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
             ).copyWith(fontWeight: FontWeight.w700),
           ),
         ),
       );
-      if (i < _steps.length - 1) {
+      if (i < statuses.length - 1) {
         result.add(
           Icon(
             Icons.chevron_right,
@@ -1201,7 +1236,6 @@ class _PipelineHeader extends StatelessWidget {
   }
 }
 
-
 class _TerminalPanel extends StatelessWidget {
   const _TerminalPanel({
     required this.project,
@@ -1209,6 +1243,7 @@ class _TerminalPanel extends StatelessWidget {
     required this.visibleLogs,
     required this.hiddenLogCount,
     required this.searchController,
+    required this.searchFocusNode,
     required this.searchQuery,
     required this.onSearchChanged,
     required this.onLoadOlderLogs,
@@ -1220,6 +1255,7 @@ class _TerminalPanel extends StatelessWidget {
   final List<LogEntry> visibleLogs;
   final int hiddenLogCount;
   final TextEditingController searchController;
+  final FocusNode searchFocusNode;
   final String searchQuery;
   final ValueChanged<String> onSearchChanged;
   final VoidCallback? onLoadOlderLogs;
@@ -1232,7 +1268,7 @@ class _TerminalPanel extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: MixBuildPalette.surfaceLow,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: MixBuildPalette.foreground.withValues(alpha: 0.06),
         ),
@@ -1245,7 +1281,7 @@ class _TerminalPanel extends StatelessWidget {
             decoration: BoxDecoration(
               color: MixBuildPalette.surfaceHighest,
               borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
+                top: Radius.circular(16),
               ),
               border: Border(
                 bottom: BorderSide(
@@ -1283,7 +1319,7 @@ class _TerminalPanel extends StatelessWidget {
                     minWidth: 28,
                     minHeight: 28,
                   ),
-                  tooltip: strings.btnSave,
+                  tooltip: strings.logDownloadTooltip,
                 ),
               ],
             ),
@@ -1292,6 +1328,7 @@ class _TerminalPanel extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
             child: TextField(
               controller: searchController,
+              focusNode: searchFocusNode,
               onChanged: onSearchChanged,
               style: MixBuildTheme.monoTextStyle(
                 fontSize: 12,
@@ -1311,9 +1348,11 @@ class _TerminalPanel extends StatelessWidget {
                         splashRadius: 14,
                         tooltip: strings.btnClose,
                       ),
-                hintText: strings.buildLogsNoMatch,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                hintText: strings.buildLogsSearchHint,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -1342,78 +1381,85 @@ class _TerminalPanel extends StatelessWidget {
                       ],
                     ),
                   )
-                : visibleLogs.isEmpty
-                    ? Center(
-                        child: Text(
-                          strings.noLogMatch(searchQuery),
-                          style: MixBuildTheme.monoTextStyle(
-                            fontSize: 12,
-                            color:
-                                MixBuildPalette.muted.withValues(alpha: 0.55),
-                          ),
-                        ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(20),
-                        itemCount:
-                            visibleLogs.length + (hiddenLogCount > 0 ? 1 : 0),
-                        separatorBuilder: (_, r) => const SizedBox(height: 6),
-                        itemBuilder: (context, index) {
-                          if (index == visibleLogs.length) {
-                            return Align(
-                              alignment: Alignment.centerLeft,
-                              child: TextButton(
-                                onPressed: onLoadOlderLogs,
-                                child: Text(
-                                  strings.buildLogsLoadOlder(hiddenLogCount),
-                                ),
-                              ),
-                            );
-                          }
-                          final log = visibleLogs[index];
-                          return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(
-                                width: 84,
-                                child: Text(
-                                  '[${log.time}]',
-                                  maxLines: 1,
-                                  softWrap: false,
-                                  overflow: TextOverflow.clip,
-                                  style: MixBuildTheme.monoTextStyle(
-                                    fontSize: 12,
-                                    color: MixBuildPalette.muted
-                                        .withValues(alpha: 0.7),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(
-                                width: 52,
-                                child: Text(
-                                  '[${log.level}]',
-                                  maxLines: 1,
-                                  softWrap: false,
-                                  overflow: TextOverflow.clip,
-                                  style: MixBuildTheme.monoTextStyle(
-                                    fontSize: 12,
-                                    color: log.accent,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  log.message,
-                                  style: MixBuildTheme.monoTextStyle(
-                                    fontSize: 12,
-                                    color: MixBuildPalette.foreground,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
+                : shouldShowNoLogMatch(
+                    query: searchQuery,
+                    viewport: LogViewportSlice(
+                      visibleLogs: visibleLogs,
+                      totalMatches: visibleLogs.length,
+                      hiddenCount: hiddenLogCount,
+                    ),
+                  )
+                ? Center(
+                    child: Text(
+                      strings.noLogMatch(searchQuery),
+                      style: MixBuildTheme.monoTextStyle(
+                        fontSize: 12,
+                        color: MixBuildPalette.muted.withValues(alpha: 0.55),
                       ),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.all(20),
+                    itemCount:
+                        visibleLogs.length + (hiddenLogCount > 0 ? 1 : 0),
+                    separatorBuilder: (_, r) => const SizedBox(height: 6),
+                    itemBuilder: (context, index) {
+                      if (index == visibleLogs.length) {
+                        return Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton(
+                            onPressed: onLoadOlderLogs,
+                            child: Text(
+                              strings.buildLogsLoadOlder(hiddenLogCount),
+                            ),
+                          ),
+                        );
+                      }
+                      final log = visibleLogs[index];
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 84,
+                            child: Text(
+                              '[${log.time}]',
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.clip,
+                              style: MixBuildTheme.monoTextStyle(
+                                fontSize: 12,
+                                color: MixBuildPalette.muted.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 52,
+                            child: Text(
+                              '[${log.level}]',
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.clip,
+                              style: MixBuildTheme.monoTextStyle(
+                                fontSize: 12,
+                                color: log.accent,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              log.message,
+                              style: MixBuildTheme.monoTextStyle(
+                                fontSize: 12,
+                                color: MixBuildPalette.foreground,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
@@ -1445,8 +1491,9 @@ class _TerminalPanel extends StatelessWidget {
                       : scenario.progress,
                   minHeight: 4,
                   borderRadius: BorderRadius.circular(999),
-                  backgroundColor:
-                      MixBuildPalette.foreground.withValues(alpha: 0.05),
+                  backgroundColor: MixBuildPalette.foreground.withValues(
+                    alpha: 0.05,
+                  ),
                   valueColor: AlwaysStoppedAnimation<Color>(
                     scenario.status.color,
                   ),
@@ -1459,7 +1506,6 @@ class _TerminalPanel extends StatelessWidget {
     );
   }
 }
-
 
 class _HudOverlay extends StatelessWidget {
   const _HudOverlay({required this.metrics});

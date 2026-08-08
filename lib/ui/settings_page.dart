@@ -70,7 +70,7 @@ class SettingsPage extends ConsumerWidget {
                         padding: const EdgeInsets.all(24),
                         decoration: MixBuildTheme.surfacePanel(
                           context,
-                          radius: 24,
+                          radius: 16,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,18 +95,14 @@ class SettingsPage extends ConsumerWidget {
                               width: double.infinity,
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color:
-                                    MixBuildTheme.surfaceChromeColor(context),
-                                borderRadius: BorderRadius.circular(20),
+                                color: MixBuildTheme.surfaceChromeColor(
+                                  context,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    strings.settingsAppearanceTitle,
-                                    style: theme.textTheme.titleMedium,
-                                  ),
-                                  const SizedBox(height: 6),
                                   Text(
                                     strings.settingsThemeSectionNote,
                                     style: theme.textTheme.bodySmall,
@@ -117,8 +113,9 @@ class SettingsPage extends ConsumerWidget {
                                     segments: <ButtonSegment<ThemeMode>>[
                                       ButtonSegment<ThemeMode>(
                                         value: ThemeMode.system,
-                                        label:
-                                            Text(strings.settingsThemeSystem),
+                                        label: Text(
+                                          strings.settingsThemeSystem,
+                                        ),
                                         icon: const Icon(Icons.brightness_auto),
                                       ),
                                       ButtonSegment<ThemeMode>(
@@ -139,8 +136,9 @@ class SettingsPage extends ConsumerWidget {
                                     selected: <ThemeMode>{themeMode},
                                     onSelectionChanged: (selection) {
                                       if (selection.isNotEmpty) {
-                                        controller
-                                            .setThemeMode(selection.first);
+                                        controller.setThemeMode(
+                                          selection.first,
+                                        );
                                       }
                                     },
                                   ),
@@ -177,10 +175,7 @@ class _DataManagementPanel extends ConsumerWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
-      decoration: MixBuildTheme.surfacePanel(
-        context,
-        radius: 24,
-      ),
+      decoration: MixBuildTheme.surfacePanel(context, radius: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -225,6 +220,7 @@ class _DataManagementPanel extends ConsumerWidget {
                   icon: Icons.delete_sweep_outlined,
                   title: strings.settingsClearLogs,
                   subtitle: strings.settingsClearLogsDesc,
+                  accentColor: theme.colorScheme.error,
                   onTap: () => _handleClearLogs(context, ref),
                 ),
               ),
@@ -242,15 +238,15 @@ class _DataManagementPanel extends ConsumerWidget {
           .read(dashboardControllerProvider.notifier)
           .exportConfigToZip();
       if (context.mounted && count > 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.exportSuccess(count))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(strings.exportSuccess(count))));
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.exportError('$e'))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(strings.exportError('$e'))));
       }
     }
   }
@@ -281,15 +277,15 @@ class _DataManagementPanel extends ConsumerWidget {
           .read(dashboardControllerProvider.notifier)
           .importConfigFromZip();
       if (context.mounted && count > 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.importSuccess(count))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(strings.importSuccess(count))));
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(strings.importError('$e'))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(strings.importError('$e'))));
       }
     }
   }
@@ -308,6 +304,10 @@ class _DataManagementPanel extends ConsumerWidget {
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+              foregroundColor: Theme.of(ctx).colorScheme.onError,
+            ),
             child: Text(strings.btnConfirm),
           ),
         ],
@@ -339,12 +339,14 @@ class _DataActionCard extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.accentColor,
     required this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
+  final Color? accentColor;
   final VoidCallback onTap;
 
   @override
@@ -352,18 +354,27 @@ class _DataActionCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Material(
       color: MixBuildTheme.surfaceChromeColor(context),
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 28, color: theme.colorScheme.primary),
+              Icon(
+                icon,
+                size: 28,
+                color: accentColor ?? theme.colorScheme.primary,
+              ),
               const SizedBox(height: 12),
-              Text(title, style: theme.textTheme.titleMedium),
+              Text(
+                title,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: accentColor,
+                ),
+              ),
               const SizedBox(height: 4),
               Text(
                 subtitle,
@@ -411,14 +422,21 @@ class _BuildServerPanelState extends ConsumerState<_BuildServerPanel> {
     final dashboardState = ref.watch(dashboardControllerProvider);
     final serverPort = ref.watch(buildTriggerPortControllerProvider);
     final serverError = dashboardState.lastError;
-    final hasError = serverError != null &&
+    final hasError =
+        serverError != null &&
         serverError.startsWith('Build trigger server failed:');
-    final projectName =
-        dashboardState.config.mainProject.name.replaceAll('"', '\\"');
-    final scenarioName =
-        dashboardState.selectedScenario.name.replaceAll('"', '\\"');
-    final branch =
-        dashboardState.selectedScenario.mainBranch.replaceAll('"', '\\"');
+    final projectName = dashboardState.config.mainProject.name.replaceAll(
+      '"',
+      '\\"',
+    );
+    final scenarioName = dashboardState.selectedScenario.name.replaceAll(
+      '"',
+      '\\"',
+    );
+    final branch = dashboardState.selectedScenario.mainBranch.replaceAll(
+      '"',
+      '\\"',
+    );
     final curlProjectCommand =
         'curl -X POST http://127.0.0.1:$serverPort/build \\\n'
         '  -H "Content-Type: application/json" \\\n'
@@ -431,7 +449,7 @@ class _BuildServerPanelState extends ConsumerState<_BuildServerPanel> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
-      decoration: MixBuildTheme.surfacePanel(context, radius: 24),
+      decoration: MixBuildTheme.surfacePanel(context, radius: 16),
       child: Form(
         key: _formKey,
         child: Column(
@@ -458,7 +476,7 @@ class _BuildServerPanelState extends ConsumerState<_BuildServerPanel> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: MixBuildTheme.surfaceChromeColor(context),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -530,9 +548,7 @@ class _BuildServerPanelState extends ConsumerState<_BuildServerPanel> {
                             return;
                           }
                           ref
-                              .read(
-                                buildTriggerPortControllerProvider.notifier,
-                              )
+                              .read(buildTriggerPortControllerProvider.notifier)
                               .setPort(int.parse(_portController.text));
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -606,10 +622,15 @@ class _CurlCodeBlock extends StatelessWidget {
             top: 0,
             child: IconButton(
               icon: const Icon(Icons.copy, size: 18),
+              tooltip: AppStrings.of(context).settingsServerCurlCopied,
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: curlCommand));
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('已复制 Curl 命令示例')),
+                  SnackBar(
+                    content: Text(
+                      AppStrings.of(context).settingsServerCurlCopied,
+                    ),
+                  ),
                 );
               },
             ),

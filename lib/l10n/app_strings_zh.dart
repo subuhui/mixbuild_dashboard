@@ -17,7 +17,8 @@ class AppStringsZh extends AppStrings {
   String appTitleWithVersionWith(String v) =>
       'MixBuild Dashboard v${v.split('.').take(3).join('.')}';
   @override
-  String appVersionSubtitleWith(String v) => 'v$v-stable · Flutter Desktop / macOS';
+  String appVersionSubtitleWith(String v) =>
+      'v$v-stable · Flutter Desktop / macOS';
 
   @override
   String get navDashboard => '仪表盘';
@@ -289,6 +290,10 @@ class AppStringsZh extends AppStrings {
   String get buildLogsStart => '开始于';
   @override
   String get buildLogsStartFinish => '开始于 · 结束于';
+  @override
+  String get buildLogsSearchHint => '搜索日志';
+  @override
+  String get logDownloadTooltip => '下载完整日志';
 
   @override
   String get yamlEditorTitle => 'YAML Configuration Override';
@@ -312,6 +317,14 @@ class AppStringsZh extends AppStrings {
   String get yamlOpen => '打开 YAML';
   @override
   String get yamlGlobalConfig => 'Global Config';
+  @override
+  String get yamlCopied => '已复制 YAML 内容';
+  @override
+  String get yamlDiscardTitle => '放弃未保存的修改？';
+  @override
+  String get yamlDiscardMessage => '当前编辑内容尚未保存，关闭后这些修改将丢失。';
+  @override
+  String get yamlDiscard => '放弃修改';
 
   @override
   String get globalConfigTitle => '工程配置中心';
@@ -373,7 +386,8 @@ class AppStringsZh extends AppStrings {
   @override
   String get settingsImportConfirmTitle => '确认导入';
   @override
-  String get settingsImportConfirmMessage => '导入将会添加 ZIP 中的工作区配置，现有配置不会被覆盖。是否继续？';
+  String get settingsImportConfirmMessage =>
+      '导入将会添加 ZIP 中的工作区配置，现有配置不会被覆盖。是否继续？';
   @override
   String exportSuccess(int count) => '已导出 $count 个工作区配置';
   @override
@@ -390,7 +404,8 @@ class AppStringsZh extends AppStrings {
   @override
   String get settingsClearLogsConfirmTitle => '确认清除日志';
   @override
-  String get settingsClearLogsConfirmMessage => '此操作将永久删除所有历史构建日志文件，且无法恢复。是否继续？';
+  String get settingsClearLogsConfirmMessage =>
+      '此操作将永久删除所有历史构建日志文件，且无法恢复。是否继续？';
   @override
   String settingsClearLogsSuccess(int count) => '已清除 $count 个日志文件';
   @override
@@ -470,4 +485,6 @@ class AppStringsZh extends AppStrings {
   String get settingsServerCurlProject => 'A. 通过项目名称触发（默认）：';
   @override
   String get settingsServerCurlScenario => 'B. 通过构建场景触发：';
+  @override
+  String get settingsServerCurlCopied => '已复制 Curl 命令示例';
 }

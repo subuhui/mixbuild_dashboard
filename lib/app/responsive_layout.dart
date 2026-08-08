@@ -13,14 +13,17 @@ class ResponsiveLayout {
 
   final double width;
 
-  static const double compactBreakpoint = 1024;
-  static const double mediumBreakpoint = 1024;
-  static const double wideBreakpoint = 1024;
+  /// The native desktop minimum is 1024px; keep the navigation drawer compact
+  /// until the main content can comfortably share the window with it.
+  static const double compactBreakpoint = 1100;
+  static const double mediumBreakpoint = 1440;
+  static const double wideBreakpoint = 1440;
+  static const double extraWideBreakpoint = 1600;
 
   bool get isCompact => width < compactBreakpoint;
   bool get isMedium => width >= compactBreakpoint && width < mediumBreakpoint;
   bool get isWide => width >= mediumBreakpoint;
-  bool get isExtraWide => width >= wideBreakpoint;
+  bool get isExtraWide => width >= extraWideBreakpoint;
 
   EdgeInsets get shellPadding {
     if (isCompact) {
@@ -42,6 +45,6 @@ class ResponsiveLayout {
     return const EdgeInsets.fromLTRB(20, 18, 20, 12);
   }
 
-  double get navRailWidth => isCompact ? 280 : 252;
-  double get detailSidebarWidth => isMedium ? 320 : 380;
+  double get navRailWidth => isCompact ? 236 : 252;
+  double get detailSidebarWidth => isMedium ? 320 : 368;
 }

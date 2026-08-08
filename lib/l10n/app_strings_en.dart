@@ -17,7 +17,8 @@ class AppStringsEn extends AppStrings {
   String appTitleWithVersionWith(String v) =>
       'MixBuild Dashboard v${v.split('.').take(2).join('.')}';
   @override
-  String appVersionSubtitleWith(String v) => 'v$v-stable · Flutter Desktop / macOS';
+  String appVersionSubtitleWith(String v) =>
+      'v$v-stable · Flutter Desktop / macOS';
 
   @override
   String get navDashboard => 'Dashboard';
@@ -302,6 +303,10 @@ class AppStringsEn extends AppStrings {
   String get buildLogsStart => 'Started at';
   @override
   String get buildLogsStartFinish => 'Started at · Finished at';
+  @override
+  String get buildLogsSearchHint => 'Search logs';
+  @override
+  String get logDownloadTooltip => 'Download full log';
 
   @override
   String get yamlEditorTitle => 'YAML Configuration Override';
@@ -327,6 +332,15 @@ class AppStringsEn extends AppStrings {
   String get yamlOpen => 'Open YAML';
   @override
   String get yamlGlobalConfig => 'Global Config';
+  @override
+  String get yamlCopied => 'YAML content copied';
+  @override
+  String get yamlDiscardTitle => 'Discard unsaved changes?';
+  @override
+  String get yamlDiscardMessage =>
+      'Your edits have not been saved. Closing now will discard them.';
+  @override
+  String get yamlDiscard => 'Discard changes';
 
   @override
   String get globalConfigTitle => 'Global Configuration';
@@ -379,7 +393,8 @@ class AppStringsEn extends AppStrings {
   @override
   String get settingsDataTitle => 'Data Management';
   @override
-  String get settingsDataSubtitle => 'Export or import all workspace configurations for backup and migration';
+  String get settingsDataSubtitle =>
+      'Export or import all workspace configurations for backup and migration';
   @override
   String get settingsExport => 'Export Config';
   @override
@@ -391,7 +406,8 @@ class AppStringsEn extends AppStrings {
   @override
   String get settingsImportConfirmTitle => 'Confirm Import';
   @override
-  String get settingsImportConfirmMessage => 'Importing will add workspace configs from the ZIP. Existing configs will not be overwritten. Continue?';
+  String get settingsImportConfirmMessage =>
+      'Importing will add workspace configs from the ZIP. Existing configs will not be overwritten. Continue?';
   @override
   String exportSuccess(int count) => 'Exported $count workspace config(s)';
   @override
@@ -408,7 +424,8 @@ class AppStringsEn extends AppStrings {
   @override
   String get settingsClearLogsConfirmTitle => 'Confirm Clear Logs';
   @override
-  String get settingsClearLogsConfirmMessage => 'This will permanently delete all historical build log files. This action cannot be undone. Continue?';
+  String get settingsClearLogsConfirmMessage =>
+      'This will permanently delete all historical build log files. This action cannot be undone. Continue?';
   @override
   String settingsClearLogsSuccess(int count) => 'Cleared $count log file(s)';
   @override
@@ -496,4 +513,6 @@ class AppStringsEn extends AppStrings {
       'A. Trigger by Project Name (Default):';
   @override
   String get settingsServerCurlScenario => 'B. Trigger by Build Scenario Name:';
+  @override
+  String get settingsServerCurlCopied => 'Curl command copied';
 }

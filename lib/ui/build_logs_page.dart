@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mixbuild_dashboard/app/responsive_layout.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_theme.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 import 'package:mixbuild_dashboard/l10n/app_strings.dart';
@@ -19,6 +21,7 @@ class BuildLogsPage extends ConsumerStatefulWidget {
 class _BuildLogsPageState extends ConsumerState<BuildLogsPage> {
   String? _selectedExecutionId;
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   final Map<String, int> _visibleLogCounts = <String, int>{};
   String _searchQuery = '';
 
@@ -31,6 +34,7 @@ class _BuildLogsPageState extends ConsumerState<BuildLogsPage> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -39,6 +43,7 @@ class _BuildLogsPageState extends ConsumerState<BuildLogsPage> {
     final dashboardState = ref.watch(dashboardControllerProvider);
     final history = dashboardState.executionHistory;
     final selectedRecord = _resolveSelectedRecord(history);
+    final responsive = ResponsiveLayout.of(context);
     final logViewport = selectedRecord == null
         ? const LogViewportSlice(
             visibleLogs: <LogEntry>[],
@@ -51,81 +56,120 @@ class _BuildLogsPageState extends ConsumerState<BuildLogsPage> {
             visibleCount: _visibleLogCountFor(selectedRecord.id),
           );
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          const DashboardBackground(),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  _BuildLogsHeader(
-                    hasRecords: history.isNotEmpty,
-                    onBack: () => Navigator.of(context).pop(),
-                  ),
-                  const SizedBox(height: 18),
-                  Expanded(
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 360,
-                          child: _BuildExecutionHistoryList(
-                            records: history,
-                            selectedExecutionId: selectedRecord?.id,
-                            onSelected: (record) {
-                              setState(() {
-                                _selectedExecutionId = record.id;
-                                _searchQuery = '';
-                                _searchController.clear();
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 18),
-                        Expanded(
-                          child: _BuildExecutionLogDetail(
-                            record: selectedRecord,
-                            visibleLogs: logViewport.visibleLogs,
-                            hiddenLogCount: logViewport.hiddenCount,
-                            searchController: _searchController,
-                            searchQuery: _searchQuery,
-                            onSearchChanged: (value) {
-                              setState(() {
-                                _searchQuery = value;
-                                if (selectedRecord != null) {
-                                  _visibleLogCounts[selectedRecord.id] =
-                                      kBuildHistoryLogPageSize;
-                                }
-                              });
-                            },
-                            onLoadOlderLogs: selectedRecord != null &&
-                                    logViewport.canLoadOlder
-                                ? () {
-                                    setState(() {
-                                      _visibleLogCounts[selectedRecord.id] =
-                                          _visibleLogCountFor(
-                                                  selectedRecord.id) +
-                                              kBuildHistoryLogPageSize;
-                                    });
-                                  }
-                                : null,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+    final historyPanel = _BuildExecutionHistoryList(
+      records: history,
+      selectedExecutionId: selectedRecord?.id,
+      onSelected: (record) {
+        setState(() {
+          _selectedExecutionId = record.id;
+          _searchQuery = '';
+          _searchController.clear();
+        });
+      },
+    );
+    final detailPanel = _BuildExecutionLogDetail(
+      record: selectedRecord,
+      visibleLogs: logViewport.visibleLogs,
+      hiddenLogCount: logViewport.hiddenCount,
+      searchController: _searchController,
+      searchFocusNode: _searchFocusNode,
+      searchQuery: _searchQuery,
+      onSearchChanged: (value) {
+        setState(() {
+          _searchQuery = value;
+          if (selectedRecord != null) {
+            _visibleLogCounts[selectedRecord.id] = kBuildHistoryLogPageSize;
+          }
+        });
+      },
+      onLoadOlderLogs: selectedRecord != null && logViewport.canLoadOlder
+          ? () {
+              setState(() {
+                _visibleLogCounts[selectedRecord.id] =
+                    _visibleLogCountFor(selectedRecord.id) +
+                    kBuildHistoryLogPageSize;
+              });
+            }
+          : null,
+    );
+    final historyAndDetail = responsive.isCompact
+        ? Column(
+            children: [
+              SizedBox(height: 220, child: historyPanel),
+              const SizedBox(height: 12),
+              Expanded(child: detailPanel),
+            ],
+          )
+        : Row(
+            children: [
+              SizedBox(
+                width: responsive.isMedium ? 300 : 340,
+                child: historyPanel,
               ),
-            ),
+              const SizedBox(width: 14),
+              Expanded(child: detailPanel),
+            ],
+          );
+
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        SingleActivator(LogicalKeyboardKey.keyF, control: true):
+            _searchFocusNode.requestFocus,
+        SingleActivator(LogicalKeyboardKey.keyF, meta: true):
+            _searchFocusNode.requestFocus,
+        SingleActivator(LogicalKeyboardKey.arrowUp): () =>
+            _selectRelativeRecord(-1),
+        SingleActivator(LogicalKeyboardKey.arrowDown): () =>
+            _selectRelativeRecord(1),
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+          body: Stack(
+            children: [
+              const DashboardBackground(),
+              SafeArea(
+                child: Padding(
+                  padding: responsive.shellPadding,
+                  child: Column(
+                    children: [
+                      _BuildLogsHeader(
+                        hasRecords: history.isNotEmpty,
+                        onBack: () => Navigator.of(context).pop(),
+                      ),
+                      const SizedBox(height: 18),
+                      Expanded(child: historyAndDetail),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
+  void _selectRelativeRecord(int delta) {
+    final history = ref.read(dashboardControllerProvider).executionHistory;
+    if (history.isEmpty) return;
+    final currentIndex = history.indexWhere(
+      (record) => record.id == _selectedExecutionId,
+    );
+    final nextIndex = (currentIndex < 0 ? 0 : currentIndex + delta).clamp(
+      0,
+      history.length - 1,
+    );
+    setState(() {
+      _selectedExecutionId = history[nextIndex].id;
+      _searchQuery = '';
+      _searchController.clear();
+    });
+  }
+
   BuildExecutionRecord? _resolveSelectedRecord(
-      List<BuildExecutionRecord> history) {
+    List<BuildExecutionRecord> history,
+  ) {
     if (history.isEmpty) {
       return null;
     }
@@ -146,10 +190,7 @@ class _BuildLogsPageState extends ConsumerState<BuildLogsPage> {
 }
 
 class _BuildLogsHeader extends StatelessWidget {
-  const _BuildLogsHeader({
-    required this.hasRecords,
-    required this.onBack,
-  });
+  const _BuildLogsHeader({required this.hasRecords, required this.onBack});
 
   final bool hasRecords;
   final VoidCallback onBack;
@@ -203,7 +244,7 @@ class _BuildExecutionHistoryList extends StatelessWidget {
     final strings = AppStrings.of(context);
     if (records.isEmpty) {
       return Container(
-        decoration: MixBuildTheme.surfacePanel(context, radius: 24),
+        decoration: MixBuildTheme.surfacePanel(context, radius: 16),
         alignment: Alignment.center,
         child: Text(
           strings.buildLogsEmpty,
@@ -212,7 +253,7 @@ class _BuildExecutionHistoryList extends StatelessWidget {
       );
     }
     return Container(
-      decoration: MixBuildTheme.surfacePanel(context, radius: 24),
+      decoration: MixBuildTheme.surfacePanel(context, radius: 16),
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: records.length,
@@ -291,6 +332,7 @@ class _BuildExecutionLogDetail extends StatelessWidget {
     required this.visibleLogs,
     required this.hiddenLogCount,
     required this.searchController,
+    required this.searchFocusNode,
     required this.searchQuery,
     required this.onSearchChanged,
     required this.onLoadOlderLogs,
@@ -300,6 +342,7 @@ class _BuildExecutionLogDetail extends StatelessWidget {
   final List<LogEntry> visibleLogs;
   final int hiddenLogCount;
   final TextEditingController searchController;
+  final FocusNode searchFocusNode;
   final String searchQuery;
   final ValueChanged<String> onSearchChanged;
   final VoidCallback? onLoadOlderLogs;
@@ -309,7 +352,7 @@ class _BuildExecutionLogDetail extends StatelessWidget {
     final strings = AppStrings.of(context);
     if (record == null) {
       return Container(
-        decoration: MixBuildTheme.surfacePanel(context, radius: 24),
+        decoration: MixBuildTheme.surfacePanel(context, radius: 16),
         alignment: Alignment.center,
         child: Text(
           strings.buildLogsSelectRecord,
@@ -318,15 +361,16 @@ class _BuildExecutionLogDetail extends StatelessWidget {
       );
     }
     return Container(
-      decoration: MixBuildTheme.surfacePanel(context, radius: 24),
+      decoration: MixBuildTheme.surfacePanel(context, radius: 16),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
             decoration: BoxDecoration(
               color: MixBuildPalette.surfaceHighest,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
               border: Border(
                 bottom: BorderSide(
                   color: MixBuildPalette.foreground.withValues(alpha: 0.08),
@@ -369,6 +413,7 @@ class _BuildExecutionLogDetail extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
             child: TextField(
               controller: searchController,
+              focusNode: searchFocusNode,
               onChanged: onSearchChanged,
               style: MixBuildTheme.monoTextStyle(
                 fontSize: 12,
@@ -388,9 +433,11 @@ class _BuildExecutionLogDetail extends StatelessWidget {
                         splashRadius: 14,
                         tooltip: strings.btnClose,
                       ),
-                hintText: strings.buildLogsNoMatch,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                hintText: strings.buildLogsSearchHint,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -405,72 +452,81 @@ class _BuildExecutionLogDetail extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   )
-                : visibleLogs.isEmpty
-                    ? Center(
-                        child: Text(
-                          strings.noLogMatch(searchQuery),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(18),
-                        itemCount:
-                            visibleLogs.length + (hiddenLogCount > 0 ? 1 : 0),
-                        separatorBuilder: (context, index) => const SizedBox(height: 6),
-                        itemBuilder: (context, index) {
-                          if (index == visibleLogs.length) {
-                            return Align(
-                              alignment: Alignment.centerLeft,
-                              child: TextButton(
-                                onPressed: onLoadOlderLogs,
-                                child: Text(
-                                  strings.buildLogsLoadOlder(hiddenLogCount),
+                : shouldShowNoLogMatch(
+                    query: searchQuery,
+                    viewport: LogViewportSlice(
+                      visibleLogs: visibleLogs,
+                      totalMatches: visibleLogs.length,
+                      hiddenCount: hiddenLogCount,
+                    ),
+                  )
+                ? Center(
+                    child: Text(
+                      strings.noLogMatch(searchQuery),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.all(18),
+                    itemCount:
+                        visibleLogs.length + (hiddenLogCount > 0 ? 1 : 0),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 6),
+                    itemBuilder: (context, index) {
+                      if (index == visibleLogs.length) {
+                        return Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton(
+                            onPressed: onLoadOlderLogs,
+                            child: Text(
+                              strings.buildLogsLoadOlder(hiddenLogCount),
+                            ),
+                          ),
+                        );
+                      }
+                      final log = visibleLogs[index];
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 84,
+                            child: Text(
+                              '[${log.time}]',
+                              maxLines: 1,
+                              softWrap: false,
+                              style: MixBuildTheme.monoTextStyle(
+                                fontSize: 12,
+                                color: MixBuildPalette.muted.withValues(
+                                  alpha: 0.7,
                                 ),
                               ),
-                            );
-                          }
-                          final log = visibleLogs[index];
-                          return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(
-                                width: 84,
-                                child: Text(
-                                  '[${log.time}]',
-                                  maxLines: 1,
-                                  softWrap: false,
-                                  style: MixBuildTheme.monoTextStyle(
-                                    fontSize: 12,
-                                    color: MixBuildPalette.muted
-                                        .withValues(alpha: 0.7),
-                                  ),
-                                ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 52,
+                            child: Text(
+                              '[${log.level}]',
+                              maxLines: 1,
+                              softWrap: false,
+                              style: MixBuildTheme.monoTextStyle(
+                                fontSize: 12,
+                                color: log.accent,
                               ),
-                              SizedBox(
-                                width: 52,
-                                child: Text(
-                                  '[${log.level}]',
-                                  maxLines: 1,
-                                  softWrap: false,
-                                  style: MixBuildTheme.monoTextStyle(
-                                    fontSize: 12,
-                                    color: log.accent,
-                                  ),
-                                ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              log.message,
+                              style: MixBuildTheme.monoTextStyle(
+                                fontSize: 12,
+                                color: MixBuildPalette.foreground,
                               ),
-                              Expanded(
-                                child: Text(
-                                  log.message,
-                                  style: MixBuildTheme.monoTextStyle(
-                                    fontSize: 12,
-                                    color: MixBuildPalette.foreground,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
           ),
         ],
       ),

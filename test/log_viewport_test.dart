@@ -16,11 +16,7 @@ void main() {
       growable: false,
     );
 
-    final viewport = buildLogViewport(
-      logs: logs,
-      query: '',
-      visibleCount: 3,
-    );
+    final viewport = buildLogViewport(logs: logs, query: '', visibleCount: 3);
 
     expect(viewport.visibleLogs.map((log) => log.message).toList(), <String>[
       'line-0',
@@ -73,5 +69,17 @@ void main() {
     expect(viewport.totalMatches, 3);
     expect(viewport.hiddenCount, 1);
     expect(viewport.canLoadOlder, isTrue);
+    expect(shouldShowNoLogMatch(query: 'gradle', viewport: viewport), isFalse);
+  });
+
+  test('empty query never presents a no-match state', () {
+    const viewport = LogViewportSlice(
+      visibleLogs: <LogEntry>[],
+      totalMatches: 0,
+      hiddenCount: 0,
+    );
+
+    expect(shouldShowNoLogMatch(query: '', viewport: viewport), isFalse);
+    expect(shouldShowNoLogMatch(query: 'missing', viewport: viewport), isTrue);
   });
 }

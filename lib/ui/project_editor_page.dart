@@ -107,8 +107,9 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
       text: widget.config.activeProjectName,
     );
     _bindingDrafts = _createBindingDrafts();
-    _scenarioDrafts =
-        widget.scenarios.map(_ScenarioDraft.fromScenario).toList();
+    _scenarioDrafts = widget.scenarios
+        .map(_ScenarioDraft.fromScenario)
+        .toList();
     _workspaceController.addListener(_handleWorkspacePathChanged);
     unawaited(_initializeEditorState());
   }
@@ -154,8 +155,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
       final index = entry.key;
       final binding = entry.value;
       final isMainProject = index == 0;
-      final inferredType =
-          binding.type ?? _inferProjectType(null);
+      final inferredType = binding.type ?? _inferProjectType(null);
       return _ProjectBindingDraft(
         projectName: binding.projectName,
         isMainProject: isMainProject,
@@ -205,9 +205,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  MixbuildProjectType _inferProjectType(
-    MixbuildProjectType? detectedType,
-  ) {
+  MixbuildProjectType _inferProjectType(MixbuildProjectType? detectedType) {
     return detectedType ?? MixbuildProjectType.android;
   }
 
@@ -260,11 +258,13 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
       return selectedPath;
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(
-            content:
-                Text(AppStrings.of(context).dirAccessError(error.toString()))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppStrings.of(context).dirAccessError(error.toString()),
+            ),
+          ),
+        );
       }
       return null;
     }
@@ -335,9 +335,9 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
 
   String _normalizeRepoName(String value) {
     return value.toLowerCase().replaceAll(
-          RegExp(r'[^a-z0-9\u4e00-\u9fa5]+'),
-          '',
-        );
+      RegExp(r'[^a-z0-9\u4e00-\u9fa5]+'),
+      '',
+    );
   }
 
   List<String> _pathOptionsForDraft(_ProjectBindingDraft draft) {
@@ -345,8 +345,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
       if (draft.pathController.text.trim().isNotEmpty)
         draft.pathController.text.trim(),
       ..._discoveredProjects.map((project) => project.relativePath),
-    }.toList()
-      ..sort();
+    }.toList()..sort();
   }
 
   void _applyPathToDraft(_ProjectBindingDraft draft, String path) {
@@ -354,7 +353,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
     if (matchedProject != null &&
         _isProjectSelected(matchedProject, excluding: draft)) {
       _showSelectionMessage(
-          AppStrings.of(context).projectAlreadySelected(matchedProject.name));
+        AppStrings.of(context).projectAlreadySelected(matchedProject.name),
+      );
       return;
     }
 
@@ -380,7 +380,8 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   void _addDependencyFromProject(DiscoveredGitProject project) {
     if (_isProjectSelected(project)) {
       _showSelectionMessage(
-          AppStrings.of(context).projectAlreadyInConfig(project.name));
+        AppStrings.of(context).projectAlreadyInConfig(project.name),
+      );
       return;
     }
 
@@ -501,30 +502,33 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   }
 
   List<String> _branchOptionsForDraft(_ProjectBindingDraft draft) {
-    return _draftBranchOptions[draft] ?? const <String>['develop', 'main', 'master'];
+    return _draftBranchOptions[draft] ??
+        const <String>['develop', 'main', 'master'];
   }
 
   List<ScenarioBranchDraft> _scenarioDependencyDrafts({
     List<DependencyBranch>? scenarioDependencies,
   }) {
-    return _dependencyDrafts.map((draft) {
-      var initialBranch = 'main';
-      if (scenarioDependencies != null) {
-        for (final dependency in scenarioDependencies) {
-          if (dependency.name == draft.projectName) {
-            initialBranch = dependency.branch;
-            break;
+    return _dependencyDrafts
+        .map((draft) {
+          var initialBranch = 'main';
+          if (scenarioDependencies != null) {
+            for (final dependency in scenarioDependencies) {
+              if (dependency.name == draft.projectName) {
+                initialBranch = dependency.branch;
+                break;
+              }
+            }
           }
-        }
-      }
-      return ScenarioBranchDraft(
-        projectName: draft.projectName,
-        initialBranch: initialBranch,
-        icon: _dependencyIconForDraft(draft.type, draft.projectName),
-        options: _branchOptionsForDraft(draft),
-        highlight: MixBuildPalette.primary,
-      );
-    }).toList(growable: false);
+          return ScenarioBranchDraft(
+            projectName: draft.projectName,
+            initialBranch: initialBranch,
+            icon: _dependencyIconForDraft(draft.type, draft.projectName),
+            options: _branchOptionsForDraft(draft),
+            highlight: MixBuildPalette.primary,
+          );
+        })
+        .toList(growable: false);
   }
 
   Future<void> _openScenarioDialog({_ScenarioDraft? editingDraft}) async {
@@ -593,8 +597,9 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   }
 
   ProjectEditorResult _buildResult() {
-    final bindings =
-        _bindingDrafts.map((draft) => draft.toConfig()).toList(growable: false);
+    final bindings = _bindingDrafts
+        .map((draft) => draft.toConfig())
+        .toList(growable: false);
     final config = widget.config.copyWith(
       workspaceRoot: _workspaceController.text.trim(),
       activeProjectName: _projectNameController.text.trim(),
@@ -650,8 +655,9 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                             ),
                             border: Border(
                               bottom: BorderSide(
-                                color: MixBuildPalette.foreground
-                                    .withValues(alpha: 0.06),
+                                color: MixBuildPalette.foreground.withValues(
+                                  alpha: 0.06,
+                                ),
                               ),
                             ),
                           ),
@@ -729,8 +735,9 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                             ),
                             border: Border(
                               top: BorderSide(
-                                color: MixBuildPalette.foreground
-                                    .withValues(alpha: 0.08),
+                                color: MixBuildPalette.foreground.withValues(
+                                  alpha: 0.08,
+                                ),
                               ),
                             ),
                           ),
@@ -768,9 +775,11 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                                 onPressed: () =>
                                     Navigator.of(context).pop(_buildResult()),
                                 icon: const Icon(Icons.save_outlined),
-                                label: Text(widget.primaryActionLabel.isEmpty
-                                    ? strings.projectEditorSave
-                                    : widget.primaryActionLabel),
+                                label: Text(
+                                  widget.primaryActionLabel.isEmpty
+                                      ? strings.projectEditorSave
+                                      : widget.primaryActionLabel,
+                                ),
                               ),
                             ],
                           ),
@@ -845,8 +854,9 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
             _scanError ??
                 (_discoveredProjects.isEmpty
                     ? strings.workspaceScanInfo
-                    : strings
-                        .discoveredGitProjects(_discoveredProjects.length)),
+                    : strings.discoveredGitProjects(
+                        _discoveredProjects.length,
+                      )),
             style: theme.textTheme.bodySmall?.copyWith(
               color: _scanError == null
                   ? MixBuildPalette.muted
@@ -973,23 +983,25 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
         tooltip: strings.dependencyAddSelect,
         onSelected: _addDependencyFromProject,
         itemBuilder: (context) {
-          return _availableDiscoveredProjects.map((project) {
-            return PopupMenuItem<DiscoveredGitProject>(
-              value: project,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(project.name),
-                  Text(
-                    project.relativePath,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          return _availableDiscoveredProjects
+              .map((project) {
+                return PopupMenuItem<DiscoveredGitProject>(
+                  value: project,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(project.name),
+                      Text(
+                        project.relativePath,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: MixBuildPalette.muted,
                         ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            );
-          }).toList(growable: false);
+                );
+              })
+              .toList(growable: false);
         },
         child: FilledButton.icon(
           onPressed: null,
@@ -1022,8 +1034,10 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(strings.dependencyAddItem,
-                          style: theme.textTheme.titleMedium),
+                      Text(
+                        strings.dependencyAddItem,
+                        style: theme.textTheme.titleMedium,
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         _availableDiscoveredProjects.isEmpty
@@ -1093,8 +1107,9 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: MixBuildPalette.foreground
-                                .withValues(alpha: 0.08),
+                            color: MixBuildPalette.foreground.withValues(
+                              alpha: 0.08,
+                            ),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -1139,15 +1154,12 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
                       decoration: InputDecoration(
                         isDense: true,
                         hintText: strings.dependencyRestoreCmd,
-                        prefixIcon: Icon(
-                          switch (draft.type) {
-                            MixbuildProjectType.flutter => Icons.terminal,
-                            MixbuildProjectType.ios => Icons.phone_iphone,
-                            MixbuildProjectType.android =>
-                              Icons.developer_board_outlined,
-                          },
-                          size: 18,
-                        ),
+                        prefixIcon: Icon(switch (draft.type) {
+                          MixbuildProjectType.flutter => Icons.terminal,
+                          MixbuildProjectType.ios => Icons.phone_iphone,
+                          MixbuildProjectType.android =>
+                            Icons.developer_board_outlined,
+                        }, size: 18),
                       ),
                     ),
                   ],
@@ -1170,150 +1182,166 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
         icon: const Icon(Icons.add),
         label: Text(strings.scenarioAddNew),
       ),
-      child: Wrap(
-        spacing: 16,
-        runSpacing: 16,
-        children: _scenarioDrafts.map((draft) {
-          return SizedBox(
-            width: 392,
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () => _openEditScenarioDialog(draft),
-                child: Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: MixBuildPalette.foreground.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: MixBuildPalette.foreground.withValues(alpha: 0.08),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: MixBuildPalette.primary.withValues(
-                                alpha: 0.1,
-                              ),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              _scenarioBadge(draft.nameController.text),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final columnCount = (constraints.maxWidth / 420).floor().clamp(1, 3);
+          final gap = 16.0;
+          final cardWidth =
+              (constraints.maxWidth - gap * (columnCount - 1)) / columnCount;
+          return Wrap(
+            spacing: gap,
+            runSpacing: gap,
+            children: _scenarioDrafts.map((draft) {
+              return SizedBox(
+                width: cardWidth,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => _openEditScenarioDialog(draft),
+                    child: Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: MixBuildPalette.foreground.withValues(
+                          alpha: 0.08,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: MixBuildPalette.foreground.withValues(
+                            alpha: 0.08,
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  draft.nameController.text.trim().isEmpty
-                                      ? strings.scenarioUnnamed
-                                      : draft.nameController.text.trim(),
-                                  style: theme.textTheme.titleMedium,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  draft.subtitle,
-                                  style: theme.textTheme.bodySmall,
-                                ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            tooltip: strings.scenarioEditTooltip,
-                            onPressed: () => _openEditScenarioDialog(draft),
-                            icon: const Icon(Icons.edit_outlined),
-                          ),
-                          IconButton(
-                            tooltip: strings.scenarioDeleteTooltip,
-                            onPressed: () => _removeScenarioDraft(draft),
-                            icon: const Icon(Icons.delete_outline),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        draft.commandController.text.trim().isEmpty
-                            ? strings.scenarioNoCommand
-                            : draft.commandController.text.trim(),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: MixBuildTheme.monoTextStyle(
-                          fontSize: 12,
-                          color: MixBuildPalette.primary,
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: _ScenarioMetaItem(
-                              label: strings.mainBranchLabel,
-                              value: draft.mainBranch,
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: MixBuildPalette.primary.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  _scenarioBadge(draft.nameController.text),
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      draft.nameController.text.trim().isEmpty
+                                          ? strings.scenarioUnnamed
+                                          : draft.nameController.text.trim(),
+                                      style: theme.textTheme.titleMedium,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      draft.subtitle,
+                                      style: theme.textTheme.bodySmall,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: strings.scenarioEditTooltip,
+                                onPressed: () => _openEditScenarioDialog(draft),
+                                icon: const Icon(Icons.edit_outlined),
+                              ),
+                              IconButton(
+                                tooltip: strings.scenarioDeleteTooltip,
+                                onPressed: () => _removeScenarioDraft(draft),
+                                icon: const Icon(Icons.delete_outline),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            draft.commandController.text.trim().isEmpty
+                                ? strings.scenarioNoCommand
+                                : draft.commandController.text.trim(),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: MixBuildTheme.monoTextStyle(
+                              fontSize: 12,
+                              color: MixBuildPalette.primary,
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _ScenarioMetaItem(
-                              label: strings.outputDir,
-                              value: draft.outputController.text.trim().isEmpty
-                                  ? '未配置'
-                                  : draft.outputController.text.trim(),
-                            ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _ScenarioMetaItem(
+                                  label: strings.mainBranchLabel,
+                                  value: draft.mainBranch,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _ScenarioMetaItem(
+                                  label: strings.outputDir,
+                                  value:
+                                      draft.outputController.text.trim().isEmpty
+                                      ? '未配置'
+                                      : draft.outputController.text.trim(),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _ScenarioMetaItem(
+                                  label: strings.autoTag,
+                                  value: draft.autoTag
+                                      ? (draft.tagController.text.trim().isEmpty
+                                            ? strings.autoTagEnabled
+                                            : draft.tagController.text.trim())
+                                      : strings.autoTagDisabled,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _ScenarioMetaItem(
-                              label: strings.autoTag,
-                              value: draft.autoTag
-                                  ? (draft.tagController.text.trim().isEmpty
-                                      ? strings.autoTagEnabled
-                                      : draft.tagController.text.trim())
-                                  : strings.autoTagDisabled,
-                            ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              TinyBadge(
+                                label: strings.mainProjectBranchInfo(
+                                  draft.mainBranch,
+                                ),
+                                color: MixBuildPalette.tertiary,
+                              ),
+                              ...draft.dependencies.map((dependency) {
+                                return TinyBadge(
+                                  label:
+                                      '${dependency.name}: ${dependency.branch}',
+                                  color:
+                                      dependency.highlight ??
+                                      MixBuildPalette.primary,
+                                );
+                              }),
+                            ],
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          TinyBadge(
-                            label:
-                                strings.mainProjectBranchInfo(draft.mainBranch),
-                            color: MixBuildPalette.tertiary,
-                          ),
-                          ...draft.dependencies.map((dependency) {
-                            return TinyBadge(
-                              label: '${dependency.name}: ${dependency.branch}',
-                              color: dependency.highlight ??
-                                  MixBuildPalette.primary,
-                            );
-                          }),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            }).toList(),
           );
-        }).toList(),
+        },
       ),
     );
   }
@@ -1337,10 +1365,10 @@ class _ProjectBindingDraft {
     required String path,
     required this.type,
     required String? restoreCommand,
-  })  : pathController = TextEditingController(text: path),
-        restoreCommandController = TextEditingController(
-          text: restoreCommand ?? '',
-        );
+  }) : pathController = TextEditingController(text: path),
+       restoreCommandController = TextEditingController(
+         text: restoreCommand ?? '',
+       );
 
   String projectName;
   final bool isMainProject;
@@ -1413,20 +1441,23 @@ class _ScenarioDraft {
   }) {
     final normalizedNext = nextDependency.name.toLowerCase();
     var replaced = false;
-    dependencies = dependencies.map((dependency) {
-      final normalizedCurrent = dependency.name.toLowerCase();
-      final matchedPrevious = previousName != null &&
-          normalizedCurrent == previousName.toLowerCase();
-      final matchedNext = normalizedCurrent == normalizedNext;
-      if (matchedPrevious || matchedNext) {
-        replaced = true;
-        return nextDependency.copyWith(
-          isOverride: dependency.isOverride,
-          highlight: dependency.highlight,
-        );
-      }
-      return dependency;
-    }).toList(growable: false);
+    dependencies = dependencies
+        .map((dependency) {
+          final normalizedCurrent = dependency.name.toLowerCase();
+          final matchedPrevious =
+              previousName != null &&
+              normalizedCurrent == previousName.toLowerCase();
+          final matchedNext = normalizedCurrent == normalizedNext;
+          if (matchedPrevious || matchedNext) {
+            replaced = true;
+            return nextDependency.copyWith(
+              isOverride: dependency.isOverride,
+              highlight: dependency.highlight,
+            );
+          }
+          return dependency;
+        })
+        .toList(growable: false);
 
     if (!replaced) {
       dependencies = [...dependencies, nextDependency];
@@ -1447,11 +1478,11 @@ class _ScenarioDraft {
       name: nameController.text.trim().isEmpty
           ? original.name
           : nameController.text.trim(),
-      mainBranch:
-          mainBranch.trim().isEmpty ? original.mainBranch : mainBranch.trim(),
+      mainBranch: mainBranch.trim().isEmpty
+          ? original.mainBranch
+          : mainBranch.trim(),
       command: commandController.text.trim(),
-      defaultUpdateDescription:
-          defaultUpdateDescriptionController.text.trim(),
+      defaultUpdateDescription: defaultUpdateDescriptionController.text.trim(),
       dependencies: dependencies,
       outputPath: outputController.text.trim(),
       autoTag: autoTag,
@@ -1607,12 +1638,14 @@ class _PathSelectorField extends StatelessWidget {
             tooltip: AppStrings.of(context).pathLabel,
             onSelected: onPathSelected,
             itemBuilder: (context) {
-              return options.map((option) {
-                return PopupMenuItem<String>(
-                  value: option,
-                  child: Text(option, overflow: TextOverflow.ellipsis),
-                );
-              }).toList(growable: false);
+              return options
+                  .map((option) {
+                    return PopupMenuItem<String>(
+                      value: option,
+                      child: Text(option, overflow: TextOverflow.ellipsis),
+                    );
+                  })
+                  .toList(growable: false);
             },
             child: Container(
               width: 42,
@@ -1728,8 +1761,8 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
     _branches = {
       widget.mainProject.projectName:
           widget.initialScenario?.mainBranch.trim().isNotEmpty == true
-              ? widget.initialScenario!.mainBranch
-              : widget.mainProject.initialBranch,
+          ? widget.initialScenario!.mainBranch
+          : widget.mainProject.initialBranch,
       for (final item in widget.dependencyDrafts)
         item.projectName:
             _scenarioDependencyBranch(item.projectName) ?? item.initialBranch,
@@ -1766,10 +1799,10 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
     return Dialog(
       insetPadding: const EdgeInsets.all(24),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           constraints: const BoxConstraints(maxWidth: 720, maxHeight: 820),
-          decoration: MixBuildTheme.surfacePanel(context, radius: 24),
+          decoration: MixBuildTheme.surfacePanel(context, radius: 16),
           child: Column(
             children: [
               Padding(
@@ -1853,15 +1886,17 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                           color: MixBuildPalette.surface,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: MixBuildPalette.foreground
-                                .withValues(alpha: 0.06),
+                            color: MixBuildPalette.foreground.withValues(
+                              alpha: 0.06,
+                            ),
                           ),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               widget.mainProject.icon,
-                              color: widget.mainProject.highlight ??
+                              color:
+                                  widget.mainProject.highlight ??
                                   MixBuildPalette.tertiary,
                             ),
                             const SizedBox(width: 12),
@@ -1876,12 +1911,14 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                 value:
                                     _branches[widget.mainProject.projectName],
                                 dropdownColor: MixBuildPalette.surfaceHighest,
-                                items: widget.mainProject.options.map((item) {
-                                  return DropdownMenuItem<String>(
-                                    value: item,
-                                    child: Text(item),
-                                  );
-                                }).toList(growable: false),
+                                items: widget.mainProject.options
+                                    .map((item) {
+                                      return DropdownMenuItem<String>(
+                                        value: item,
+                                        child: Text(item),
+                                      );
+                                    })
+                                    .toList(growable: false),
                                 onChanged: (value) {
                                   if (value == null) {
                                     return;
@@ -1900,8 +1937,9 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                     const SizedBox(height: 24),
                     _ConfigSectionCard(
                       title: strings.dependencyBranchOverride,
-                      subtitle: strings
-                          .dependenciesDetected(widget.dependencyDrafts.length),
+                      subtitle: strings.dependenciesDetected(
+                        widget.dependencyDrafts.length,
+                      ),
                       child: Column(
                         children: [
                           for (final dependency in widget.dependencyDrafts)
@@ -1921,7 +1959,8 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                   children: [
                                     Icon(
                                       dependency.icon,
-                                      color: dependency.highlight ??
+                                      color:
+                                          dependency.highlight ??
                                           MixBuildPalette.muted,
                                     ),
                                     const SizedBox(width: 12),
@@ -1937,12 +1976,14 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                             _branches[dependency.projectName],
                                         dropdownColor:
                                             MixBuildPalette.surfaceHighest,
-                                        items: dependency.options.map((item) {
-                                          return DropdownMenuItem<String>(
-                                            value: item,
-                                            child: Text(item),
-                                          );
-                                        }).toList(growable: false),
+                                        items: dependency.options
+                                            .map((item) {
+                                              return DropdownMenuItem<String>(
+                                                value: item,
+                                                child: Text(item),
+                                              );
+                                            })
+                                            .toList(growable: false),
                                         onChanged: (value) {
                                           if (value == null) {
                                             return;
@@ -2047,27 +2088,30 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                       onPressed: () {
                         Navigator.of(context).pop(
                           BuildScenario(
-                            id: widget.initialScenario?.id ??
+                            id:
+                                widget.initialScenario?.id ??
                                 'scenario-${DateTime.now().millisecondsSinceEpoch}',
                             name: _nameController.text.trim().isEmpty
                                 ? (widget.initialScenario?.name ??
-                                    strings.scenarioDefaultName)
+                                      strings.scenarioDefaultName)
                                 : _nameController.text.trim(),
-                            subtitle: widget.initialScenario?.subtitle ??
+                            subtitle:
+                                widget.initialScenario?.subtitle ??
                                 strings.scenarioDefaultSubtitle,
                             environment:
                                 widget.initialScenario?.environment ?? 'custom',
                             mainBranch:
                                 _branches[widget.mainProject.projectName] ??
-                                    widget.mainProject.initialBranch,
+                                widget.mainProject.initialBranch,
                             command: _commandController.text.trim(),
                             defaultUpdateDescription:
-                                _defaultUpdateDescriptionController.text
-                                    .trim(),
-                            status: widget.initialScenario?.status ??
+                                _defaultUpdateDescriptionController.text.trim(),
+                            status:
+                                widget.initialScenario?.status ??
                                 BuildStatus.idle,
                             progress: widget.initialScenario?.progress ?? 0,
-                            logs: widget.initialScenario?.logs ??
+                            logs:
+                                widget.initialScenario?.logs ??
                                 [
                                   LogEntry(
                                     time: '19:22:10',
@@ -2079,10 +2123,12 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                             dependencies: widget.dependencyDrafts.map((item) {
                               return DependencyBranch(
                                 name: item.projectName,
-                                branch: _branches[item.projectName] ??
+                                branch:
+                                    _branches[item.projectName] ??
                                     item.initialBranch,
                                 icon: item.icon,
-                                isOverride: (_branches[item.projectName] ??
+                                isOverride:
+                                    (_branches[item.projectName] ??
                                         item.initialBranch) !=
                                     item.initialBranch,
                                 highlight: item.highlight,
@@ -2094,9 +2140,11 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                           ),
                         );
                       },
-                      child: Text(widget.primaryActionLabel.isEmpty
-                          ? strings.scenarioConfirmAdd
-                          : widget.primaryActionLabel),
+                      child: Text(
+                        widget.primaryActionLabel.isEmpty
+                            ? strings.scenarioConfirmAdd
+                            : widget.primaryActionLabel,
+                      ),
                     ),
                   ],
                 ),
