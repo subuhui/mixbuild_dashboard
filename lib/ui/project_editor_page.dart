@@ -115,13 +115,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
   }
 
   Future<void> _initializeEditorState() async {
-    if (_workspaceController.text.trim().isNotEmpty) {
-      await _refreshDiscoveredProjects();
-    }
-    if (!mounted) {
-      return;
-    }
-    await _refreshAllDraftBranchOptions();
+    await _refreshDiscoveredProjects();
   }
 
   @override
@@ -281,6 +275,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
         _scanError = null;
         _discoveredProjects = const <DiscoveredGitProject>[];
       });
+      await _refreshAllDraftBranchOptions();
       return;
     }
 
@@ -302,6 +297,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
         _discoveredProjects = projects;
         _scanError = projects.isEmpty ? '当前目录下未发现包含 .git 的项目。' : null;
       });
+      await _refreshAllDraftBranchOptions();
     } catch (error) {
       if (!mounted) {
         return;
@@ -311,6 +307,7 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
         _scanError = AppStrings.of(context).scanError(error.toString());
         _discoveredProjects = const <DiscoveredGitProject>[];
       });
+      await _refreshAllDraftBranchOptions();
     }
   }
 
@@ -329,7 +326,6 @@ class _ProjectEditorPageState extends State<ProjectEditorPage> {
       draft.projectName = match.name;
       draft.pathController.text = match.relativePath;
       draft.type = _inferProjectType(match.projectType);
-      unawaited(_refreshBranchOptionsForDraft(draft));
     }
   }
 
