@@ -267,22 +267,40 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
                           ),
                         ],
                       )
-                    : Column(
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.fromLTRB(
-                              responsive.shellPadding.left,
-                              responsive.shellPadding.top,
-                              responsive.shellPadding.right,
-                              0,
+                    : LayoutBuilder(
+                        builder: (context, constraints) {
+                          final sidebarHeight =
+                              constraints.maxHeight * 0.58 < 340
+                              ? 340.0
+                              : constraints.maxHeight * 0.58;
+                          final remainingHeight =
+                              constraints.maxHeight - sidebarHeight;
+                          final terminalHeight = remainingHeight < 420
+                              ? 420.0
+                              : remainingHeight;
+                          return SingleChildScrollView(
+                            child: Column(
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.fromLTRB(
+                                    responsive.shellPadding.left,
+                                    responsive.shellPadding.top,
+                                    responsive.shellPadding.right,
+                                    0,
+                                  ),
+                                  child: SizedBox(
+                                    height: sidebarHeight,
+                                    child: sidebarPanel,
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: terminalHeight,
+                                  child: terminalSection,
+                                ),
+                              ],
                             ),
-                            child: SizedBox(
-                              height: MediaQuery.sizeOf(context).height * 0.58,
-                              child: sidebarPanel,
-                            ),
-                          ),
-                          Expanded(child: terminalSection),
-                        ],
+                          );
+                        },
                       ),
               ),
             ],

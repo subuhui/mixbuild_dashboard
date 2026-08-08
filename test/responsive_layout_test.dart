@@ -108,48 +108,50 @@ void main() {
     });
 
     testWidgets(
-      'project detail header renders without overflow on narrow width',
+      'project detail renders without overflow on narrow and short layouts',
       (tester) async {
-        _setSurfaceSize(tester, const Size(780, 1100));
+        for (final size in const <Size>[Size(780, 1100), Size(1024, 480)]) {
+          _setSurfaceSize(tester, size);
 
-        final tempDir = Directory.systemTemp.createTempSync(
-          'mixbuild-responsive-detail-header',
-        );
-        addTearDown(() {
-          if (tempDir.existsSync()) {
-            tempDir.deleteSync(recursive: true);
-          }
-        });
+          final tempDir = Directory.systemTemp.createTempSync(
+            'mixbuild-responsive-detail-header',
+          );
+          addTearDown(() {
+            if (tempDir.existsSync()) {
+              tempDir.deleteSync(recursive: true);
+            }
+          });
 
-        final store = MixbuildYamlStore(configHomePath: tempDir.path);
-        store.saveConfigSync(_seedConfig());
-        final container = ProviderContainer(
-          overrides: [mixbuildYamlStoreProvider.overrideWithValue(store)],
-        );
-        addTearDown(container.dispose);
+          final store = MixbuildYamlStore(configHomePath: tempDir.path);
+          store.saveConfigSync(_seedConfig());
+          final container = ProviderContainer(
+            overrides: [mixbuildYamlStoreProvider.overrideWithValue(store)],
+          );
+          addTearDown(container.dispose);
 
-        final state = container.read(dashboardControllerProvider);
-        final project = state.projects.first;
-        final scenario = project.scenarios.first;
+          final state = container.read(dashboardControllerProvider);
+          final project = state.projects.first;
+          final scenario = project.scenarios.first;
 
-        await tester.pumpWidget(
-          UncontrolledProviderScope(
-            container: container,
-            child: _testApp(
-              home: ProjectDetailPage(
-                projectId: project.id,
-                scenarioId: scenario.id,
+          await tester.pumpWidget(
+            UncontrolledProviderScope(
+              container: container,
+              child: _testApp(
+                home: ProjectDetailPage(
+                  projectId: project.id,
+                  scenarioId: scenario.id,
+                ),
               ),
             ),
-          ),
-        );
-        await tester.pump();
-        await tester.pumpAndSettle();
+          );
+          await tester.pump();
+          await tester.pumpAndSettle();
 
-        await tester.pumpWidget(const SizedBox.shrink());
-        container.dispose();
-        await tester.pump();
-        expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox.shrink());
+          container.dispose();
+          await tester.pump();
+          expect(tester.takeException(), isNull, reason: 'size=$size');
+        }
       },
     );
 
