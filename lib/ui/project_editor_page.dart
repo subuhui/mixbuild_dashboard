@@ -1782,6 +1782,22 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
     return null;
   }
 
+  List<String> _branchOptionsFor(ScenarioBranchDraft draft) {
+    final options = <String>[...draft.options];
+    final selected = _branches[draft.projectName];
+    if (selected != null &&
+        selected.isNotEmpty &&
+        !options.contains(selected)) {
+      options.insert(0, selected);
+    }
+    return options.toSet().toList(growable: false);
+  }
+
+  String? _selectedBranchFor(ScenarioBranchDraft draft) {
+    final selected = _branches[draft.projectName];
+    return _branchOptionsFor(draft).contains(selected) ? selected : null;
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -1908,10 +1924,9 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                             ),
                             DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
-                                value:
-                                    _branches[widget.mainProject.projectName],
+                                value: _selectedBranchFor(widget.mainProject),
                                 dropdownColor: MixBuildPalette.surfaceHighest,
-                                items: widget.mainProject.options
+                                items: _branchOptionsFor(widget.mainProject)
                                     .map((item) {
                                       return DropdownMenuItem<String>(
                                         value: item,
@@ -1972,11 +1987,10 @@ class _AddScenarioDialogState extends State<AddScenarioDialog> {
                                     ),
                                     DropdownButtonHideUnderline(
                                       child: DropdownButton<String>(
-                                        value:
-                                            _branches[dependency.projectName],
+                                        value: _selectedBranchFor(dependency),
                                         dropdownColor:
                                             MixBuildPalette.surfaceHighest,
-                                        items: dependency.options
+                                        items: _branchOptionsFor(dependency)
                                             .map((item) {
                                               return DropdownMenuItem<String>(
                                                 value: item,
