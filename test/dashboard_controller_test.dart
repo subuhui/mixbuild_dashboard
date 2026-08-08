@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -27,8 +26,9 @@ void main() {
     late _FakeSystemResourceMonitor resourceMonitor;
 
     setUp(() {
-      tempDir = Directory.systemTemp
-          .createTempSync('mixbuild-dashboard-controller-test');
+      tempDir = Directory.systemTemp.createTempSync(
+        'mixbuild-dashboard-controller-test',
+      );
       store = MixbuildYamlStore(configHomePath: tempDir.path);
       historyStore = BuildExecutionHistoryStore(configHomePath: tempDir.path);
       store.saveConfigSync(_seedConfig());
@@ -55,12 +55,14 @@ void main() {
     });
 
     Future<
-        ({
-          RemoteBuildTriggerResult result,
-          String? capturedScenarioName,
-          String? capturedProjectBranch,
-          String? capturedUpdateDescription,
-        })> triggerRemoteBuild({
+      ({
+        RemoteBuildTriggerResult result,
+        String? capturedScenarioName,
+        String? capturedProjectBranch,
+        String? capturedUpdateDescription,
+      })
+    >
+    triggerRemoteBuild({
       required MixbuildConfig config,
       String? projectName,
       String? scenarioName,
@@ -100,11 +102,13 @@ void main() {
       final controller = container.read(dashboardControllerProvider.notifier);
 
       controller.changeDependencyBranch(
-          'common_ui', 'feature/runtime-override');
+        'common_ui',
+        'feature/runtime-override',
+      );
 
       final dependency = controller.editorBaseDependencies().singleWhere(
-            (item) => item.name == 'common_ui',
-          );
+        (item) => item.name == 'common_ui',
+      );
 
       expect(dependency.branch, 'feature/runtime-override');
       expect(dependency.highlight, MixBuildPalette.primary);
@@ -163,7 +167,9 @@ void main() {
 
       expect(savedConfig.buildScenarios, hasLength(1));
       expect(
-          savedConfig.buildScenarios.single.mainBranch, 'release/main-project');
+        savedConfig.buildScenarios.single.mainBranch,
+        'release/main-project',
+      );
     });
 
     test('metrics use dynamic hardware snapshot for CPU and MEM', () async {
@@ -180,99 +186,102 @@ void main() {
       expect(memory.progress, 0.375);
     });
 
-    test('triggerSelectedScenario stores execution history with task logs',
-        () async {
-      final fakeEngine = _FakeMixbuildEngine(
-        onRunPipelineImpl: ({
-          required config,
-          required project,
-          required scenario,
-          required cleanBeforeBuild,
-          required dependencyOverrides,
-          required onProgress,
-          required onLog,
-        }) async {
-          onProgress(BuildStatus.building, 0.6);
-          onLog(
-            LogEntry(
-              time: '11:20:00',
-              level: 'INFO',
-              message: 'Build started',
-              accent: MixBuildPalette.primary,
-            ),
-          );
-          onProgress(BuildStatus.success, 1.0);
-          onLog(
-            LogEntry(
-              time: '11:20:10',
-              level: 'INFO',
-              message: 'Build completed',
-              accent: MixBuildPalette.success,
-            ),
-          );
-        },
-      );
-      final localContainer = ProviderContainer(
-        overrides: [
-          mixbuildYamlStoreProvider.overrideWithValue(store),
-          buildExecutionHistoryStoreProvider.overrideWithValue(historyStore),
-          systemResourceMonitorProvider.overrideWithValue(resourceMonitor),
-          mixbuildEngineProvider.overrideWithValue(fakeEngine),
-        ],
-      );
-      addTearDown(localContainer.dispose);
+    test(
+      'triggerSelectedScenario stores execution history with task logs',
+      () async {
+        final fakeEngine = _FakeMixbuildEngine(
+          onRunPipelineImpl:
+              ({
+                required config,
+                required project,
+                required scenario,
+                required cleanBeforeBuild,
+                required dependencyOverrides,
+                required onProgress,
+                required onLog,
+              }) async {
+                onProgress(BuildStatus.building, 0.6);
+                onLog(
+                  LogEntry(
+                    time: '11:20:00',
+                    level: 'INFO',
+                    message: 'Build started',
+                    accent: MixBuildPalette.primary,
+                  ),
+                );
+                onProgress(BuildStatus.success, 1.0);
+                onLog(
+                  LogEntry(
+                    time: '11:20:10',
+                    level: 'INFO',
+                    message: 'Build completed',
+                    accent: MixBuildPalette.success,
+                  ),
+                );
+              },
+        );
+        final localContainer = ProviderContainer(
+          overrides: [
+            mixbuildYamlStoreProvider.overrideWithValue(store),
+            buildExecutionHistoryStoreProvider.overrideWithValue(historyStore),
+            systemResourceMonitorProvider.overrideWithValue(resourceMonitor),
+            mixbuildEngineProvider.overrideWithValue(fakeEngine),
+          ],
+        );
+        addTearDown(localContainer.dispose);
 
-      final controller =
-          localContainer.read(dashboardControllerProvider.notifier);
-      await controller.triggerSelectedScenario();
+        final controller = localContainer.read(
+          dashboardControllerProvider.notifier,
+        );
+        await controller.triggerSelectedScenario();
 
-      final history =
-          localContainer.read(dashboardControllerProvider).executionHistory;
-      expect(history, hasLength(1));
-      expect(history.first.projectName, 'workspace-demo');
-      expect(history.first.scenarioName, 'Release Build');
-      expect(history.first.status, BuildStatus.success);
-      expect(history.first.finishedAt, isNotNull);
-      expect(
-        history.first.logs.any((entry) => entry.message == 'Build completed'),
-        isTrue,
-      );
-      expect(
-        history.first.logs.any(
-          (entry) => entry.message.contains('Queued pipeline for'),
-        ),
-        isTrue,
-      );
-      final persistedHistory = historyStore.loadHistorySync();
-      expect(persistedHistory, hasLength(1));
-      expect(persistedHistory.first.status, BuildStatus.success);
-    });
+        final history = localContainer
+            .read(dashboardControllerProvider)
+            .executionHistory;
+        expect(history, hasLength(1));
+        expect(history.first.projectName, 'workspace-demo');
+        expect(history.first.scenarioName, 'Release Build');
+        expect(history.first.status, BuildStatus.success);
+        expect(history.first.finishedAt, isNotNull);
+        expect(
+          history.first.logs.any((entry) => entry.message == 'Build completed'),
+          isTrue,
+        );
+        expect(
+          history.first.logs.any(
+            (entry) => entry.message.contains('Queued pipeline for'),
+          ),
+          isTrue,
+        );
+        final persistedHistory = historyStore.loadHistorySync();
+        expect(persistedHistory, hasLength(1));
+        expect(persistedHistory.first.status, BuildStatus.success);
+      },
+    );
 
     test('execution history is restored from local storage on startup', () {
-      historyStore.saveHistorySync(
-        <BuildExecutionRecord>[
-          BuildExecutionRecord(
-            id: 'persisted-task',
-            projectId: 'seed.yaml',
-            projectName: 'workspace-demo',
-            scenarioId: 'release-build',
-            scenarioName: 'Release Build',
-            command: 'fvm flutter build macos --release',
-            branch: 'develop',
-            status: BuildStatus.failed,
-            startedAt: DateTime(2026, 5, 23, 11, 30),
-            finishedAt: DateTime(2026, 5, 23, 11, 31),
-            logs: <LogEntry>[
-              LogEntry(
-                time: '11:30:00',
-                level: 'ERROR',
-                message: 'Persisted failure',
-                accent: MixBuildPalette.error,
-              ),
-            ],
-          ),
-        ],
-      );
+      historyStore.saveHistorySync(<BuildExecutionRecord>[
+        BuildExecutionRecord(
+          id: 'persisted-task',
+          projectId: 'seed.yaml',
+          projectName: 'workspace-demo',
+          scenarioId: 'release-build',
+          scenarioName: 'Release Build',
+          command: 'fvm flutter build macos --release',
+          branch: 'develop',
+          status: BuildStatus.failed,
+          startedAt: DateTime(2026, 5, 23, 11, 30),
+          finishedAt: DateTime(2026, 5, 23, 11, 31),
+          logs: <LogEntry>[
+            LogEntry(
+              time: '11:30:00',
+              level: 'ERROR',
+              message: 'Persisted failure',
+              accent: MixBuildPalette.error,
+            ),
+          ],
+        ),
+      ]);
 
       final restoredContainer = ProviderContainer(
         overrides: [
@@ -286,115 +295,125 @@ void main() {
       final restoredState = restoredContainer.read(dashboardControllerProvider);
       expect(restoredState.executionHistory, hasLength(1));
       expect(restoredState.executionHistory.first.id, 'persisted-task');
-      expect(restoredState.executionHistory.first.logs.single.message,
-          'Persisted failure');
+      expect(
+        restoredState.executionHistory.first.logs.single.message,
+        'Persisted failure',
+      );
     });
 
-    test('triggerSelectedScenario batches log UI updates and history writes',
-        () async {
-      final historySpy = _SpyBuildExecutionHistoryStore(
-        configHomePath: tempDir.path,
-      );
-      final fakeEngine = _FakeMixbuildEngine(
-        onRunPipelineImpl: ({
-          required config,
-          required project,
-          required scenario,
-          required cleanBeforeBuild,
-          required dependencyOverrides,
-          required onProgress,
-          required onLog,
-        }) async {
-          onProgress(BuildStatus.building, 0.6);
-          for (var i = 0; i < 40; i++) {
-            onLog(
-              LogEntry(
-                time: '11:20:${i.toString().padLeft(2, '0')}',
-                level: 'OUT',
-                message: 'line-$i',
-                accent: MixBuildPalette.muted,
-              ),
-            );
-          }
-          onProgress(BuildStatus.success, 1.0);
-        },
-      );
-      final localContainer = ProviderContainer(
-        overrides: [
-          mixbuildYamlStoreProvider.overrideWithValue(store),
-          buildExecutionHistoryStoreProvider.overrideWithValue(historySpy),
-          systemResourceMonitorProvider.overrideWithValue(resourceMonitor),
-          mixbuildEngineProvider.overrideWithValue(fakeEngine),
-        ],
-      );
-      addTearDown(localContainer.dispose);
+    test(
+      'triggerSelectedScenario batches log UI updates and history writes',
+      () async {
+        final historySpy = _SpyBuildExecutionHistoryStore(
+          configHomePath: tempDir.path,
+        );
+        final fakeEngine = _FakeMixbuildEngine(
+          onRunPipelineImpl:
+              ({
+                required config,
+                required project,
+                required scenario,
+                required cleanBeforeBuild,
+                required dependencyOverrides,
+                required onProgress,
+                required onLog,
+              }) async {
+                onProgress(BuildStatus.building, 0.6);
+                for (var i = 0; i < 40; i++) {
+                  onLog(
+                    LogEntry(
+                      time: '11:20:${i.toString().padLeft(2, '0')}',
+                      level: 'OUT',
+                      message: 'line-$i',
+                      accent: MixBuildPalette.muted,
+                    ),
+                  );
+                }
+                onProgress(BuildStatus.success, 1.0);
+              },
+        );
+        final localContainer = ProviderContainer(
+          overrides: [
+            mixbuildYamlStoreProvider.overrideWithValue(store),
+            buildExecutionHistoryStoreProvider.overrideWithValue(historySpy),
+            systemResourceMonitorProvider.overrideWithValue(resourceMonitor),
+            mixbuildEngineProvider.overrideWithValue(fakeEngine),
+          ],
+        );
+        addTearDown(localContainer.dispose);
 
-      var stateChanges = 0;
-      final subscription = localContainer.listen<DashboardState>(
-        dashboardControllerProvider,
-        (_, __) => stateChanges++,
-      );
-      addTearDown(subscription.close);
+        var stateChanges = 0;
+        final subscription = localContainer.listen<DashboardState>(
+          dashboardControllerProvider,
+          (_, _) => stateChanges++,
+        );
+        addTearDown(subscription.close);
 
-      final controller =
-          localContainer.read(dashboardControllerProvider.notifier);
-      await controller.triggerSelectedScenario();
-      await Future<void>.delayed(const Duration(milliseconds: 250));
+        final controller = localContainer.read(
+          dashboardControllerProvider.notifier,
+        );
+        await controller.triggerSelectedScenario();
+        await Future<void>.delayed(const Duration(milliseconds: 250));
 
-      final history =
-          localContainer.read(dashboardControllerProvider).executionHistory;
-      final lineLogs = history.first.logs
-          .where((entry) => entry.message.startsWith('line-'))
-          .toList(growable: false);
+        final history = localContainer
+            .read(dashboardControllerProvider)
+            .executionHistory;
+        final lineLogs = history.first.logs
+            .where((entry) => entry.message.startsWith('line-'))
+            .toList(growable: false);
 
-      expect(lineLogs, hasLength(40));
-      expect(stateChanges, lessThan(18));
-      expect(historySpy.saveCalls, lessThan(18));
-    });
+        expect(lineLogs, hasLength(40));
+        expect(stateChanges, lessThan(18));
+        expect(historySpy.saveCalls, lessThan(18));
+      },
+    );
 
-    for (final testCase in <({
-      String description,
-      String? projectName,
-      String? scenarioName,
-      String branch,
-      String expectedScenarioName,
-    })>[
-      (
-        description: 'matches scenario name and requested branch',
-        projectName: null,
-        scenarioName: 'Release Build',
-        branch: 'release/v1.2',
-        expectedScenarioName: 'Release Build',
-      ),
-      (
-        description: 'matches main project name and branch',
-        projectName: 'main_project',
-        scenarioName: null,
-        branch: 'develop',
-        expectedScenarioName: 'Debug Build',
-      ),
-      (
-        description: 'matches dependency override branch',
-        projectName: 'common_ui',
-        scenarioName: null,
-        branch: 'release/v1.0',
-        expectedScenarioName: 'Release Build',
-      ),
-      (
-        description: 'matches scenario by dependency override branch',
-        projectName: null,
-        scenarioName: 'Release Build',
-        branch: 'release/v1.0',
-        expectedScenarioName: 'Release Build',
-      ),
-      (
-        description: 'matches dot-separated dependency name',
-        projectName: 'flutter.module.ui',
-        scenarioName: null,
-        branch: 'release/v1.0',
-        expectedScenarioName: 'Release Build',
-      ),
-    ]) {
+    for (final testCase
+        in <
+          ({
+            String description,
+            String? projectName,
+            String? scenarioName,
+            String branch,
+            String expectedScenarioName,
+          })
+        >[
+          (
+            description: 'matches scenario name and requested branch',
+            projectName: null,
+            scenarioName: 'Release Build',
+            branch: 'release/v1.2',
+            expectedScenarioName: 'Release Build',
+          ),
+          (
+            description: 'matches main project name and branch',
+            projectName: 'main_project',
+            scenarioName: null,
+            branch: 'develop',
+            expectedScenarioName: 'Debug Build',
+          ),
+          (
+            description: 'matches dependency override branch',
+            projectName: 'common_ui',
+            scenarioName: null,
+            branch: 'release/v1.0',
+            expectedScenarioName: 'Release Build',
+          ),
+          (
+            description: 'matches scenario by dependency override branch',
+            projectName: null,
+            scenarioName: 'Release Build',
+            branch: 'release/v1.0',
+            expectedScenarioName: 'Release Build',
+          ),
+          (
+            description: 'matches dot-separated dependency name',
+            projectName: 'flutter.module.ui',
+            scenarioName: null,
+            branch: 'release/v1.0',
+            expectedScenarioName: 'Release Build',
+          ),
+        ]) {
       test('curl trigger ${testCase.description}', () async {
         final trigger = await triggerRemoteBuild(
           config: _curlTriggerSeedConfig(),
@@ -529,7 +548,7 @@ class _SpyBuildExecutionHistoryStore extends BuildExecutionHistoryStore {
 
 class _FakeMixbuildEngine extends MixbuildEngine {
   _FakeMixbuildEngine({required this.onRunPipelineImpl})
-      : super(_NoopCommandRunner());
+    : super(_NoopCommandRunner());
 
   final Future<void> Function({
     required MixbuildConfig config,
@@ -539,7 +558,8 @@ class _FakeMixbuildEngine extends MixbuildEngine {
     required Map<String, String> dependencyOverrides,
     required void Function(BuildStatus status, double progress) onProgress,
     required void Function(LogEntry entry) onLog,
-  }) onRunPipelineImpl;
+  })
+  onRunPipelineImpl;
 
   @override
   Future<void> runPipeline({

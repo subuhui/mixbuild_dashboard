@@ -99,44 +99,46 @@ class MixBuildPalette {
 class MixBuildTheme {
   static ThemeData get lightTheme {
     return _buildTheme(
-        _MixBuildPaletteSpec(
-          background: MixBuildPalette._light.background,
-          surface: MixBuildPalette._light.surface,
-          surfaceLow: MixBuildPalette._light.surfaceLow,
-          surfaceHigh: MixBuildPalette._light.surfaceHigh,
-          surfaceHighest: MixBuildPalette._light.surfaceHighest,
-          foreground: MixBuildPalette._light.foreground,
-          muted: MixBuildPalette._light.muted,
-          primary: MixBuildPalette._light.primary,
-          primarySoft: MixBuildPalette._light.primarySoft,
-          tertiary: MixBuildPalette._light.tertiary,
-          success: MixBuildPalette._light.success,
-          warning: MixBuildPalette._light.warning,
-          error: MixBuildPalette._light.error,
-          barrier: MixBuildPalette._light.barrier,
-        ),
-        Brightness.light);
+      _MixBuildPaletteSpec(
+        background: MixBuildPalette._light.background,
+        surface: MixBuildPalette._light.surface,
+        surfaceLow: MixBuildPalette._light.surfaceLow,
+        surfaceHigh: MixBuildPalette._light.surfaceHigh,
+        surfaceHighest: MixBuildPalette._light.surfaceHighest,
+        foreground: MixBuildPalette._light.foreground,
+        muted: MixBuildPalette._light.muted,
+        primary: MixBuildPalette._light.primary,
+        primarySoft: MixBuildPalette._light.primarySoft,
+        tertiary: MixBuildPalette._light.tertiary,
+        success: MixBuildPalette._light.success,
+        warning: MixBuildPalette._light.warning,
+        error: MixBuildPalette._light.error,
+        barrier: MixBuildPalette._light.barrier,
+      ),
+      Brightness.light,
+    );
   }
 
   static ThemeData get darkTheme {
     return _buildTheme(
-        _MixBuildPaletteSpec(
-          background: MixBuildPalette._dark.background,
-          surface: MixBuildPalette._dark.surface,
-          surfaceLow: MixBuildPalette._dark.surfaceLow,
-          surfaceHigh: MixBuildPalette._dark.surfaceHigh,
-          surfaceHighest: MixBuildPalette._dark.surfaceHighest,
-          foreground: MixBuildPalette._dark.foreground,
-          muted: MixBuildPalette._dark.muted,
-          primary: MixBuildPalette._dark.primary,
-          primarySoft: MixBuildPalette._dark.primarySoft,
-          tertiary: MixBuildPalette._dark.tertiary,
-          success: MixBuildPalette._dark.success,
-          warning: MixBuildPalette._dark.warning,
-          error: MixBuildPalette._dark.error,
-          barrier: MixBuildPalette._dark.barrier,
-        ),
-        Brightness.dark);
+      _MixBuildPaletteSpec(
+        background: MixBuildPalette._dark.background,
+        surface: MixBuildPalette._dark.surface,
+        surfaceLow: MixBuildPalette._dark.surfaceLow,
+        surfaceHigh: MixBuildPalette._dark.surfaceHigh,
+        surfaceHighest: MixBuildPalette._dark.surfaceHighest,
+        foreground: MixBuildPalette._dark.foreground,
+        muted: MixBuildPalette._dark.muted,
+        primary: MixBuildPalette._dark.primary,
+        primarySoft: MixBuildPalette._dark.primarySoft,
+        tertiary: MixBuildPalette._dark.tertiary,
+        success: MixBuildPalette._dark.success,
+        warning: MixBuildPalette._dark.warning,
+        error: MixBuildPalette._dark.error,
+        barrier: MixBuildPalette._dark.barrier,
+      ),
+      Brightness.dark,
+    );
   }
 
   static ThemeData _buildTheme(
@@ -147,10 +149,7 @@ class MixBuildTheme {
         ? ThemeData.dark(useMaterial3: true)
         : ThemeData.light(useMaterial3: true);
     final textTheme = base.textTheme
-        .apply(
-          bodyColor: palette.foreground,
-          displayColor: palette.foreground,
-        )
+        .apply(bodyColor: palette.foreground, displayColor: palette.foreground)
         .copyWith(
           headlineLarge: base.textTheme.headlineLarge?.copyWith(
             fontWeight: FontWeight.w700,
@@ -168,9 +167,7 @@ class MixBuildTheme {
             fontWeight: FontWeight.w600,
             color: palette.foreground,
           ),
-          bodySmall: base.textTheme.bodySmall?.copyWith(
-            color: palette.muted,
-          ),
+          bodySmall: base.textTheme.bodySmall?.copyWith(color: palette.muted),
           labelLarge: base.textTheme.labelLarge?.copyWith(
             letterSpacing: 0.2,
             fontWeight: FontWeight.w600,
@@ -196,13 +193,14 @@ class MixBuildTheme {
       dialogTheme: DialogThemeData(
         backgroundColor: colorScheme.surface,
         barrierColor: palette.barrier,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: colorScheme.surfaceContainerLow,
         indicatorColor: colorScheme.secondaryContainer,
-        selectedIconTheme:
-            IconThemeData(color: colorScheme.onSecondaryContainer),
+        selectedIconTheme: IconThemeData(
+          color: colorScheme.onSecondaryContainer,
+        ),
         selectedLabelTextStyle: textTheme.labelLarge?.copyWith(
           color: colorScheme.onSurface,
         ),
@@ -218,11 +216,11 @@ class MixBuildTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: palette.surfaceLow,
-        hintStyle: textTheme.bodyMedium?.copyWith(
-          color: palette.muted.withValues(alpha: 0.5),
+        hintStyle: textTheme.bodyMedium?.copyWith(color: palette.muted),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(
@@ -237,7 +235,11 @@ class MixBuildTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: palette.primary, width: 1.2),
+          borderSide: BorderSide(color: palette.primary, width: 2),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: palette.error, width: 2),
         ),
       ),
     );
@@ -252,9 +254,7 @@ class MixBuildTheme {
   }
 
   static Color surfacePanelBorderColor(BuildContext context) {
-    return Theme.of(
-      context,
-    ).colorScheme.outlineVariant.withValues(alpha: 0.45);
+    return Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.45);
   }
 
   static BoxDecoration surfacePanel(
@@ -265,9 +265,7 @@ class MixBuildTheme {
     return BoxDecoration(
       color: surfacePanelColor(context, color: color),
       borderRadius: BorderRadius.circular(radius),
-      border: Border.all(
-        color: surfacePanelBorderColor(context),
-      ),
+      border: Border.all(color: surfacePanelBorderColor(context)),
     );
   }
 

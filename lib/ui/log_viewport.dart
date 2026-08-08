@@ -17,6 +17,13 @@ class LogViewportSlice {
   bool get canLoadOlder => hiddenCount > 0;
 }
 
+bool shouldShowNoLogMatch({
+  required String query,
+  required LogViewportSlice viewport,
+}) {
+  return query.trim().isNotEmpty && viewport.visibleLogs.isEmpty;
+}
+
 LogViewportSlice buildLogViewport({
   required List<LogEntry> logs,
   required String query,
@@ -25,11 +32,13 @@ LogViewportSlice buildLogViewport({
   final normalizedQuery = query.trim().toLowerCase();
   final matchedLogs = normalizedQuery.isEmpty
       ? logs
-      : logs.where((log) {
-          final haystack =
-              '${log.time} ${log.level} ${log.message}'.toLowerCase();
-          return haystack.contains(normalizedQuery);
-        }).toList(growable: false);
+      : logs
+            .where((log) {
+              final haystack = '${log.time} ${log.level} ${log.message}'
+                  .toLowerCase();
+              return haystack.contains(normalizedQuery);
+            })
+            .toList(growable: false);
   final clampedVisibleCount = visibleCount.clamp(0, matchedLogs.length);
   return LogViewportSlice(
     visibleLogs: matchedLogs.take(clampedVisibleCount).toList(growable: false),

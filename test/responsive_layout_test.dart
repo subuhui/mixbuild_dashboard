@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mixbuild_dashboard/app/mixbuild_app.dart';
+import 'package:mixbuild_dashboard/app/responsive_layout.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_config.dart';
 import 'package:mixbuild_dashboard/data/mixbuild_models.dart';
 import 'package:mixbuild_dashboard/l10n/app_strings.dart';
@@ -15,15 +16,48 @@ import 'package:mixbuild_dashboard/ui/project_editor_page.dart';
 
 void main() {
   group('Responsive layout', () {
+    test('exposes compact, medium, and wide layout bands', () {
+      final compact = ResponsiveLayout.fromWidth(1024);
+      final medium = ResponsiveLayout.fromWidth(1280);
+      final wide = ResponsiveLayout.fromWidth(1440);
+
+      expect(compact.isCompact, isTrue);
+      expect(compact.isMedium, isFalse);
+      expect(compact.isWide, isFalse);
+      expect(medium.isCompact, isFalse);
+      expect(medium.isMedium, isTrue);
+      expect(medium.isWide, isFalse);
+      expect(wide.isCompact, isFalse);
+      expect(wide.isMedium, isFalse);
+      expect(wide.isWide, isTrue);
+      expect(compact.navRailWidth, lessThan(medium.navRailWidth));
+      expect(medium.detailSidebarWidth, lessThan(wide.detailSidebarWidth));
+    });
+
     testWidgets('dashboard home renders without overflow on compact width', (
       tester,
     ) async {
       _setSurfaceSize(tester, const Size(780, 1100));
 
-      await tester.pumpWidget(const MixBuildApp());
+      await tester.pumpWidget(const ProviderScope(child: MixBuildApp()));
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('dashboard remains reachable across desktop width bands', (
+      tester,
+    ) async {
+      for (final size in const <Size>[
+        Size(1024, 720),
+        Size(1280, 800),
+        Size(1440, 900),
+      ]) {
+        _setSurfaceSize(tester, size);
+        await tester.pumpWidget(const ProviderScope(child: MixBuildApp()));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: 'size=$size');
+      }
     });
 
     testWidgets('project detail renders without overflow on medium width', (
@@ -74,50 +108,52 @@ void main() {
     });
 
     testWidgets(
-        'project detail header renders without overflow on narrow width', (
-      tester,
-    ) async {
-      _setSurfaceSize(tester, const Size(780, 1100));
+      'project detail renders without overflow on narrow and short layouts',
+      (tester) async {
+        for (final size in const <Size>[Size(780, 1100), Size(1024, 480)]) {
+          _setSurfaceSize(tester, size);
 
-      final tempDir = Directory.systemTemp.createTempSync(
-        'mixbuild-responsive-detail-header',
-      );
-      addTearDown(() {
-        if (tempDir.existsSync()) {
-          tempDir.deleteSync(recursive: true);
-        }
-      });
+          final tempDir = Directory.systemTemp.createTempSync(
+            'mixbuild-responsive-detail-header',
+          );
+          addTearDown(() {
+            if (tempDir.existsSync()) {
+              tempDir.deleteSync(recursive: true);
+            }
+          });
 
-      final store = MixbuildYamlStore(configHomePath: tempDir.path);
-      store.saveConfigSync(_seedConfig());
-      final container = ProviderContainer(
-        overrides: [mixbuildYamlStoreProvider.overrideWithValue(store)],
-      );
-      addTearDown(container.dispose);
+          final store = MixbuildYamlStore(configHomePath: tempDir.path);
+          store.saveConfigSync(_seedConfig());
+          final container = ProviderContainer(
+            overrides: [mixbuildYamlStoreProvider.overrideWithValue(store)],
+          );
+          addTearDown(container.dispose);
 
-      final state = container.read(dashboardControllerProvider);
-      final project = state.projects.first;
-      final scenario = project.scenarios.first;
+          final state = container.read(dashboardControllerProvider);
+          final project = state.projects.first;
+          final scenario = project.scenarios.first;
 
-      await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: _testApp(
-            home: ProjectDetailPage(
-              projectId: project.id,
-              scenarioId: scenario.id,
+          await tester.pumpWidget(
+            UncontrolledProviderScope(
+              container: container,
+              child: _testApp(
+                home: ProjectDetailPage(
+                  projectId: project.id,
+                  scenarioId: scenario.id,
+                ),
+              ),
             ),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.pumpAndSettle();
+          );
+          await tester.pump();
+          await tester.pumpAndSettle();
 
-      await tester.pumpWidget(const SizedBox.shrink());
-      container.dispose();
-      await tester.pump();
-      expect(tester.takeException(), isNull);
-    });
+          await tester.pumpWidget(const SizedBox.shrink());
+          container.dispose();
+          await tester.pump();
+          expect(tester.takeException(), isNull, reason: 'size=$size');
+        }
+      },
+    );
 
     testWidgets('project editor renders without overflow on medium width', (
       tester,
@@ -201,10 +237,7 @@ Widget _testApp({required Widget home}) {
       GlobalWidgetsLocalizations.delegate,
       GlobalCupertinoLocalizations.delegate,
     ],
-    supportedLocales: const [
-      Locale('zh', 'CN'),
-      Locale('en', 'US'),
-    ],
+    supportedLocales: const [Locale('zh', 'CN'), Locale('en', 'US')],
     locale: const Locale('zh', 'CN'),
     home: home,
   );
