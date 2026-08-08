@@ -3,10 +3,7 @@ import 'dart:io';
 import 'package:mixbuild_dashboard/services/mixbuild_command_runner.dart';
 
 class GitBranchDiscoveryResult {
-  const GitBranchDiscoveryResult({
-    required this.branches,
-    this.warningMessage,
-  });
+  const GitBranchDiscoveryResult({required this.branches, this.warningMessage});
 
   final List<String> branches;
   final String? warningMessage;
@@ -14,7 +11,7 @@ class GitBranchDiscoveryResult {
 
 class GitBranchDiscovery {
   GitBranchDiscovery({MixbuildCommandRunner? runner})
-      : _runner = runner ?? ProcessRunCommandRunner();
+    : _runner = runner ?? ProcessRunCommandRunner();
 
   final MixbuildCommandRunner _runner;
 
@@ -24,12 +21,16 @@ class GitBranchDiscovery {
   }) async {
     final normalizedPath = repoPath.trim();
     if (normalizedPath.isEmpty) {
-      return GitBranchDiscoveryResult(branches: _fallbackBranches(preferredBranch));
+      return GitBranchDiscoveryResult(
+        branches: _fallbackBranches(preferredBranch),
+      );
     }
 
     final root = Directory(normalizedPath);
     if (!root.existsSync() || !Directory('$normalizedPath/.git').existsSync()) {
-      return GitBranchDiscoveryResult(branches: _fallbackBranches(preferredBranch));
+      return GitBranchDiscoveryResult(
+        branches: _fallbackBranches(preferredBranch),
+      );
     }
 
     final gitExecutable = _resolveGitExecutable();
@@ -37,28 +38,27 @@ class GitBranchDiscovery {
     CommandRunResult currentBranchResult;
     CommandRunResult refResult;
     try {
-      fetchResult = await _runner.runProcess(
-        gitExecutable,
-        <String>['-C', normalizedPath, 'fetch', '--all', '--prune'],
-        workingDirectory: Directory.current.path,
-      );
-      currentBranchResult = await _runner.runProcess(
-        gitExecutable,
-        <String>['-C', normalizedPath, 'branch', '--show-current'],
-        workingDirectory: Directory.current.path,
-      );
-      refResult = await _runner.runProcess(
-        gitExecutable,
-        <String>[
-          '-C',
-          normalizedPath,
-          'for-each-ref',
-          '--format=%(refname:short)',
-          'refs/heads',
-          'refs/remotes',
-        ],
-        workingDirectory: Directory.current.path,
-      );
+      fetchResult = await _runner.runProcess(gitExecutable, <String>[
+        '-C',
+        normalizedPath,
+        'fetch',
+        '--all',
+        '--prune',
+      ], workingDirectory: Directory.current.path);
+      currentBranchResult = await _runner.runProcess(gitExecutable, <String>[
+        '-C',
+        normalizedPath,
+        'branch',
+        '--show-current',
+      ], workingDirectory: Directory.current.path);
+      refResult = await _runner.runProcess(gitExecutable, <String>[
+        '-C',
+        normalizedPath,
+        'for-each-ref',
+        '--format=%(refname)',
+        'refs/heads',
+        'refs/remotes',
+      ], workingDirectory: Directory.current.path);
     } catch (error) {
       return GitBranchDiscoveryResult(
         branches: _fallbackBranches(preferredBranch),
@@ -66,7 +66,7 @@ class GitBranchDiscovery {
       );
     }
 
-    if (fetchResult.exitCode != 0 || refResult.exitCode != 0) {
+    if (refResult.exitCode != 0) {
       return GitBranchDiscoveryResult(
         branches: _fallbackBranches(preferredBranch),
         warningMessage: _buildWarningMessage(
@@ -79,18 +79,28 @@ class GitBranchDiscovery {
 
     final currentBranch = currentBranchResult.stdout.trim();
     final branches = <String>{
-      if (preferredBranch != null && preferredBranch.trim().isNotEmpty) preferredBranch.trim(),
+      if (preferredBranch != null && preferredBranch.trim().isNotEmpty)
+        preferredBranch.trim(),
       if (currentBranch.isNotEmpty) currentBranch,
     };
 
     for (final line in refResult.stdout.split('\n')) {
       final raw = line.trim();
-      if (raw.isEmpty || raw.endsWith('/HEAD')) {
+      if (raw.startsWith('refs/heads/')) {
+        branches.add(raw.substring('refs/heads/'.length));
         continue;
       }
-      final normalized = raw.contains('/') ? raw.split('/').skip(1).join('/') : raw;
-      if (normalized.isNotEmpty) {
-        branches.add(normalized);
+      if (!raw.startsWith('refs/remotes/')) {
+        continue;
+      }
+      final remoteRef = raw.substring('refs/remotes/'.length);
+      final separator = remoteRef.indexOf('/');
+      if (separator == -1) {
+        continue;
+      }
+      final branch = remoteRef.substring(separator + 1);
+      if (branch.isNotEmpty && branch != 'HEAD') {
+        branches.add(branch);
       }
     }
 
@@ -106,15 +116,22 @@ class GitBranchDiscovery {
       });
     return GitBranchDiscoveryResult(
       branches: sorted.isEmpty ? _fallbackBranches(preferredBranch) : sorted,
-      warningMessage: currentBranchResult.exitCode == 0
+      warningMessage: fetchResult.exitCode != 0
+          ? _buildWarningMessage(
+              fetchResult,
+              refResult,
+              repoPath: normalizedPath,
+            )
+          : currentBranchResult.exitCode == 0
           ? null
-          : 'Fell back to default branches. Check repository permissions or local Git state.',
+          : 'Branch discovery could not determine the current branch; local refs are still available.',
     );
   }
 
   List<String> _fallbackBranches(String? preferredBranch) {
     return <String>{
-      if (preferredBranch != null && preferredBranch.trim().isNotEmpty) preferredBranch.trim(),
+      if (preferredBranch != null && preferredBranch.trim().isNotEmpty)
+        preferredBranch.trim(),
       'develop',
       'main',
       'master',
@@ -123,20 +140,20 @@ class GitBranchDiscovery {
 
   String _buildWarningMessage(
     CommandRunResult fetchResult,
-    CommandRunResult refResult,
-    {
+    CommandRunResult refResult, {
     required String repoPath,
-  }
-  ) {
-    final raw = <String>[
-      fetchResult.stderr.trim(),
-      fetchResult.stdout.trim(),
-      refResult.stderr.trim(),
-      refResult.stdout.trim(),
-    ].firstWhere(
-      (item) => item.isNotEmpty,
-      orElse: () => 'Branch discovery failed. Fell back to default branches.',
-    );
+  }) {
+    final raw =
+        <String>[
+          fetchResult.stderr.trim(),
+          fetchResult.stdout.trim(),
+          refResult.stderr.trim(),
+          refResult.stdout.trim(),
+        ].firstWhere(
+          (item) => item.isNotEmpty,
+          orElse: () =>
+              'Branch discovery failed. Fell back to default branches.',
+        );
     if (_isPermissionDeniedMessage(raw)) {
       return _permissionDeniedMessage(repoPath);
     }
@@ -173,7 +190,10 @@ class GitBranchDiscovery {
     if (resolved != null && resolved.trim().isNotEmpty) {
       return resolved;
     }
-    for (final candidate in const <String>['/opt/homebrew/bin/git', '/usr/bin/git']) {
+    for (final candidate in const <String>[
+      '/opt/homebrew/bin/git',
+      '/usr/bin/git',
+    ]) {
       if (File(candidate).existsSync()) {
         return candidate;
       }
