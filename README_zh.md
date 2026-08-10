@@ -135,7 +135,7 @@ build_scenarios:
     tag_prefix: "release_"
 ```
 
-`default_update_description` 可选。开始构建时可以临时修改；构建命令通过 `${build.update_description}` 决定如何把文案传给下游。变量已经按单个 Shell 参数转义，命令中不需要再为变量额外添加引号。
+`default_update_description` 可选。开始构建时可以临时修改；构建命令通过 `${build.update_description}` 决定如何把文案传给下游。Shell 安全的文本会直接替换；包含空格或 Shell 特殊字符时会按单个参数转义，命令中不需要再为变量额外添加引号。
 
 ## 构建流水线阶段
 

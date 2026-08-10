@@ -200,7 +200,7 @@ void main() {
     );
   });
 
-  test('shell-quotes the runtime update description template value', () async {
+  test('only shell-quotes update descriptions when needed', () async {
     final workspaceRoot = await Directory.systemTemp.createTemp(
       'mixbuild-engine-update-description-test_',
     );
@@ -218,53 +218,66 @@ void main() {
     );
     final engine = MixbuildEngine(runner);
     const command = r'echo ${build.update_description}';
-
-    await engine.runPipeline(
-      config: MixbuildConfig(
-        filePath: p.join(workspaceRoot.path, 'workspace.yaml'),
-        workspace: MixbuildWorkspaceConfig(
-          name: 'workspace-demo',
-          rootPath: workspaceRoot.path,
-        ),
-        mainProject: const MixbuildRepoConfig(
-          name: 'app',
-          path: 'app',
-          type: MixbuildProjectType.flutter,
-        ),
-        dependencies: const <MixbuildRepoConfig>[],
-        buildScenarios: const <MixbuildScenarioConfig>[
-          MixbuildScenarioConfig(
-            id: 'release-build',
-            name: 'Release Build',
-            mainBranch: 'main',
-            command: command,
-          ),
-        ],
+    final config = MixbuildConfig(
+      filePath: p.join(workspaceRoot.path, 'workspace.yaml'),
+      workspace: MixbuildWorkspaceConfig(
+        name: 'workspace-demo',
+        rootPath: workspaceRoot.path,
       ),
-      project: const ProjectBuild(
-        id: 'workspace-demo',
-        emoji: '🚀',
+      mainProject: const MixbuildRepoConfig(
         name: 'app',
-        description: 'demo',
-        branch: 'main',
-        scenarios: <BuildScenario>[],
+        path: 'app',
         type: MixbuildProjectType.flutter,
       ),
-      scenario: const BuildScenario(
-        id: 'release-build',
-        name: 'Release Build',
-        subtitle: 'demo',
-        environment: 'test',
-        mainBranch: 'main',
-        command: command,
-        status: BuildStatus.idle,
-        progress: 0,
-        logs: <LogEntry>[],
-        dependencies: <DependencyBranch>[],
-        outputPath: '',
-        autoTag: false,
-        tagPrefix: '',
-      ),
+      dependencies: const <MixbuildRepoConfig>[],
+      buildScenarios: const <MixbuildScenarioConfig>[
+        MixbuildScenarioConfig(
+          id: 'release-build',
+          name: 'Release Build',
+          mainBranch: 'main',
+          command: command,
+        ),
+      ],
+    );
+    const project = ProjectBuild(
+      id: 'workspace-demo',
+      emoji: '🚀',
+      name: 'app',
+      description: 'demo',
+      branch: 'main',
+      scenarios: <BuildScenario>[],
+      type: MixbuildProjectType.flutter,
+    );
+    const scenario = BuildScenario(
+      id: 'release-build',
+      name: 'Release Build',
+      subtitle: 'demo',
+      environment: 'test',
+      mainBranch: 'main',
+      command: command,
+      status: BuildStatus.idle,
+      progress: 0,
+      logs: <LogEntry>[],
+      dependencies: <DependencyBranch>[],
+      outputPath: '',
+      autoTag: false,
+      tagPrefix: '',
+    );
+
+    await engine.runPipeline(
+      config: config,
+      project: project,
+      scenario: scenario,
+      updateDescription: '本地更新说明',
+      cleanBeforeBuild: false,
+      dependencyOverrides: const <String, String>{},
+      onProgress: (_, progress) {},
+      onLog: (_) {},
+    );
+    await engine.runPipeline(
+      config: config,
+      project: project,
+      scenario: scenario,
       updateDescription: r'修复登录; $(unsafe)',
       cleanBeforeBuild: false,
       dependencyOverrides: const <String, String>{},
@@ -272,6 +285,7 @@ void main() {
       onLog: (_) {},
     );
 
+    expect(runner.shellCommands, contains('echo 本地更新说明'));
     expect(runner.shellCommands, contains(r"echo '修复登录; $(unsafe)'"));
   });
 

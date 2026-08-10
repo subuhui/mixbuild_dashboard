@@ -688,10 +688,27 @@ class MixbuildEngine {
   }
 
   String _shellQuote(String value) {
+    if (_canUseUnquotedShellValue(value)) {
+      return value;
+    }
     if (Platform.isWindows) {
       return '"${value.replaceAll('"', '""').replaceAll('%', '%%')}"';
     }
     return "'${value.replaceAll("'", "'\"'\"'")}'";
+  }
+
+  bool _canUseUnquotedShellValue(String value) {
+    if (value.isEmpty) {
+      return false;
+    }
+    const safeAscii =
+        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_@+=:,./-';
+    if (RegExp(r'\s', unicode: true).hasMatch(value)) {
+      return false;
+    }
+    return value.runes.every((rune) {
+      return rune > 0x7f || safeAscii.contains(String.fromCharCode(rune));
+    });
   }
 
   void _addRepoTemplateValues({
