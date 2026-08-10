@@ -143,7 +143,7 @@ build_scenarios:
     tag_prefix: "release_"
 ```
 
-`default_update_description` is optional. It can be overridden when a build starts, and the command decides how to pass it downstream through `${build.update_description}`. The value is already escaped as one shell argument, so do not add another pair of quotes around the variable.
+`default_update_description` is optional. It can be overridden when a build starts, and the command decides how to pass it downstream through `${build.update_description}`. Shell-safe text is inserted directly; values containing spaces or shell metacharacters are escaped as one argument, so do not add another pair of quotes around the variable.
 
 ## Build Pipeline Stages
 
